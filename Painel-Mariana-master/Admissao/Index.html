@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{
+    --teal:#247662; --teal-dark:#18564A; --magenta:#B51061;
+    --green:#2A8E47; --red:#C9142E;
+    --ink:#173029; --muted:#6b7d78; --line:#e3ebe8; --bg:#f4f7f6; --card:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:16px;background:var(--teal-dark);
+    padding:10px 14px;border-radius:14px;box-shadow:0 6px 20px rgba(24,86,74,.12)}
+  .brand img{height:34px;width:auto;display:block}
+  .hero h1{font-size:22px;margin:6px 0 4px;line-height:1.2}
+  .hero p{margin:0 0 16px;color:var(--muted);font-size:14px}
+  .progress{display:flex;gap:6px;margin:0 0 18px}
+  .progress .seg{height:5px;border-radius:99px;background:var(--line);flex:1;transition:.3s}
+  .progress .seg.on{background:var(--teal)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:20px 18px;box-shadow:0 6px 24px rgba(24,86,74,.06)}
+  .step-title{font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin:0 0 2px}
+  .step h2{font-size:18px;margin:0 0 16px}
+  label{display:block;font-size:13px;font-weight:600;margin:0 0 5px;color:var(--ink)}
+  .req::after{content:" *";color:var(--red)}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);
+    border-radius:10px;font-size:15px;background:#fbfdfc;color:var(--ink);outline:none;font-family:inherit}
+  input:focus,select:focus,textarea:focus{border-color:var(--teal);background:#fff;
+    box-shadow:0 0 0 3px rgba(36,118,98,.12)}
+  .field{margin-bottom:14px}
+  .row{display:flex;gap:12px}
+  .row .field{flex:1}
+  .hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+  .err{border-color:var(--red)!important;background:#fff6f6!important}
+  .err-msg{color:var(--red);font-size:12px;margin:4px 0 0;display:none}
+  .lgpd{background:#f0f7f4;border:1px solid #d7e8e1;border-radius:12px;padding:14px;font-size:13.5px;color:#2c4a42}
+  details.privacy{background:#f7fbf9;border:1px solid #d7e8e1;border-radius:12px;overflow:hidden}
+  details.privacy summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:750;color:var(--teal-dark);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  details.privacy summary::-webkit-details-marker{display:none}
+  details.privacy summary:after{content:'+';font-size:20px;line-height:1;color:var(--teal)}
+  details.privacy[open] summary:after{content:'–'}
+  .privacy-body{padding:0 16px 15px;color:#37574f;font-size:13.5px}
+  .privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .privacy-item{background:#fff;border:1px solid #e4efeb;border-radius:10px;padding:10px}
+  .privacy-item b{display:block;color:var(--teal-dark);margin-bottom:3px}
+  .info-box{background:#f6f9ff;border:1px solid #dbe5f4;border-radius:12px;padding:13px 14px;font-size:13px;color:#35516a}
+  .warn{background:#fff8ee;border:1px solid #f1dfbf;border-radius:12px;padding:13px 14px;font-size:13px;color:#6d5223}
+  .doc-note{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
+  @media(max-width:560px){.privacy-grid{grid-template-columns:1fr}}
+  .check{display:flex;gap:10px;align-items:flex-start;margin-top:12px}
+  input:disabled,select:disabled{opacity:.55;cursor:not-allowed}
+  .lbl-nota{font-weight:700;color:var(--magenta);font-size:12px;margin-left:6px}
+  #banco[readonly]{background:#eef3f1;color:var(--ink);cursor:default}
+  .check input{width:20px;height:20px;flex:0 0 auto;margin-top:1px}
+  .check label{margin:0;font-weight:500}
+  .nav{display:flex;gap:10px;margin-top:20px}
+  button{cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;border-radius:11px;border:0;padding:13px 18px}
+  .btn-primary{background:var(--teal);color:#fff;flex:1}
+  .btn-primary:active{background:var(--teal-dark)}
+  .btn-ghost{background:#eef3f1;color:var(--teal-dark)}
+  .btn-add{background:#fff;border:1.5px dashed var(--teal);color:var(--teal);width:100%;padding:11px}
+  .dep{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;position:relative;background:#fbfdfc}
+  .dep .rm{position:absolute;top:8px;right:8px;background:#fff0f2;color:var(--red);border-radius:8px;padding:4px 9px;font-size:12px;font-weight:700}
+  .up{border:1.5px dashed var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  .up.done{border-color:var(--green);background:#f2fbf4}
+  .up-err{color:var(--red);font-size:12px;margin-top:6px;font-weight:600}
+  .up-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .up-name{font-size:13px;color:var(--muted);margin-top:6px;word-break:break-word}
+  .file-btn{background:#eef3f1;color:var(--teal-dark);font-size:13px;padding:9px 12px;border-radius:9px;white-space:nowrap}
+  .review{font-size:14px}
+  .review .grp{margin-bottom:14px}
+  .review .grp h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--teal);margin:0 0 6px}
+  .review .item{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .review .item span:first-child{color:var(--muted)}
+  .review .item span:last-child{text-align:right;font-weight:600}
+  .toggle{display:flex;gap:10px}
+  .toggle .opt{flex:1;text-align:center;border:1px solid var(--line);border-radius:10px;padding:11px;font-weight:700;color:var(--muted);background:#fbfdfc}
+  .toggle .opt.sel{border-color:var(--teal);color:var(--teal);background:#eef7f3}
+  .total{text-align:right;font-weight:800;color:var(--teal-dark);margin-top:12px}
+  .done-screen{text-align:center;padding:24px 8px}
+  .done-screen .mk{width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px}
+  .proto{font-weight:800;color:var(--teal-dark);font-size:18px;margin:6px 0}
+  .overlay{position:fixed;inset:0;background:rgba(23,48,41,.55);display:none;align-items:center;justify-content:center;z-index:9}
+  .overlay.on{display:flex}
+  .spin{width:46px;height:46px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .intro-box{background:linear-gradient(135deg,#eef7f3,#f8fbfa);border:1px solid #d7e8e1;border-radius:14px;padding:16px;margin-bottom:14px}
+  .intro-box h3{font-size:15px;margin:0 0 6px;color:var(--teal-dark)}
+  .intro-box p{font-size:13.5px;margin:0;color:#3f5d55;text-align:justify}
+  .intro-steps{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}
+  .intro-step{border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;font-size:12.5px;color:#405a53}
+  .intro-step b{display:block;color:var(--teal-dark);margin-bottom:2px}
+  .doc-ready{margin-top:16px}
+  .doc-ready-title{font-size:15px;font-weight:800;margin:0 0 4px;color:var(--ink)}
+  .doc-ready-sub{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .doc-checklist{display:flex;flex-direction:column;gap:7px}
+  .doc-check{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--line);background:#fbfdfc;border-radius:10px;padding:9px 10px;font-size:12.8px}
+  .doc-check .ico{width:20px;height:20px;border-radius:6px;background:#e7f2ee;color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex:0 0 auto}
+  .doc-check b{font-size:12.8px}
+  .tag{display:inline-block;margin-left:5px;border-radius:99px;padding:2px 6px;font-size:10px;font-weight:800;vertical-align:1px}
+  .tag.req{background:#fde9ee;color:#941039}.tag.cond{background:#fff3d9;color:#77510a}.tag.opt{background:#edf2f0;color:#587069}
+  .start-note{margin-top:13px;padding:11px 12px;border-radius:10px;background:#f7f3fb;border:1px solid #e7dbf2;font-size:12.5px;color:#5b4770}
+  @media(max-width:520px){.intro-steps{grid-template-columns:1fr}}
+  .hidden{display:none}
+
+  /* Mensagens internas do formulário (sem alert nativo do navegador) */
+  .msg-overlay{position:fixed;inset:0;background:rgba(23,48,41,.38);display:none;align-items:center;justify-content:center;z-index:30;padding:18px}
+  .msg-overlay.on{display:flex}
+  .msg-box{width:min(100%,460px);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(23,48,41,.22);overflow:hidden}
+  .msg-head{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+  .msg-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#fff0f2;color:var(--red);flex:0 0 auto}
+  .msg-title{font-size:16px;font-weight:800;color:var(--ink)}
+  .msg-body{padding:4px 18px 16px;color:#40564f;font-size:14px;line-height:1.55}
+  .msg-lista{list-style:none;margin:10px 0 0;padding:0;max-height:min(58vh,460px);overflow:auto;border-top:1px solid var(--line)}
+  .msg-lista li{display:flex;gap:10px;align-items:flex-start;padding:8px 2px;border-bottom:1px solid var(--line);color:var(--ink);font-weight:600;line-height:1.35}
+  .msg-lista li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red);flex:0 0 auto;margin-top:6px}
+  .msg-lista li span{color:var(--red);font-weight:600}
+  .msg-actions{padding:0 18px 18px;display:flex;justify-content:flex-end}
+  .msg-ok{background:var(--teal);color:#fff;padding:10px 18px;border-radius:10px}
+  .msg-ok:hover{background:var(--teal-dark)}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="https://www.cieds.org.br/storage/settings/November2023/M6WM79uKrtrtxUbv8fll.png" alt="CIEDS"></div>
+  <div class="hero">
+    <h1>Cadastro de Admissão</h1>
+  </div>
+  <div class="progress" id="progress"></div>
+
+  <div class="card">
+    <!-- 0: Antes de começar -->
+    <section class="step" data-step="0">
+      <div class="intro-box">
+        <h3>Bem-vindo(a) ao processo de admissão do CIEDS</h3>
+        <p>Este cadastro reúne as informações e os documentos necessários para seguirmos com o seu processo de admissão. Você pode preencher tudo pelo celular ou computador e, se já deixar os documentos separados antes de começar, o preenchimento fica bem mais simples e rápido.</p>
+        <p style="margin-top:10px"><b>Um ponto importante:</b> o preenchimento deste cadastro e o envio dos documentos fazem parte do processo admissional, mas ainda existem outras etapas antes da contratação ser concluída, como o exame médico admissional. Por isso, o envio das informações e documentos não representa, por si só, a confirmação da contratação.</p>
+      </div>
+
+      <div class="doc-ready">
+        <p class="doc-ready-title">Documentos necessários para o cadastro</p>
+        <p class="doc-ready-sub">Para dar andamento ao seu processo admissional, tenha em mãos os documentos abaixo. Todos são obrigatórios: o cadastro só avança depois que cada um for anexado. Alguns só são pedidos em situações específicas, indicadas abaixo.</p>
+        <div class="doc-checklist">
+          <div class="doc-check"><span class="ico">✓</span><div><b>Foto digital recente</b><br><span class="hint">Tirada há no máximo 6 meses, de frente, com fundo branco e boa iluminação.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Carteira de Trabalho física ou digital</b><br><span class="hint">Na CTPS física, tenha frente e verso. Na digital, poderá utilizar o CPF como número da CTPS.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Carteira de identidade (RG)</b><br><span class="hint">Se a frente e o verso estiverem em fotos separadas, envie as duas.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Comprovante de situação cadastral do CPF</b><br><span class="hint">Emitido no site da Receita Federal.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Declaração do PIS/NIS</b><br><span class="hint">Emitida pelo aplicativo Caixa Trabalhador ou em uma agência da Caixa.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Declaração de Nada Consta / Benefícios do INSS</b><br><span class="hint">Emitida pelo Meu INSS, na opção Declaração de Benefícios, ou em uma agência do INSS.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Título de eleitor</b><br><span class="hint">Impresso ou digital, pelo aplicativo e-Título.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Certificado de reservista</b><br><span class="hint">Obrigatório para quem informar sexo masculino.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Certidão de nascimento, casamento ou união estável</b><br><span class="hint">Casado(a): certidão de casamento. União estável: certidão ou escritura de união estável. Demais casos: certidão de nascimento.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Comprovante de residência</b><br><span class="hint">Conta de luz, água, gás, telefone, internet ou fatura de cartão recente.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Comprovante de escolaridade</b><br><span class="hint">Diploma, certificado, histórico ou declaração da escola ou faculdade. Obrigatório para quem está cursando ou já concluiu o nível informado no grau de instrução.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Nada Consta Bilhete Único / RioCard</b><br><span class="hint">Obrigatório para quem optar por vale-transporte com RioCard. Emita no <a href="https://www.cartaoriocard.com.br/rcc/paraEmpresa/consultarCpf" target="_blank" rel="noopener noreferrer">site do RioCard</a>.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Documentação de dependentes</b><br><span class="hint">Obrigatória para cada dependente incluído, como certidão de nascimento ou de casamento e CPF. Para salário-família, inclua também, conforme a idade, a caderneta de vacinação ou o comprovante de frequência escolar.</span></div></div>
+          <div class="doc-check"><span class="ico">✓</span><div><b>Comprovante da conta bancária</b><br><span class="hint">Aceitamos somente conta no Santander. Quem ainda não tem conta no Santander não precisa enviar: depois do envio do cadastro, recebe por e-mail a carta do CIEDS para abrir a conta salário.</span></div></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 1: LGPD -->
+    <section class="step hidden" data-step="1">
+      <p class="step-title">Passo 1</p>
+      <h2>Boas-vindas e privacidade</h2>
+      <div class="lgpd" style="margin-bottom:10px;text-align:justify">
+        Para realizar sua admissão, precisamos coletar alguns dados pessoais e documentos. Eles serão utilizados somente para as finalidades necessárias ao vínculo com o CIEDS e ao cumprimento das obrigações trabalhistas, previdenciárias e legais.
+      </div>
+      <details class="privacy">
+        <summary>LGPD — veja quais dados usamos e para quê</summary>
+        <div class="privacy-body">
+          <p style="margin-top:0;text-align:justify">Sua privacidade é importante para nós. Por isso, os dados informados neste cadastro são utilizados apenas para conduzir o seu processo admissional e cumprir as obrigações relacionadas à contratação. O tratamento dessas informações segue a <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" rel="noopener noreferrer" style="color:var(--teal-dark);font-weight:700;text-decoration:underline;text-underline-offset:2px">Lei nº 13.709/2018 (LGPD)</a>. </p>
+          <div class="privacy-grid">
+            <div class="privacy-item"><b>Identificação e documentos</b>Nome, CPF, RG, CTPS, PIS/NIS, título de eleitor e demais documentos para registro do vínculo, eSocial e obrigações legais.</div>
+            <div class="privacy-item"><b>Contato e endereço</b>E-mail, telefone e endereço para comunicação sobre a admissão, assinatura de documentos e cadastro funcional.</div>
+            <div class="privacy-item"><b>Dados bancários</b>Banco, agência e conta para processamento dos pagamentos decorrentes do vínculo.</div>
+            <div class="privacy-item"><b>Benefícios e transporte</b>Informações de vale-transporte e trajeto para análise e concessão dos benefícios aplicáveis.</div>
+            <div class="privacy-item"><b>Dependentes</b>Dados necessários para cadastro de dependentes, Imposto de Renda e salário-família, quando aplicável.</div>
+            <div class="privacy-item"><b>Documentos anexados</b>Comprovações necessárias para conferência cadastral e formação do dossiê admissional.</div>
+          </div>
+          <p style="margin-bottom:0;text-align:justify">O acesso às informações é restrito às áreas e pessoas autorizadas a participar das atividades necessárias ao processo admissional.</p>
+        </div>
+      </details>
+      <div class="check">
+        <input type="checkbox" id="consentLGPD">
+        <label for="consentLGPD">Li e autorizo o tratamento dos meus dados para a finalidade de admissão.</label>
+      </div>
+      <p class="err-msg" id="err-consent">Você precisa autorizar para continuar.</p>
+    </section>
+
+    <!-- 2: Dados pessoais -->
+    <section class="step hidden" data-step="2">
+      <p class="step-title">Passo 2</p>
+      <h2>Dados pessoais</h2>
+      <div class="field"><label class="req" for="nomeCompleto">Nome completo</label><input id="nomeCompleto" data-req></div>
+      <div class="field"><label for="nomeSocial">Nome social (se usar)</label><input id="nomeSocial"></div>
+      <div class="row">
+        <div class="field"><label class="req" for="dataNascimento">Data de nascimento</label><input id="dataNascimento" type="date" data-req></div>
+        <div class="field"><label class="req" for="sexo">Sexo (eSocial)</label>
+          <select id="sexo" data-req><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="req" for="estadoCivil">Estado civil</label>
+          <select id="estadoCivil" data-req><option value="">Selecione</option><option>Solteiro(a)</option><option>Casado(a)</option><option>União estável</option><option>Divorciado(a)</option><option>Viúvo(a)</option></select></div>
+        <div class="field"><label class="req" for="grauInstrucao">Grau de instrução</label>
+          <select id="grauInstrucao" data-req><option value="">Selecione</option><option>Fundamental incompleto</option><option>Fundamental cursando</option><option>Fundamental completo</option><option>Médio incompleto</option><option>Médio cursando</option><option>Médio completo</option><option>Superior incompleto</option><option>Superior cursando</option><option>Superior completo</option><option>Pós-graduação</option></select></div>
+      </div>
+      <div class="field"><label class="req" for="nacionalidade">Nacionalidade</label><input id="nacionalidade" value="Brasileira" data-req></div>
+      <div class="row">
+        <div class="field"><label for="naturalidadeCidade">Naturalidade (cidade)</label><input id="naturalidadeCidade"></div>
+        <div class="field" style="max-width:110px"><label for="naturalidadeUF">UF</label><select id="naturalidadeUF"><option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
+      </div>
+      <div class="field"><label class="req" for="racaCor">Raça/Cor (eSocial)</label>
+        <select id="racaCor" data-req><option value="">Selecione</option><option>Branca</option><option>Preta</option><option>Parda</option><option>Amarela</option><option>Indígena</option><option>Prefiro não informar</option></select></div>
+      <div class="field"><label class="req" for="nomeMae">Nome da mãe</label><input id="nomeMae" data-req></div>
+      <div class="field"><label for="nomePai">Nome do pai (se constar no registro)</label><input id="nomePai"></div>
+    </section>
+
+    <!-- 3: Documentos -->
+    <section class="step hidden" data-step="3">
+      <p class="step-title">Passo 3</p>
+      <h2>Documentos</h2>
+      <div class="field"><label class="req" for="cpf">CPF</label><input id="cpf" inputmode="numeric" data-req>
+        <p class="err-msg" id="err-cpf">CPF inválido.</p></div>
+      <div class="row">
+        <div class="field"><label class="req" for="rgNumero">RG</label><input id="rgNumero" data-req></div>
+        <div class="field" style="max-width:130px"><label for="rgOrgao">Órgão emissor</label><input id="rgOrgao" placeholder="Ex: SSP"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="max-width:110px"><label for="rgUF">UF</label><select id="rgUF"><option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
+        <div class="field"><label for="rgEmissao">Data de emissão</label><input id="rgEmissao" type="date"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="tituloEleitor">Título de eleitor</label><input id="tituloEleitor" inputmode="numeric" data-req data-opcional></div>
+        <div class="field" style="max-width:90px"><label for="tituloZona">Zona</label><input id="tituloZona" inputmode="numeric"></div>
+        <div class="field" style="max-width:90px"><label for="tituloSecao">Seção</label><input id="tituloSecao" inputmode="numeric"></div>
+      </div>
+      <div class="check" style="margin:2px 0 12px"><input type="checkbox" id="ctpsDigital"><label for="ctpsDigital"><b>Minha CTPS é digital</b><span class="hint" style="display:block">Nesse caso, utilizaremos o CPF como número da CTPS.</span></label></div>
+      <div id="ctpsFisicaBox">
+        <div class="row">
+          <div class="field"><label for="ctpsNumero">CTPS — número</label><input id="ctpsNumero" inputmode="numeric"></div>
+          <div class="field" style="max-width:120px"><label for="ctpsSerie">Série</label><input id="ctpsSerie"></div>
+          <div class="field" style="max-width:90px"><label for="ctpsUF">UF</label><select id="ctpsUF"><option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
+        </div>
+      </div>
+      <div id="ctpsDigitalBox" class="info-box hidden" style="margin:-2px 0 14px">CTPS digital selecionada. O número da carteira será preenchido automaticamente com o CPF informado.</div>
+      <div class="field"><label for="pisPasep">PIS/PASEP/NIT (se já tiver)</label><input id="pisPasep" inputmode="numeric">
+        <p class="hint">Quem está no primeiro emprego pode não ter. Nesse caso, deixe em branco.</p></div>
+      <div class="field hidden" id="reservistaBox"><label for="reservista">Certificado de reservista (se aplicável)</label><input id="reservista"></div>
+      <div class="row">
+        <div class="field"><label for="cnhNumero">CNH — número (se tiver)</label><input id="cnhNumero" inputmode="numeric"></div>
+        <div class="field" style="max-width:110px"><label for="cnhCategoria">Categoria</label><input id="cnhCategoria" maxlength="3" style="text-transform:uppercase"></div>
+        <div class="field" style="max-width:140px"><label for="cnhValidade">Validade</label><input id="cnhValidade" type="date"></div>
+      </div>
+    </section>
+
+    <!-- 4: Contato + Endereço + Banco -->
+    <section class="step hidden" data-step="4">
+      <p class="step-title">Passo 4</p>
+      <h2>Contato, endereço e dados bancários</h2>
+      <div class="field"><label class="req" for="emailPessoal">E-mail pessoal</label><input id="emailPessoal" type="email" inputmode="email" data-req>
+        <p class="hint">Usaremos para enviar o contrato para assinatura.</p></div>
+      <div class="row">
+        <div class="field"><label class="req" for="celular">Celular/WhatsApp</label><input id="celular" inputmode="tel" data-req placeholder="(21) 99999-9999"></div>
+        <div class="field"><label for="telefoneRecado">Telefone recado</label><input id="telefoneRecado" inputmode="tel"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="max-width:150px"><label class="req" for="cep">CEP</label><input id="cep" inputmode="numeric" data-req placeholder="00000-000">
+          <p class="hint" id="cep-status"></p></div>
+        <div class="field"><label class="req" for="logradouro">Logradouro</label><input id="logradouro" data-req></div>
+      </div>
+      <div class="row">
+        <div class="field" style="max-width:110px"><label class="req" for="numero">Número</label><input id="numero" data-req></div>
+        <div class="field"><label for="complemento">Complemento</label><input id="complemento"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="bairro">Bairro</label><input id="bairro"></div>
+        <div class="field"><label class="req" for="cidade">Cidade</label><input id="cidade" data-req></div>
+        <div class="field" style="max-width:80px"><label class="req" for="uf">UF</label><select id="uf" data-req><option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="banco">Banco <span class="lbl-nota">Aceitamos somente conta no Santander</span></label><input id="banco" value="Santander" readonly></div>
+        <div class="field" style="max-width:120px"><label class="req" for="agencia">Agência</label><input id="agencia" inputmode="numeric" data-req></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="req" for="conta">Conta (com dígito)</label><input id="conta" inputmode="numeric" data-req></div>
+        <div class="field" style="max-width:150px"><label class="req" for="tipoConta">Tipo</label>
+          <select id="tipoConta" data-req><option value="">Selecione</option><option>Corrente</option><option>Poupança</option></select></div>
+      </div>
+      <div class="check" style="margin:-4px 0 12px"><input type="checkbox" id="semConta"><label for="semConta"><b>Não tenho conta no Santander</b><span class="hint" style="display:block">Marque se você não tem conta no Santander, mesmo que tenha conta em outro banco. Nesse caso, não é preciso enviar comprovante bancário e, depois do envio do cadastro, você receberá por e-mail a carta do CIEDS para abrir a sua conta salário no Santander.</span></label></div>
+      <div class="field"><label for="pix">Chave PIX (opcional)</label><input id="pix"></div>
+    </section>
+
+    <!-- 5: Dependentes -->
+    <section class="step hidden" data-step="5">
+      <p class="step-title">Passo 5</p>
+      <h2>Dependentes</h2>
+      <p class="hint" style="margin-bottom:12px">Inclua dependentes para Imposto de Renda e salário-família. Se não tiver, é só avançar. Para cada dependente incluído, todos os dados e a documentação são obrigatórios.</p>
+      <div id="deps"></div>
+      <button type="button" class="btn-add" id="addDep">+ Adicionar dependente</button>
+    </section>
+
+    <!-- 6: VT -->
+    <section class="step hidden" data-step="6">
+      <p class="step-title">Passo 6</p>
+      <h2>Vale-transporte</h2>
+      <p class="hint" style="margin-bottom:12px">O vale-transporte é opcional e, por lei, depende da sua opção.</p>
+      <label>Deseja receber vale-transporte?</label>
+      <div class="toggle" id="vtToggle">
+        <div class="opt" data-v="Sim">Sim, quero</div>
+        <div class="opt" data-v="Não">Não quero</div>
+      </div>
+      <input type="hidden" id="vtQuer">
+
+      <div id="vtDetalhe" class="hidden" style="margin-top:18px">
+        <label>Qual você utiliza?</label>
+        <div class="check"><input type="radio" name="vtTipo" id="vtJae" value="Jaé"><label for="vtJae">Jaé</label></div>
+        <div class="check"><input type="radio" name="vtTipo" id="vtRio" value="RioCard"><label for="vtRio">RioCard</label></div>
+
+        <div id="vtRioBox" class="hidden" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+          <div class="field"><label class="req" for="vtRiocardNumero">Número do cartão RioCard</label><input id="vtRiocardNumero" inputmode="numeric"></div>
+          <div class="check"><input type="checkbox" id="vtSemCartao"><label for="vtSemCartao">Não tenho cartão RioCard (solicitar um novo)</label></div>
+          <div class="warn" style="margin-top:12px"><b>Antes de continuar</b><br>Se o seu RioCard estiver ou já tiver sido vinculado a outra empresa, a recarga pelo CIEDS pode ficar impedida. Verifique a situação do cartão e, se necessário, solicite a desvinculação junto à empresa anterior.</div>
+          <div class="check"><input type="checkbox" id="vtCiente"><label class="req" for="vtCiente">Li a orientação acima e estou ciente de que pode ser necessário regularizar a vinculação do meu cartão.</label></div>
+        </div>
+
+
+        <label style="margin-top:16px">Trechos do trajeto</label>
+        <p class="hint" style="margin-bottom:10px">Em cada trecho, selecione o meio de transporte. Os valores são fixos em R$ 5,00 na ida e R$ 5,00 na volta, totalizando R$ 10,00 por dia, e não podem ser alterados.</p>
+        <div id="trechos"></div>
+        <button type="button" class="btn-add" id="addTrecho">+ Adicionar trecho</button>
+        <div class="total">Total diário: R$ <span id="vtTotal">0,00</span></div>
+      </div>
+    </section>
+
+    <!-- 7: Upload -->
+    <section class="step hidden" data-step="7">
+      <p class="step-title">Passo 7</p>
+      <h2>Envio de documentos</h2>
+      <p class="hint" style="margin-bottom:12px">Aceita foto ou PDF. As imagens são reduzidas automaticamente. Os documentos marcados com * são obrigatórios: o cadastro só avança depois que cada um for anexado. Embaixo de cada documento está onde conseguir.</p>
+      <div id="uploads"></div>
+    </section>
+
+    <!-- 8: Revisão -->
+    <section class="step hidden" data-step="8">
+      <p class="step-title">Último passo</p>
+      <h2>Revisão e envio</h2>
+      <div class="review" id="review"></div>
+      <p class="hint" style="margin-top:10px">Confira os dados. Ao enviar, seu cadastro chega ao DP com status pendente de conferência.</p>
+    </section>
+
+    <div class="nav">
+      <button type="button" class="btn-ghost hidden" id="btnBack">Voltar</button>
+      <button type="button" class="btn-primary" id="btnNext">Continuar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="msg-overlay" id="msgOverlay" role="dialog" aria-modal="true" aria-labelledby="msgTitle">
+  <div class="msg-box">
+    <div class="msg-head">
+      <div class="msg-ico">!</div>
+      <div class="msg-title" id="msgTitle">Atenção</div>
+    </div>
+    <div class="msg-body" id="msgBody"></div>
+    <div class="msg-actions"><button type="button" class="msg-ok" id="msgOk">Entendi</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="spin"></div></div>
+
+<script>
+  var STEPS = 9;
+  var cur = 0;
+  var arquivosSel = {};   // uploads gerais: campo -> {campo,nome,tipo,base64}
+
+  // [2026-09-30] Todos obrigatórios. "quando" = só aparece (e só é exigido) nessa situação.
+  // Tem que bater com DOCS_OBRIGATORIOS no Código.js.
+  var DOCS = [
+    {campo:'Foto', label:'Foto digital recente', note:'Pode ser tirada com o celular. Precisa ter sido tirada há no máximo 6 meses, de frente, com fundo branco e iluminação uniforme. Rosto e ombros devem estar centralizados, com os olhos abertos e direcionados para a câmera.'},
+    {campo:'Carteira de Trabalho', label:'Carteira de Trabalho — física ou digital', note:'Física: envie a frente e o verso da página com a sua foto e os seus dados. Digital: no aplicativo Carteira de Trabalho Digital, entre com a sua conta gov.br e envie o PDF ou um print da tela com os seus dados.'},
+    {campo:'Documento de identidade', label:'Carteira de identidade (RG) — frente ou arquivo completo', note:'Envie uma foto nítida do documento original, fora do plástico, ou um único arquivo com a frente e o verso. Se perdeu a identidade, peça a 2ª via no DETRAN-RJ (identificação civil), com agendamento pelo site detran.rj.gov.br.'},
+    {campo:'Documento de identidade - verso', label:'Carteira de identidade (RG) — verso', quando:'rgVerso', note:'Envie aqui a foto do verso do documento.'},
+    {campo:'CPF', label:'Comprovante de situação cadastral do CPF', note:'Emita grátis no <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" rel="noopener noreferrer">site da Receita Federal</a>: informe o CPF e a data de nascimento e salve a página em PDF ou tire um print.'},
+    {campo:'PIS NIS', label:'Declaração do PIS/NIS', note:'Pode ser emitida no aplicativo Caixa Trabalhador ou em uma agência da Caixa.'},
+    {campo:'Nada consta INSS', label:'Declaração de Nada Consta / Benefícios do INSS', note:'Emita no aplicativo Meu INSS ou no site <a href="https://meu.inss.gov.br" target="_blank" rel="noopener noreferrer">meu.inss.gov.br</a>: entre com a sua conta gov.br e use a opção Declaração de Benefícios. Também pode ser pedida em uma agência do INSS.'},
+    {campo:'Titulo de eleitor', label:'Título de eleitor', note:'Envie uma foto do título impresso ou um print do título digital no aplicativo e-Título, da Justiça Eleitoral. O número do título também pode ser consultado no site do TSE (tse.jus.br).'},
+    {campo:'Reservista', label:'Certificado de reservista', quando:'masculino', note:'Obrigatório para quem informou sexo masculino. Vale o Certificado de Reservista ou o Certificado de Dispensa de Incorporação (CDI). Se perdeu, peça a 2ª via na Junta de Serviço Militar da sua cidade.'},
+    {campo:'Certidao civil', label:'Certidão de nascimento', note:'Se não tiver a certidão, peça a 2ª via no cartório onde você foi registrado(a) ou pela internet, no site <a href="https://www.registrocivil.org.br" target="_blank" rel="noopener noreferrer">registrocivil.org.br</a>.'},
+    {campo:'Comprovante de residencia', label:'Comprovante de residência', note:'Conta de luz, água, gás, telefone ou internet, ou fatura de cartão, recente e com o endereço informado no cadastro. A 2ª via pode ser baixada no site ou no aplicativo da empresa.'},
+    {campo:'Comprovante de escolaridade', label:'Comprovante de escolaridade', note:'Diploma, certificado de conclusão, histórico escolar ou declaração da escola ou faculdade, de acordo com o grau de instrução informado. Se não tiver, peça na secretaria da instituição de ensino.'},
+    {campo:'Nada consta Bilhete Unico', label:'Nada Consta Bilhete Único / RioCard', quando:'riocard', note:'Obrigatório para quem optou por vale-transporte com RioCard. Emita no <a href="https://www.cartaoriocard.com.br/rcc/paraEmpresa/consultarCpf" target="_blank" rel="noopener noreferrer">site do RioCard</a> e salve em PDF ou tire um print.'},
+    {campo:'Comprovante bancário', label:'Comprovante da conta bancária', note:'Print do aplicativo do Santander, foto do cartão ou extrato em que apareçam o seu nome, a agência e o número da conta. Aceitamos somente conta no Santander.', quando:'temBanco'}
+  ];
+  var rgVersoSeparado = false; // marcado no quadro da identidade: frente e verso em arquivos separados
+
+  function $(id){return document.getElementById(id);}
+  function val(id){var e=$(id);return e?String(e.value||'').trim():'';}
+  function money(n){return (n||0).toFixed(2).replace('.',',');}
+  function parseVal(s){s=String(s||'').replace(',','.').replace(/[^\d.]/g,'');var n=parseFloat(s);return isNaN(n)?0:n;}
+
+  // itens (opcional): lista mostrada um embaixo do outro; cada item é texto ou [texto, detalhe em vermelho].
+  function showMsg(mensagem,titulo,itens){
+    $('msgTitle').textContent=titulo||'Atenção';
+    var corpo=$('msgBody');corpo.textContent=mensagem||'';
+    if(itens&&itens.length){
+      var ul=document.createElement('ul');ul.className='msg-lista';
+      itens.forEach(function(it){
+        var li=document.createElement('li'),txt=document.createElement('div');
+        if(Array.isArray(it)){txt.textContent=it[0]+' ';var d=document.createElement('span');d.textContent=it[1];txt.appendChild(d);}
+        else txt.textContent=it;
+        li.appendChild(txt);ul.appendChild(li);
+      });
+      corpo.appendChild(ul);
+    }
+    $('msgOverlay').classList.add('on');
+    setTimeout(function(){$('msgOk').focus();},0);
+  }
+  var focoDepoisDoAviso=null; // primeiro campo pendente: recebe o foco quando o aviso fecha
+  function closeMsg(){
+    $('msgOverlay').classList.remove('on');
+    var f=focoDepoisDoAviso;focoDepoisDoAviso=null;
+    if(f){if(f.scrollIntoView)f.scrollIntoView({block:'center'});if(f.focus)f.focus();}
+  }
+  $('msgOk').onclick=closeMsg;
+  $('msgOverlay').addEventListener('click',function(e){if(e.target===$('msgOverlay'))closeMsg();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('msgOverlay').classList.contains('on'))closeMsg();});
+
+  // ---- Campos obrigatórios: aviso na hora, embaixo do campo ----
+  // [2026-09-30] Ao sair de um campo obrigatório vazio (ou com CPF/e-mail inválido), o aviso
+  // aparece embaixo dele; some assim que o campo é corrigido. O Continuar lista o que falta.
+  function nomeDoCampo(f){
+    var l=document.querySelector('label[for="'+f.id+'"]');
+    return l?l.textContent.trim():f.id;
+  }
+  function avisoDoCampo(f){
+    var m=f.parentNode.querySelector('.err-msg');
+    if(!m){m=document.createElement('p');m.className='err-msg';f.insertAdjacentElement('afterend',m);}
+    return m;
+  }
+  function problemaDoCampo(f){
+    var v=String(f.value||'').trim();
+    // [2026-10-05] data-opcional: pode ficar em branco, mas se preenchido o formato é conferido (título de eleitor).
+    if(!v) return f.hasAttribute('data-opcional') ? '' : 'Campo obrigatório.';
+    if(f.id==='cpf' && !cpfValido(v)) return 'CPF inválido.';
+    if(f.id==='emailPessoal'){
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'E-mail inválido.';
+      var sug=sugestaoEmail(v); if(sug) return 'Confira o e-mail: você quis dizer '+sug+'?';
+    }
+    if(f.id==='celular' && !celularValido(v)) return 'Informe o celular com DDD e 9 dígitos. Ex.: (21) 99999-9999.';
+    if(f.id==='cep' && v.replace(/\D/g,'').length!==8) return 'CEP inválido. Informe os 8 números.';
+    if(f.id==='dataNascimento'){ var pn=problemaNascimento(v); if(pn) return pn; }
+    if(f.id==='tituloEleitor' && !tituloValido(v)) return 'Título de eleitor inválido. Confira os 12 números.';
+    return '';
+  }
+
+  // [2026-10-02] Formatos. Iguais aos do Código.js (_celularValido_, _tituloValido_, _problemaNascimento_, _sugestaoEmail_).
+  var DDDS=[11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,
+    61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99];
+  function celularValido(v){
+    var d=String(v||'').replace(/\D/g,'');
+    if(d.length===13&&d.indexOf('55')===0)d=d.slice(2);
+    return d.length===11 && DDDS.indexOf(Number(d.slice(0,2)))>-1 && d[2]==='9';
+  }
+  function tituloValido(v){
+    var d=String(v||'').replace(/\D/g,'');
+    if(d.length===13&&(d.slice(9,11)==='01'||d.slice(9,11)==='02'))return true; // títulos antigos de SP/MG
+    if(d.length!==12||/^(\d)\1+$/.test(d))return false;
+    var uf=Number(d.slice(8,10)); if(uf<1||uf>28)return false;
+    var s=0,i; for(i=0;i<8;i++)s+=Number(d[i])*(i+2);
+    var dv1=s%11; if(dv1===10)dv1=0; if((uf===1||uf===2)&&dv1===0)dv1=1;
+    var dv2=(Number(d[8])*7+Number(d[9])*8+dv1*9)%11; if(dv2===10)dv2=0; if((uf===1||uf===2)&&dv2===0)dv2=1;
+    return dv1===Number(d[10])&&dv2===Number(d[11]);
+  }
+  function hojeISO(){ var h=new Date(); return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2); }
+  function problemaNascimento(v){
+    var m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return 'Data de nascimento inválida.';
+    var hoje=hojeISO(); if(v>hoje) return 'A data de nascimento não pode ser no futuro.';
+    var idade=Number(hoje.slice(0,4))-Number(m[1]); if(hoje.slice(5)<v.slice(5))idade--;
+    if(idade<14) return 'Idade mínima para admissão: 14 anos. Confira a data.';
+    if(idade>100) return 'Confira o ano de nascimento.';
+    return '';
+  }
+  var EMAIL_DOMINIOS={
+    'gmial.com':'gmail.com','gmai.com':'gmail.com','gmal.com':'gmail.com','gamil.com':'gmail.com','gnail.com':'gmail.com','gmil.com':'gmail.com',
+    'gmaill.com':'gmail.com','gmeil.com':'gmail.com','gmsil.com':'gmail.com','gemail.com':'gmail.com','gimail.com':'gmail.com','gmail.co':'gmail.com',
+    'gmail.com.br':'gmail.com','gmail.combr':'gmail.com',
+    'hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','hotmai.com':'hotmail.com','hotmil.com':'hotmail.com','hotamil.com':'hotmail.com',
+    'hotmaill.com':'hotmail.com','homail.com':'hotmail.com','hotmail.co':'hotmail.com','hotmail.com.b':'hotmail.com.br',
+    'outlok.com':'outlook.com','outllok.com':'outlook.com','outloo.com':'outlook.com','outlook.co':'outlook.com','outlook.com.b':'outlook.com.br',
+    'yaho.com':'yahoo.com','yahooo.com':'yahoo.com','yhaoo.com':'yahoo.com','yahho.com':'yahoo.com','yahoo.co':'yahoo.com',
+    'yahoo.com.b':'yahoo.com.br','yahoo.combr':'yahoo.com.br','iclod.com':'icloud.com','icoud.com':'icloud.com','icloud.co':'icloud.com',
+    'bol.com':'bol.com.br','uol.com':'uol.com.br'
+  };
+  function sugestaoEmail(v){
+    var e=String(v||'').trim().toLowerCase(), i=e.lastIndexOf('@'); if(i<0)return '';
+    var usuario=e.slice(0,i), dom=e.slice(i+1);
+    if(EMAIL_DOMINIOS[dom]) return usuario+'@'+EMAIL_DOMINIOS[dom];
+    var fim=dom.match(/\.(con|cpm|cmo|comm|coom|cm|om|vom|xom)$/);
+    if(fim) return usuario+'@'+dom.slice(0,dom.length-fim[0].length)+'.com';
+    return '';
+  }
+  function checaCampo(f){
+    var prob=problemaDoCampo(f), m=avisoDoCampo(f);
+    f.classList.toggle('err',!!prob);
+    m.textContent=prob;m.style.display=prob?'block':'none';
+    return !prob;
+  }
+  function rechecaSeMarcado(f){if(f&&f.classList.contains('err'))checaCampo(f);}
+  document.querySelectorAll('[data-req]').forEach(function(f){
+    f.addEventListener('blur',function(){checaCampo(f);});
+    f.addEventListener('input',function(){rechecaSeMarcado(f);});
+    f.addEventListener('change',function(){rechecaSeMarcado(f);});
+  });
+
+  // [2026-10-01] Comprovante de escolaridade sempre aparece; é obrigatório para "cursando",
+  // "completo" e pós-graduação. Para "incompleto" fica opcional. Igual a DOCS_OBRIGATORIOS no Código.js.
+  function escolaridadeExigeComprovante(){
+    var g=val('grauInstrucao');
+    return !!g && !/incompleto/i.test(g);
+  }
+  // Documento aparece e é exigido só na situação indicada em "quando".
+  function docAplica(doc){
+    if(doc.quando==='rgVerso') return rgVersoSeparado;
+    if(doc.quando==='masculino') return val('sexo')==='Masculino';
+    if(doc.quando==='riocard') return val('vtQuer')==='Sim' && $('vtRio').checked;
+    if(doc.quando==='temBanco') return temBanco();
+    return true;
+  }
+  // [2026-10-01] Comprovante bancário: só para quem tem conta no Santander. "Não tenho conta no
+  // Santander" deixa o campo Banco vazio e o anexo some (nem aparece). Igual a DOCS_OBRIGATORIOS no Código.js.
+  function temBanco(){ return !!val('banco'); }
+  function docObrigatorio(doc){
+    if(!docAplica(doc)) return false;
+    if(doc.campo==='Comprovante de escolaridade') return escolaridadeExigeComprovante();
+    return true;
+  }
+  // A certidão muda conforme o estado civil.
+  function docTexto(doc){
+    if(doc.campo==='Certidao civil'){
+      var ec=val('estadoCivil');
+      if(ec==='Casado(a)') return {label:'Certidão de casamento',
+        note:'Como você informou estado civil casado(a), envie a certidão de casamento. Se não tiver, peça a 2ª via no cartório onde o casamento foi registrado ou pela internet, no site <a href="https://www.registrocivil.org.br" target="_blank" rel="noopener noreferrer">registrocivil.org.br</a>.'};
+      if(ec==='União estável') return {label:'Certidão ou escritura de união estável',
+        note:'Como você informou união estável, envie a escritura pública de união estável, feita em cartório de notas, ou a certidão ou termo de união estável do cartório de registro civil.'};
+    }
+    if(doc.campo==='Comprovante de escolaridade' && !escolaridadeExigeComprovante())
+      return {label:'Comprovante de escolaridade (opcional)',
+        note:'Como o grau de instrução informado é incompleto, este documento é opcional. Se tiver, envie o histórico escolar ou uma declaração da escola ou faculdade.'};
+    return {label:doc.label, note:doc.note};
+  }
+  function syncCTPS(){
+    var digital=$('ctpsDigital').checked;
+    $('ctpsFisicaBox').classList.toggle('hidden',digital);
+    $('ctpsDigitalBox').classList.toggle('hidden',!digital);
+    ['ctpsNumero','ctpsSerie','ctpsUF'].forEach(function(id){
+      var el=$(id); if(!el)return;
+      el.removeAttribute('data-req');
+      el.classList.remove('err');
+    });
+    if(digital){$('ctpsNumero').value=val('cpf');$('ctpsSerie').value='';$('ctpsUF').value='';}
+  }
+
+  function buildProgress(){
+    var p=$('progress');p.innerHTML='';
+    for(var i=0;i<STEPS;i++){var s=document.createElement('div');s.className='seg';s.id='seg'+i;p.appendChild(s);}
+  }
+  function paintProgress(){for(var i=0;i<STEPS;i++){$('seg'+i).className='seg'+(i<=cur?' on':'');}}
+
+  function show(n){
+    document.querySelectorAll('.step').forEach(function(el){
+      el.classList.toggle('hidden', Number(el.getAttribute('data-step'))!==n);
+    });
+    $('btnBack').classList.toggle('hidden', n===0);
+    $('btnNext').textContent = (n===0)?'Começar cadastro':((n===STEPS-1)?'Enviar cadastro':'Continuar');
+    if(n===STEPS-1) buildReview();
+    cur=n;paintProgress();window.scrollTo(0,0);
+  }
+
+  // ---- Validação ----
+  function validStep(n){
+    var ok=true;
+    if(n===0) return true;
+    if(n===1){
+      if(!$('consentLGPD').checked){$('err-consent').style.display='block';return false;}
+      $('err-consent').style.display='none';return true;
+    }
+    var sec=document.querySelector('.step[data-step="'+n+'"]');
+    var pendentes=[];
+    sec.querySelectorAll('[data-req]').forEach(function(f){
+      if(f.offsetParent===null||f.disabled)return; // ignora campos ocultos e desativados (sem conta no Santander)
+      if(!checaCampo(f)){ok=false;pendentes.push(f);}
+    });
+    if(n===5){
+      // Dependentes são opcionais, mas cada dependente incluído precisa de todos os dados.
+      var itensDep=[],primeiroDep=null,num=0;
+      document.querySelectorAll('#deps .dep').forEach(function(d){
+        d.style.borderColor='';
+        if(!depEmUso(d)){limpaDep(d);return;}
+        num++;
+        var probs=checaDep(d);
+        if(probs.length){
+          var nome=d.querySelector('.d-nome').value.trim();
+          itensDep.push(['Dependente '+num+(nome?' ('+nome+')':'')+':',probs.join('; ')]);
+          d.style.borderColor='var(--red)';
+          if(!primeiroDep)primeiroDep=d.querySelector('.err')||d.querySelector('.sf-btn');
+        }
+      });
+      if(itensDep.length){
+        focoDepoisDoAviso=primeiroDep;
+        showMsg('Corrija os dados dos dependentes abaixo para continuar:','Dados dos dependentes',itensDep);
+        return false;
+      }
+    }
+    if(n===6) ok = validVT();
+    if(n===7){ // uploads obrigatórios
+      var falta=[],primeiro=null;
+      DOCS.forEach(function(doc,idx){
+        var w=$('up'+idx);
+        if(!w) return; // documento que não se aplica a esta pessoa
+        var e=w.querySelector('.up-err');
+        if(docObrigatorio(doc) && !arquivosSel[doc.campo]){
+          falta.push(docTexto(doc).label);w.style.borderColor='var(--red)';
+          if(!e){e=document.createElement('div');e.className='up-err';w.appendChild(e);}
+          e.textContent='Documento obrigatório: anexe para continuar.';
+          if(!primeiro)primeiro=w.querySelector('.file-btn');
+        }else{w.style.borderColor='';if(e)e.remove();}
+      });
+      if(falta.length){focoDepoisDoAviso=primeiro;showMsg(falta.length===1?'Falta 1 documento. Anexe para continuar:':'Faltam '+falta.length+' documentos. Anexe todos para continuar:','Faltam documentos',falta);return false;}
+    }
+    if(!ok && n!==6){
+      focoDepoisDoAviso=pendentes[0]||null;
+      var itens=pendentes.map(function(f){
+        var prob=problemaDoCampo(f);
+        return prob==='Campo obrigatório.'?nomeDoCampo(f):[nomeDoCampo(f)+':',prob.replace(/\.$/,'')];
+      });
+      var faltaConta=pendentes.some(function(f){return ['agencia','conta','tipoConta'].indexOf(f.id)>-1;});
+      showMsg('Preencha os campos abaixo para continuar. Eles estão marcados em vermelho no formulário.'+
+        (faltaConta?' Se você não tem conta no Santander, marque "Não tenho conta no Santander".':''),'Campos obrigatórios',itens);
+    }
+    return ok;
+  }
+
+  function validVT(){
+    if(val('vtQuer')!=='Sim') return true;
+
+    if(!$('vtJae').checked && !$('vtRio').checked){
+      showMsg(
+        'Selecione o tipo de vale-transporte: Jaé ou RioCard.',
+        'Vale-transporte'
+      );
+      return false;
+    }
+
+    // [2026-10-02] RioCard: número do cartão obrigatório, a não ser que marque "Não tenho cartão
+    // RioCard"; a confirmação de ciência é sempre obrigatória. Igual ao Código.js.
+    if($('vtRio').checked){
+      var faltaVT=[], semNumero=!$('vtSemCartao').checked&&!val('vtRiocardNumero');
+      if(semNumero)faltaVT.push('Número do cartão RioCard, ou marque "Não tenho cartão RioCard"');
+      if(!$('vtCiente').checked)faltaVT.push('Confirme que leu a orientação sobre a vinculação do cartão');
+      $('vtRiocardNumero').classList.toggle('err',semNumero);
+      if(faltaVT.length){
+        focoDepoisDoAviso=semNumero?$('vtRiocardNumero'):$('vtCiente');
+        showMsg('Preencha os itens abaixo para continuar:','Vale-transporte',faltaVT);
+        return false;
+      }
+    }
+
+    var total=totalTrechos();
+
+    if(total>10.005){
+      showMsg(
+        'O total diário do vale-transporte não pode ultrapassar R$ 10,00.',
+        'Vale-transporte'
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  function cpfValido(v){
+    v=String(v).replace(/\D/g,'');
+    if(v.length!==11||/^(\d)\1{10}$/.test(v))return false;
+    var s=0,i,r;
+    for(i=0;i<9;i++)s+=parseInt(v[i])*(10-i);
+    r=(s*10)%11;if(r===10)r=0;if(r!==parseInt(v[9]))return false;
+    s=0;for(i=0;i<10;i++)s+=parseInt(v[i])*(11-i);
+    r=(s*10)%11;if(r===10)r=0;return r===parseInt(v[10]);
+  }
+
+  // ---- CTPS digital ----
+  $('ctpsDigital').addEventListener('change',syncCTPS);
+  $('sexo').addEventListener('change',buildUploads);
+  // [2026-10-02] Certificado de reservista só aparece para sexo masculino; se trocar, o número é apagado.
+  function syncReservista(){
+    var homem=val('sexo')==='Masculino';
+    $('reservistaBox').classList.toggle('hidden',!homem);
+    if(!homem)$('reservista').value='';
+  }
+  $('sexo').addEventListener('change',syncReservista);
+  $('grauInstrucao').addEventListener('change',buildUploads);
+  $('estadoCivil').addEventListener('change',buildUploads);
+  $('banco').addEventListener('change',buildUploads);
+  function syncSemConta(){
+    var sem=$('semConta').checked;
+    ['banco','agencia','conta','tipoConta'].forEach(function(id){var e=$(id);e.disabled=sem;if(sem)e.value='';});
+    // [2026-10-02] Agência, Conta e Tipo: obrigatórios com conta no Santander; sem conta, some o asterisco e o aviso.
+    ['agencia','conta','tipoConta'].forEach(function(id){
+      var l=document.querySelector('label[for="'+id+'"]');if(l)l.classList.toggle('req',!sem);
+      if(sem){$(id).classList.remove('err');var m=$(id).parentNode.querySelector('.err-msg');if(m)m.style.display='none';}
+    });
+    if(!sem)$('banco').value='Santander'; // [2026-10-01] só aceitamos Santander
+    else delete arquivosSel['Comprovante bancário']; // sem conta no Santander: não envia comprovante
+    buildUploads();
+  }
+  $('semConta').addEventListener('change',syncSemConta);
+  $('cpf').addEventListener('input',function(){if($('ctpsDigital').checked)$('ctpsNumero').value=val('cpf');});
+
+  // ---- CEP ----
+  $('cep').addEventListener('blur',function(){
+    var cep=this.value.replace(/\D/g,'');if(cep.length!==8)return;
+    $('cep-status').textContent='Buscando...';
+    fetch('https://viacep.com.br/ws/'+cep+'/json/').then(function(r){return r.json();}).then(function(d){
+      if(d.erro){$('cep-status').textContent='CEP não encontrado.';return;}
+      if(d.logradouro)$('logradouro').value=d.logradouro;
+      if(d.bairro)$('bairro').value=d.bairro;
+      if(d.localidade)$('cidade').value=d.localidade;
+      if(d.uf)$('uf').value=d.uf;
+      $('cep-status').textContent='Endereço preenchido.';
+      ['logradouro','bairro','cidade','uf'].forEach(function(id){rechecaSeMarcado($(id));});
+    }).catch(function(){$('cep-status').textContent='';});
+  });
+
+  // ---- Arquivo -> payload (imagem redimensiona, PDF passa) ----
+  function fileToPayload(file,cb){
+    if(!file)return;
+    if(file.type.indexOf('image/')===0){
+      var r=new FileReader();
+      r.onload=function(){
+        var img=new Image();
+        img.onload=function(){
+          var max=1600,w=img.width,h=img.height;
+          if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
+          var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+          cv.getContext('2d').drawImage(img,0,0,w,h);
+          cb({nome:file.name,tipo:'image/jpeg',base64:cv.toDataURL('image/jpeg',0.75).split(',')[1]});
+        };
+        img.src=r.result;
+      };
+      r.readAsDataURL(file);
+    }else if(file.type==='application/pdf'){
+      if(file.size>8*1024*1024){showMsg('O PDF selecionado tem mais de 8 MB. Reduza o arquivo e tente novamente.');return;}
+      var r2=new FileReader();
+      r2.onload=function(){cb({nome:file.name,tipo:'application/pdf',base64:r2.result.split(',')[1]});};
+      r2.readAsDataURL(file);
+    }else{showMsg('Formato não aceito. Envie uma imagem ou um arquivo PDF.');}
+  }
+
+  // ---- Dependentes ----
+  function addDep(){
+    var d=document.createElement('div');d.className='dep';
+    d.innerHTML=
+      '<button type="button" class="rm">remover</button>'+
+      '<div class="field"><label class="req">Nome</label><input class="d-nome"><p class="err-msg"></p></div>'+
+      '<div class="row"><div class="field"><label class="req">Parentesco</label>'+
+      '<select class="d-par"><option value="">Selecione</option><option>Filho(a)</option><option>Cônjuge</option><option>Companheiro(a)</option><option>Enteado(a)</option><option>Outro</option></select><p class="err-msg"></p></div>'+
+      '<div class="field"><label class="req">Nascimento</label><input class="d-nasc" type="date"><p class="err-msg"></p></div></div>'+
+      '<div class="row"><div class="field"><label class="req">CPF</label><input class="d-cpf" inputmode="numeric"><p class="err-msg d-cpf-err"></p></div>'+
+      '<div class="field" style="max-width:130px"><label>Dep. p/ IR?</label>'+
+      '<select class="d-ir"><option>Não</option><option>Sim</option></select></div>'+
+      '<div class="field" style="max-width:140px"><label>Salário-família?</label>'+
+      '<select class="d-sf"><option>Não</option><option>Sim</option></select></div></div>'+
+      '<div class="sf-doc">'+
+      '<div class="lgpd" style="margin-bottom:8px">Anexe a documentação do dependente em um único arquivo, como certidão de nascimento ou de casamento e CPF. Se marcar salário-família, inclua também a caderneta de vacinação (até 6 anos) ou o comprovante de frequência escolar (7 a 14 anos).</div>'+
+      '<div class="up sf-up"><div class="up-top"><label style="margin:0">Documentação do dependente</label>'+
+      '<button type="button" class="file-btn sf-btn">Escolher arquivo</button></div><div class="up-name sf-name"></div></div>'+
+      '<p class="err-msg sf-err">Anexe a documentação para continuar.</p>'+
+      '</div>';
+    d.querySelector('.rm').onclick=function(){d.remove();};
+    CAMPOS_DEP.forEach(function(c){
+      var el=d.querySelector('.'+c);
+      el.addEventListener('blur',function(){if(depEmUso(d))checaCampoDep(d,c);});
+      el.addEventListener('input',function(){if(el.classList.contains('err'))checaCampoDep(d,c);});
+      el.addEventListener('change',function(){if(el.classList.contains('err'))checaCampoDep(d,c);});
+    });
+    var sfSel=d.querySelector('.d-sf');
+    var sfBox=d.querySelector('.sf-doc');
+    // [2026-10-02] A documentação do dependente é obrigatória para todo dependente (não só salário-família).
+    var sfInput=document.createElement('input');sfInput.type='file';
+    sfInput.accept='image/*,application/pdf';sfInput.style.display='none';
+    d.appendChild(sfInput);
+    d.querySelector('.sf-btn').onclick=function(){sfInput.click();};
+    sfInput.onchange=function(){
+      d.querySelector('.sf-name').textContent='Processando...';
+      fileToPayload(sfInput.files[0],function(obj){
+        var nome=(d.querySelector('.d-nome').value.trim()||'dependente');
+        obj.campo='Dependente - '+nome+' - documentação';
+        d._sfFile=obj;
+        d.querySelector('.sf-up').classList.add('done');
+        d.querySelector('.sf-up').style.borderColor='';d.querySelector('.sf-err').style.display='none';
+        d.querySelector('.sf-name').textContent='✓ '+obj.nome;
+      });
+    };
+    $('deps').appendChild(d);
+  }
+  $('addDep').onclick=addDep;
+
+  // [2026-10-01] CPF do dependente: obrigatório para todo dependente incluído e validado como o
+  // do titular (dígitos verificadores). Também não pode ser o CPF do titular nem repetir entre
+  // dependentes. Igual a _problemaCpfDependente_ no Código.js.
+  function depEmUso(d){
+    return !!(d.querySelector('.d-nome').value.trim()||d.querySelector('.d-cpf').value.trim()||d.querySelector('.d-nasc').value||d.querySelector('.d-par').value);
+  }
+  // [2026-10-02] Dependentes: nome, parentesco, nascimento e CPF obrigatórios; com salário-família,
+  // a documentação também. Igual ao bloco de dependentes do Código.js.
+  var CAMPOS_DEP=['d-nome','d-par','d-nasc','d-cpf'];
+  function problemaCampoDep(d,c){
+    var v=String(d.querySelector('.'+c).value||'').trim();
+    if(c==='d-nome') return v?'':'Informe o nome do dependente.';
+    if(c==='d-par') return v?'':'Informe o parentesco.';
+    if(c==='d-nasc'){ if(!v) return 'Informe a data de nascimento.'; return v>hojeISO()?'A data de nascimento não pode ser no futuro.':''; }
+    return problemaCpfDep(d);
+  }
+  function checaCampoDep(d,c){
+    var prob=problemaCampoDep(d,c), el=d.querySelector('.'+c), m=el.parentNode.querySelector('.err-msg');
+    el.classList.toggle('err',!!prob); if(m){m.textContent=prob;m.style.display=prob?'block':'none';}
+    return prob;
+  }
+  function checaDep(d){
+    var probs=[];
+    CAMPOS_DEP.forEach(function(c){var p=checaCampoDep(d,c);if(p)probs.push(p.replace(/\.$/,''));});
+    var faltaDoc=!d._sfFile;
+    d.querySelector('.sf-up').style.borderColor=faltaDoc?'var(--red)':'';
+    d.querySelector('.sf-err').style.display=faltaDoc?'block':'none';
+    if(faltaDoc)probs.push('Anexe a documentação do dependente');
+    return probs;
+  }
+  function limpaDep(d){
+    CAMPOS_DEP.forEach(function(c){var el=d.querySelector('.'+c),m=el.parentNode.querySelector('.err-msg');el.classList.remove('err');if(m)m.style.display='none';});
+  }
+  function problemaCpfDep(d){
+    var v=d.querySelector('.d-cpf').value.trim(), dig=v.replace(/\D/g,'');
+    if(!v) return 'Informe o CPF do dependente.';
+    if(!cpfValido(v)) return 'CPF inválido.';
+    if(dig===val('cpf').replace(/\D/g,'')) return 'Este é o seu CPF. Informe o CPF do dependente.';
+    var repetido=false;
+    document.querySelectorAll('#deps .dep').forEach(function(o){
+      if(o!==d && depEmUso(o) && o.querySelector('.d-cpf').value.replace(/\D/g,'')===dig) repetido=true;
+    });
+    if(repetido) return 'CPF repetido em outro dependente.';
+    return '';
+  }
+  function checaCpfDep(d){
+    var prob=problemaCpfDep(d), f=d.querySelector('.d-cpf'), m=d.querySelector('.d-cpf-err');
+    f.classList.toggle('err',!!prob);m.textContent=prob;m.style.display=prob?'block':'none';
+    return prob;
+  }
+
+  function coletaDeps(){
+    var out=[];
+    document.querySelectorAll('#deps .dep').forEach(function(d){
+      var nome=d.querySelector('.d-nome').value.trim();if(!nome)return;
+      out.push({nome:nome,parentesco:d.querySelector('.d-par').value,
+        nascimento:d.querySelector('.d-nasc').value,cpf:d.querySelector('.d-cpf').value.trim(),
+        dependenteIR:d.querySelector('.d-ir').value,salarioFamilia:d.querySelector('.d-sf').value});
+    });
+    return out;
+  }
+  function coletaDepFiles(){
+    var out=[];
+    document.querySelectorAll('#deps .dep').forEach(function(d){
+      if(!d._sfFile||!depEmUso(d))return;
+      // nome do arquivo com o nome atual do dependente (o servidor confere por ele)
+      d._sfFile.campo='Dependente - '+(d.querySelector('.d-nome').value.trim()||'dependente')+' - documentação';
+      out.push(d._sfFile);
+    });
+    return out;
+  }
+
+  // ---- VT ----
+  function limparVT(){
+    $('vtJae').checked=false;
+    $('vtRio').checked=false;
+    $('vtRioBox').classList.add('hidden');
+    $('vtRiocardNumero').value='';
+    $('vtSemCartao').checked=false;
+    $('vtCiente').checked=false;
+    $('trechos').innerHTML='';
+    $('vtTotal').textContent='0,00';
+    $('vtTotal').style.color='';
+    $('vtTotal').parentNode.style.color='';
+  }
+
+  document.querySelectorAll('#vtToggle .opt').forEach(function(o){
+    o.onclick=function(){
+      document.querySelectorAll('#vtToggle .opt').forEach(function(x){x.classList.remove('sel');});
+      o.classList.add('sel');
+
+      var quer=o.getAttribute('data-v')==='Sim';
+      $('vtQuer').value=quer?'Sim':'Não';
+
+      if(!quer){
+        limparVT();
+        $('vtDetalhe').classList.add('hidden');
+      }else{
+        $('vtDetalhe').classList.remove('hidden');
+        if(document.querySelectorAll('#trechos .tr').length===0) addTrecho();
+      }
+
+      buildUploads();
+    };
+  });
+  $('vtRio').onchange=function(){
+    $('vtRioBox').classList.toggle('hidden', !$('vtRio').checked);
+    buildUploads();
+  };
+
+  $('vtJae').onchange=function(){
+    if($('vtJae').checked){
+      $('vtRioBox').classList.add('hidden');
+      $('vtRiocardNumero').value='';
+      $('vtSemCartao').checked=false;
+      $('vtCiente').checked=false;
+    }
+    buildUploads();
+  };
+
+  function addTrecho(){
+    var t=document.createElement('div');t.className='dep tr';
+    t.innerHTML=
+      '<button type="button" class="rm">remover</button>'+
+      '<div class="field"><label>Descrição do trecho</label><select class="t-desc"><option value="">Selecione</option><option>Trem</option><option>Metrô</option><option>Ônibus</option><option>VLT</option><option>Barca</option><option>Van</option><option>Bilhete Único</option></select></div>'+
+      '<div class="row"><div class="field"><label>Valor ida (R$)</label><input class="t-ida" inputmode="decimal" min="0" max="5" readonly></div>'+
+      '<div class="field"><label>Valor volta (R$)</label><input class="t-volta" inputmode="decimal" min="0" max="5" readonly></div></div>'+
+      '<div class="bu-note hint hidden" style="margin:-4px 0 7px">Bilhete Único selecionado. Mantido o limite de R$ 5,00 na ida e R$ 5,00 na volta.</div>'+
+      '<div style="text-align:right;font-size:13px;color:var(--muted)">Subtotal: R$ <span class="t-sub">0,00</span></div>';
+    t.querySelector('.rm').onclick=function(){t.remove();recalcVT();};
+    var tipo=t.querySelector('.t-desc'), ida=t.querySelector('.t-ida'), volta=t.querySelector('.t-volta');
+
+    // [2026-10-01] Valor padrão do VT: R$ 5,00 ida + R$ 5,00 volta.
+    ida.value='5,00';
+    volta.value='5,00';
+    ida.readOnly=true;
+    volta.readOnly=true;
+
+    tipo.onchange=function(){
+      var bu=tipo.value==='Bilhete Único';
+      t.querySelector('.bu-note').classList.toggle('hidden',!bu);
+
+      // Valores do VT são fixos e não podem ser alterados pelo candidato.
+      ida.value='5,00';
+      volta.value='5,00';
+      ida.readOnly=true;
+      volta.readOnly=true;
+      recalcVT();
+    };
+    $('trechos').appendChild(t);
+    recalcVT();
+  }
+  $('addTrecho').onclick=addTrecho;
+  function syncSemCartao(){
+    var sem=$('vtSemCartao').checked, n=$('vtRiocardNumero');
+    n.disabled=sem; if(sem){n.value='';n.classList.remove('err');}
+    var l=document.querySelector('label[for="vtRiocardNumero"]'); if(l)l.classList.toggle('req',!sem);
+  }
+  $('vtSemCartao').addEventListener('change',syncSemCartao);
+  $('vtJae').addEventListener('change',syncSemCartao);
+  $('vtRio').addEventListener('change',syncSemCartao);
+  $('vtRiocardNumero').addEventListener('input',function(){if(val('vtRiocardNumero'))this.classList.remove('err');});
+
+  function limitarCampoVT(campo){
+    var n=parseVal(campo.value);
+
+    if(n>5){
+      campo.value='5,00';
+      showMsg(
+        'O valor máximo permitido por sentido é R$ 5,00. O valor foi ajustado automaticamente.',
+        'Vale-transporte'
+      );
+    }
+  }
+
+  function normalizarCampoVT(campo){
+    if(!String(campo.value||'').trim()) return;
+    var n=parseVal(campo.value);
+    if(n>5)n=5;
+    campo.value=money(n);
+  }
+
+  function recalcVT(){
+    var total=0;
+
+    document.querySelectorAll('#trechos .tr').forEach(function(t){
+      var ida=parseVal(t.querySelector('.t-ida').value);
+      var volta=parseVal(t.querySelector('.t-volta').value);
+      var sub=ida+volta;
+
+      t.querySelector('.t-sub').textContent=money(sub);
+      total+=sub;
+    });
+
+    $('vtTotal').textContent=money(total);
+
+    $('vtTotal').style.color=total>10.005?'var(--red)':'';
+    $('vtTotal').parentNode.style.color=total>10.005?'var(--red)':'';
+  }
+  function coletaTrechos(){
+    var out=[];
+    document.querySelectorAll('#trechos .tr').forEach(function(t){
+      var ida=t.querySelector('.t-ida').value,volta=t.querySelector('.t-volta').value;
+      if(!ida&&!volta)return;
+      out.push({descricao:t.querySelector('.t-desc').value.trim(),ida:money(parseVal(ida)),volta:money(parseVal(volta))});
+    });
+    return out;
+  }
+  function totalTrechos(){
+    var total=0;
+    document.querySelectorAll('#trechos .tr').forEach(function(t){
+      total+=parseVal(t.querySelector('.t-ida').value)+parseVal(t.querySelector('.t-volta').value);
+    });
+    return total;
+  }
+
+  // ---- Uploads gerais ----
+  function buildUploads(){
+    var box=$('uploads');box.innerHTML='';
+    DOCS.forEach(function(doc,idx){
+      if(!docAplica(doc))return;
+      var t=docTexto(doc);
+      var sel=arquivosSel[doc.campo];
+      var wrap=document.createElement('div');wrap.className='up'+(sel?' done':'');wrap.id='up'+idx;
+      var obrig=docObrigatorio(doc);
+      wrap.innerHTML='<div class="up-top"><label style="margin:0" class="'+(obrig?'req':'')+'">'+t.label+'</label>'+
+        '<button type="button" class="file-btn">'+(sel?'Trocar arquivo':'Escolher arquivo')+'</button></div>'+
+        (t.note?'<div class="doc-note">'+t.note+'</div>':'')+
+        (doc.campo==='Documento de identidade'?'<div class="check" style="margin-top:10px"><input type="checkbox" id="rgVersoSep"'+(rgVersoSeparado?' checked':'')+'><label for="rgVersoSep">A frente e o verso estão em fotos ou arquivos separados</label></div>':'')+
+        '<div class="up-name" id="upn'+idx+'"></div>';
+      if(sel)wrap.querySelector('.up-name').textContent='✓ '+sel.nome;
+      var input=document.createElement('input');input.type='file';
+      input.accept='image/*,application/pdf';input.style.display='none';
+      wrap.appendChild(input);
+      wrap.querySelector('.file-btn').onclick=function(){input.click();};
+      input.onchange=function(){
+        $('upn'+idx).textContent='Processando...';
+        fileToPayload(input.files[0],function(obj){
+          obj.campo=doc.campo;arquivosSel[doc.campo]=obj;
+          wrap.classList.add('done');wrap.style.borderColor='';
+          var ue=wrap.querySelector('.up-err');if(ue)ue.remove();
+          wrap.querySelector('.file-btn').textContent='Trocar arquivo';
+          $('upn'+idx).textContent='✓ '+obj.nome;
+        });
+      };
+      var chkVerso=wrap.querySelector('#rgVersoSep');
+      if(chkVerso)chkVerso.onchange=function(){rgVersoSeparado=chkVerso.checked;buildUploads();};
+      box.appendChild(wrap);
+    });
+  }
+
+  // ---- Coleta geral ----
+  function coletaTudo(){
+    var ids=['nomeCompleto','nomeSocial','dataNascimento','sexo','estadoCivil','nacionalidade',
+      'naturalidadeCidade','naturalidadeUF','racaCor','grauInstrucao','nomeMae','nomePai',
+      'cpf','rgNumero','rgOrgao','rgUF','rgEmissao','pisPasep','tituloEleitor','tituloZona','tituloSecao',
+      'ctpsNumero','ctpsSerie','ctpsUF','reservista','cnhNumero','cnhCategoria','cnhValidade',
+      'emailPessoal','celular','telefoneRecado','cep','logradouro','numero','complemento','bairro','cidade','uf',
+      'banco','agencia','conta','tipoConta','pix'];
+    var dados={};ids.forEach(function(id){dados[id]=val(id);});
+    dados.consentLGPD=$('consentLGPD').checked?'Sim':'Não';
+    dados.ctpsDigital=$('ctpsDigital').checked?'Sim':'Não';
+    dados.rgVersoSeparado=rgVersoSeparado?'Sim':'Não';
+    if($('ctpsDigital').checked)dados.ctpsNumero=val('cpf');
+    // VT
+    dados.vtQuer=val('vtQuer')||'Não';
+
+    var vtTrechosPayload=[];
+
+    if(dados.vtQuer==='Sim'){
+      dados.vtTipos=$('vtRio').checked?'RioCard':($('vtJae').checked?'Jaé':'');
+      dados.vtTotalDia=money(totalTrechos());
+      dados.vtRiocardNumero=val('vtRiocardNumero');
+      dados.vtRiocardSemCartao=$('vtSemCartao').checked?'Sim':'Não';
+      dados.vtCienteDesvinculo=$('vtCiente').checked?'Sim':'Não';
+      vtTrechosPayload=coletaTrechos();
+    }else{
+      dados.vtTipos='';
+      dados.vtTotalDia='';
+      dados.vtRiocardNumero='';
+      dados.vtRiocardSemCartao='';
+      dados.vtCienteDesvinculo='';
+    }
+
+    var arquivos=Object.keys(arquivosSel).map(function(k){return arquivosSel[k];}).concat(coletaDepFiles());
+    return {dados:dados,dependentes:coletaDeps(),vtTrechos:vtTrechosPayload,arquivos:arquivos};
+  }
+
+  // ---- Revisão ----
+  function buildReview(){
+    var t=coletaTudo();var d=t.dados;
+    function item(k,v){return v?'<div class="item"><span>'+k+'</span><span>'+v+'</span></div>':'';}
+    function dataBR(v){
+      if(!v)return '';
+      var p=String(v).split('-');
+      return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : v;
+    }
+    var html='';
+    html+='<div class="grp"><h3>Pessoal</h3>'+item('Nome',d.nomeCompleto)+item('Nascimento',dataBR(d.dataNascimento))+item('CPF',d.cpf)+item('E-mail',d.emailPessoal)+item('Celular',d.celular)+'</div>';
+    html+='<div class="grp"><h3>Endereço</h3>'+item('Local',(d.logradouro?d.logradouro+', '+d.numero:''))+item('Bairro',d.bairro)+item('Cidade',(d.cidade?d.cidade+'/'+d.uf:''))+'</div>';
+    html+='<div class="grp"><h3>Banco</h3>'+($('semConta').checked?item('Banco','Não tenho conta no Santander'):item('Banco',d.banco))+item('Ag/Conta',(d.agencia?d.agencia+' / '+d.conta+' ('+d.tipoConta+')':''))+'</div>';
+    var vt=d.vtQuer==='Sim'?(d.vtTipos+' · R$ '+d.vtTotalDia+'/dia'):'Não deseja';
+    html+='<div class="grp"><h3>Vale-transporte</h3>'+item('Opção',vt)+(d.vtRiocardSemCartao==='Sim'?item('RioCard','Solicitar novo cartão'):'')+'</div>';
+    html+='<div class="grp"><h3>Dependentes</h3>'+(t.dependentes.length?item('Total',t.dependentes.length+' cadastrado(s)'):'<div class="item"><span>Nenhum</span><span></span></div>')+'</div>';
+    html+='<div class="grp"><h3>Documentos anexados</h3>'+(t.arquivos.length?item('Total',t.arquivos.length+' arquivo(s)'):'<div class="item"><span>Nenhum</span><span></span></div>')+'</div>';
+    $('review').innerHTML=html;
+  }
+
+  // ---- Navegação e envio ----
+  $('btnBack').onclick=function(){if(cur>0)show(cur-1);};
+  // [2026-10-02] A mesma pessoa não pode enviar duas vezes: ao sair do passo 3, confere no
+  // servidor se já existe cadastro com este CPF e esta data de nascimento.
+  var cadastroConferido={};
+  function avisoDuplicado(){
+    $('cpf').classList.add('err');
+    showMsg('Já recebemos um cadastro com este CPF. Não é preciso enviar de novo. Se precisar corrigir algum dado, fale com o Departamento de Pessoal: dp@cieds.org.br ou (21) 2544-4516.','Cadastro já enviado');
+  }
+  function conferirDuplicado(seguir){
+    var chave=val('cpf').replace(/\D/g,'')+'|'+val('dataNascimento');
+    if(Object.prototype.hasOwnProperty.call(cadastroConferido,chave)){ if(cadastroConferido[chave])avisoDuplicado(); else seguir(); return; }
+    $('overlay').classList.add('on');
+    google.script.run
+      .withSuccessHandler(function(r){
+        $('overlay').classList.remove('on');
+        cadastroConferido[chave]=!!(r&&r.jaCadastrado);
+        if(cadastroConferido[chave])avisoDuplicado(); else seguir();
+      })
+      .withFailureHandler(function(){ $('overlay').classList.remove('on'); seguir(); }) // o servidor confere de novo no envio
+      .verificarCadastroExistente(val('cpf'),val('dataNascimento'));
+  }
+
+  $('btnNext').onclick=function(){
+    if(!validStep(cur))return;
+    if(cur===3){conferirDuplicado(function(){show(4);});return;}
+    if(cur<STEPS-1){show(cur+1);return;}
+    enviar();
+  };
+
+  function enviar(){
+    $('overlay').classList.add('on');
+    google.script.run
+      .withSuccessHandler(function(res){
+        $('overlay').classList.remove('on');
+        if(res&&res.ok)telaSucesso(res.protocolo,res.cartaSantander);
+        else{
+          var erro=(res&&res.erro)||'erro desconhecido';
+          var m=/^(.*obrigatóri[^:]*|Corrija os dados dos dependentes):\s*(.+?)\.?$/.exec(erro);
+          if(m)showMsg('Não foi possível enviar o cadastro. '+m[1]+':','Não foi possível enviar',m[2].split('; '));
+          else showMsg('Não foi possível enviar o cadastro: '+erro,'Não foi possível enviar');
+        }
+      })
+      .withFailureHandler(function(err){
+        $('overlay').classList.remove('on');showMsg('Falha no envio: '+err.message,'Não foi possível enviar');
+      })
+      .processarCadastro(coletaTudo());
+  }
+
+  function telaSucesso(protocolo,cartaSantander){
+    document.querySelector('.card').innerHTML=
+      '<div class="done-screen"><div class="mk">✓</div>'+
+      '<h2>Cadastro enviado!</h2>'+
+      '<p style="color:var(--muted)">Seu cadastro foi recebido pelo Departamento Pessoal.</p>'+
+      (cartaSantander?'<p class="hint">Como você ainda não tem conta no Santander, enviamos para o seu e-mail a carta do CIEDS para abrir a sua conta salário no Santander.</p>':'')+
+      '<p class="hint">O DP entrará em contato para orientar sobre as próximas etapas do processo admissional.</p></div>';
+    var nav=document.querySelector('.nav');if(nav)nav.classList.add('hidden');window.scrollTo(0,0);
+  }
+
+  buildProgress();syncCTPS();syncReservista();buildUploads();show(0);
+</script>
+</body>
+</html>

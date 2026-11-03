@@ -1,0 +1,481 @@
+<title>DP360 — Documentação Técnica</title>
+<meta name="description" content="Arquitetura, planilhas, autenticação, catálogo de ações e histórico de incidentes do sistema DP360.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --surface-2:#eef2f0;
+  --ink:#14231f; --muted:#5b6e68; --muted-2:#7c8d87;
+  --brand:#1f6f5c; --brand-dark:#134338; --brand-soft:#e2efea;
+  --accent:#b51061; --accent-soft:#fbe6ef;
+  --line:#dbe4e0; --line-2:#c7d3ce;
+  --code-bg:#0f1c19; --code-ink:#d9e8e3; --code-key:#7fd4ba; --code-str:#f2c78a;
+  --warn-soft:#fbeaec; --warn-ink:#8a1f36;
+  --r:12px; --sh:0 1px 2px rgba(15,30,25,.05), 0 6px 20px -10px rgba(15,30,25,.15);
+}
+:root[data-theme="dark"]{
+  --bg:#0d1613; --surface:#131f1b; --surface-2:#0f1a16;
+  --ink:#e7f1ec; --muted:#9fb6ae; --muted-2:#7f958d;
+  --brand:#5fc7ab; --brand-dark:#8fdcc6; --brand-soft:#17332a;
+  --accent:#ff6fa8; --accent-soft:#33172a;
+  --line:#213631; --line-2:#2b433c;
+  --code-bg:#060b09; --code-ink:#cfe6dd; --code-key:#7fd4ba; --code-str:#f2c78a;
+  --warn-soft:#3a1620; --warn-ink:#ff8fa3;
+  --sh:0 1px 2px rgba(0,0,0,.3), 0 8px 26px -12px rgba(0,0,0,.6);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1613; --surface:#131f1b; --surface-2:#0f1a16;
+    --ink:#e7f1ec; --muted:#9fb6ae; --muted-2:#7f958d;
+    --brand:#5fc7ab; --brand-dark:#8fdcc6; --brand-soft:#17332a;
+    --accent:#ff6fa8; --accent-soft:#33172a;
+    --line:#213631; --line-2:#2b433c;
+    --code-bg:#060b09; --code-ink:#cfe6dd; --code-key:#7fd4ba; --code-str:#f2c78a;
+    --warn-soft:#3a1620; --warn-ink:#ff8fa3;
+    --sh:0 1px 2px rgba(0,0,0,.3), 0 8px 26px -12px rgba(0,0,0,.6);
+  }
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;
+  font-size:15.5px; line-height:1.65;
+}
+code, .mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+h1,h2,h3,h4{font-weight:600; text-wrap:balance; margin:0; color:var(--ink)}
+a{color:var(--brand-dark)}
+p{margin:0 0 14px; max-width:70ch; color:var(--ink)}
+::selection{background:var(--brand-soft)}
+
+.layout{display:grid; grid-template-columns:248px 1fr; max-width:1180px; margin:0 auto}
+
+/* ---- sidebar ---- */
+.side{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 24px; border-right:1px solid var(--line);
+}
+.side .mark{
+  display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; margin-bottom:4px;
+}
+.side .mark .dot{width:8px;height:8px;border-radius:2px;background:var(--brand)}
+.side .sub{font-size:11.5px; color:var(--muted-2); margin-bottom:24px; letter-spacing:.03em}
+.side ol{list-style:none; margin:0; padding:0; counter-reset:sec}
+.side li{counter-increment:sec}
+.side a{
+  display:flex; gap:8px; padding:6px 8px; margin:1px 0; border-radius:7px;
+  text-decoration:none; color:var(--muted); font-size:13.3px; font-weight:500;
+  line-height:1.4;
+}
+.side a::before{content:counter(sec); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted-2); flex:none; width:16px}
+.side a:hover{background:var(--surface-2); color:var(--ink)}
+.theme-btn{
+  margin-top:22px; border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  width:100%; padding:8px; border-radius:8px; cursor:pointer; font-size:12.5px; font-family:'IBM Plex Sans',sans-serif; font-weight:600;
+}
+.theme-btn:focus-visible, a:focus-visible, summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+
+/* ---- main content ---- */
+main{padding:44px 40px 120px; min-width:0}
+.doc-head{margin-bottom:52px}
+.doc-head .eyebrow{
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent); font-weight:600;
+  letter-spacing:.04em; display:block; margin-bottom:12px;
+}
+.doc-head h1{font-size:clamp(28px,4vw,38px); margin-bottom:14px}
+.doc-head p{font-size:16px; color:var(--muted)}
+
+section{margin-bottom:56px; scroll-margin-top:24px}
+section > h2{
+  font-size:22px; display:flex; align-items:baseline; gap:11px; margin-bottom:6px;
+  padding-bottom:12px; border-bottom:1px solid var(--line);
+}
+section > h2 .num{font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--brand); font-weight:600}
+section > .lede{color:var(--muted); font-size:14.5px; margin:14px 0 22px}
+h3{font-size:16.5px; margin:28px 0 10px}
+h3.mono-h{font-family:'IBM Plex Mono',monospace; font-size:14.5px; color:var(--brand-dark)}
+
+/* ---- table ---- */
+.twrap{overflow-x:auto; margin:0 0 18px; border:1px solid var(--line); border-radius:var(--r)}
+table{border-collapse:collapse; width:100%; font-size:13.6px}
+th{
+  text-align:left; background:var(--surface-2); color:var(--muted-2);
+  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:11.5px;
+  letter-spacing:.03em; text-transform:uppercase; padding:9px 14px; white-space:nowrap;
+}
+td{padding:10px 14px; border-top:1px solid var(--line); vertical-align:top}
+tr:hover td{background:var(--surface-2)}
+td code{background:var(--surface-2); padding:1px 6px; border-radius:5px; font-size:12.5px; color:var(--brand-dark)}
+table.actions td:first-child code{color:var(--accent); font-weight:600}
+
+/* ---- code panel ---- */
+.codepanel{
+  background:var(--code-bg); color:var(--code-ink); border-radius:var(--r);
+  padding:18px 20px; margin:0 0 18px; overflow-x:auto;
+  font-family:'IBM Plex Mono',monospace; font-size:12.8px; line-height:1.65;
+}
+.codepanel .c1{color:var(--code-key)}
+.codepanel .c2{color:var(--code-str)}
+.codepanel pre{margin:0; white-space:pre}
+
+/* ---- diagram ---- */
+.diagram{
+  border:1px solid var(--line); border-radius:var(--r); background:var(--surface);
+  padding:26px 22px; margin:0 0 18px; box-shadow:var(--sh);
+}
+.dflow{display:flex; flex-direction:column; align-items:center; gap:0}
+.dbox{
+  border:1.5px solid var(--line-2); border-radius:9px; padding:11px 20px;
+  font-family:'IBM Plex Mono',monospace; font-size:12.8px; text-align:center;
+  background:var(--surface-2); min-width:220px;
+}
+.dbox.hl{border-color:var(--brand); color:var(--brand-dark); background:var(--brand-soft); font-weight:600}
+.darrow{color:var(--muted-2); font-size:12px; padding:6px 0; font-family:'IBM Plex Mono',monospace; text-align:center}
+.dcap{font-size:11.5px; color:var(--muted-2); margin-top:2px}
+
+.tree{font-family:'IBM Plex Mono',monospace; font-size:12.6px; line-height:2; color:var(--muted)}
+.tree .k{color:var(--accent); font-weight:600}
+.tree .v{color:var(--ink)}
+.tree .f{color:var(--muted-2)}
+
+/* ---- callouts ---- */
+.callout{
+  display:flex; gap:12px; border-radius:var(--r); padding:15px 17px; margin:0 0 18px;
+  background:var(--surface-2); border:1px solid var(--line);
+}
+.callout.warn{background:var(--warn-soft); border-color:transparent}
+.callout .ic{font-size:16px; flex:none}
+.callout p{margin:0; font-size:13.8px; color:var(--ink)}
+.callout.warn p{color:var(--warn-ink)}
+.callout p b{color:inherit}
+
+/* ---- incident cards ---- */
+.incident{
+  border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 var(--r) var(--r) 0;
+  padding:14px 18px; margin-bottom:12px; background:var(--surface);
+}
+.incident .id{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); font-weight:600; letter-spacing:.03em; display:block; margin-bottom:5px}
+.incident h4{font-size:14.5px; margin-bottom:6px}
+.incident p{font-size:13.5px; color:var(--muted); margin:0}
+
+/* ---- module grid ---- */
+.modgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 18px}
+@media(max-width:760px){.modgrid{grid-template-columns:1fr}}
+.mod{border:1px solid var(--line); border-radius:var(--r); padding:16px 18px; background:var(--surface); box-shadow:var(--sh)}
+.mod h4{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--brand-dark); margin-bottom:7px}
+.mod p{font-size:13.4px; color:var(--muted); margin:0}
+
+footer{max-width:1180px; margin:0 auto; padding:0 40px 60px 288px; color:var(--muted-2); font-size:12.5px}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .side{position:relative; height:auto; border-right:0; border-bottom:1px solid var(--line)}
+  main{padding:32px 22px 90px}
+  footer{padding-left:22px}
+}
+</style>
+
+<div class="layout">
+
+<aside class="side">
+  <div class="mark"><span class="dot"></span>DP360</div>
+  <div class="sub">DOCUMENTAÇÃO TÉCNICA</div>
+  <ol>
+    <li><a href="#s1">Arquitetura</a></li>
+    <li><a href="#s2">Planilhas</a></li>
+    <li><a href="#s3">Autenticação</a></li>
+    <li><a href="#s4">Perfis e escopo</a></li>
+    <li><a href="#s5">Roteamento</a></li>
+    <li><a href="#s6">Módulo Férias</a></li>
+    <li><a href="#s7">Módulo Rescisão</a></li>
+    <li><a href="#s8">Outros módulos</a></li>
+    <li><a href="#s9">Portais</a></li>
+    <li><a href="#s10">Incidentes conhecidos</a></li>
+    <li><a href="#s11">Deploy &amp; operação</a></li>
+  </ol>
+  <button class="theme-btn" id="themeBtn">Alternar tema ◐</button>
+</aside>
+
+<main>
+  <div class="doc-head">
+    <span class="eyebrow">SISTEMA · DP360 · CIEDS</span>
+    <h1>Documentação técnica</h1>
+    <p>Arquitetura, banco de dados, autenticação, catálogo de ações e histórico de incidentes — referência para manutenção e extensão do sistema.</p>
+  </div>
+
+  <section id="s1">
+    <h2><span class="num">01</span>Arquitetura</h2>
+    <p class="lede">O DP360 é construído inteiramente em Google Apps Script, rodando sobre planilhas Google Sheets como banco de dados — não existe banco tradicional.</p>
+
+    <p>O sistema é dividido em <b>7 projetos Apps Script separados</b>, cada um com scriptId e implantação Web App próprios:</p>
+
+    <div class="twrap"><table>
+      <tr><th>Projeto</th><th>Papel</th></tr>
+      <tr><td><code>DP360_API</code></td><td>Backend único e compartilhado — toda a lógica de negócio, autenticação e acesso a planilhas.</td></tr>
+      <tr><td><code>DP360_PORTAL_DP</code></td><td>Portal do Departamento Pessoal (RH) — todos os módulos.</td></tr>
+      <tr><td><code>DP360_PORTAL_GESTOR</code></td><td>Portal do Gestor — mesma base de módulos, escopado à própria equipe.</td></tr>
+      <tr><td><code>Ferias_Fim_de_Ano</code></td><td>Portal "espelho" enxuto, só a campanha de férias de fim de ano.</td></tr>
+      <tr><td><code>GUIA_FERIAS_FIM_DE_ANO_WEB</code></td><td>Página estática de ajuda — não fala com a API.</td></tr>
+      <tr><td><code>Guia_de_Afastamento</code></td><td>Página estática de ajuda — não fala com a API.</td></tr>
+      <tr><td><code>Guia_de_Movimentacoes</code></td><td>Página estática de ajuda — não fala com a API.</td></tr>
+    </table></div>
+
+    <h3>Padrão "portal espelho"</h3>
+    <p><code>DP360_PORTAL_DP</code>, <code>DP360_PORTAL_GESTOR</code> e <code>Ferias_Fim_de_Ano</code> não acessam nenhuma planilha diretamente. Cada ação do usuário vira uma chamada <code>UrlFetchApp.fetch()</code> de dentro do Apps Script do portal para a URL <code>/exec</code> do <code>DP360_API</code>, carregando um segredo compartilhado que nunca chega ao navegador.</p>
+
+    <div class="callout warn">
+      <span class="ic">⚠️</span>
+      <p><b>Toda ação passa por duas execuções separadas de Apps Script em sequência</b> — um custo de latência estrutural conhecido. Ver seção 11.</p>
+    </div>
+
+    <div class="diagram">
+      <div class="dflow">
+        <div class="dbox">Navegador do usuário</div>
+        <div class="darrow">↓ google.script.run (HTML Service)</div>
+        <div class="dbox">Portal <span class="dcap">(DP360_PORTAL_DP / _GESTOR / Ferias_Fim_de_Ano)</span></div>
+        <div class="darrow">↓ UrlFetchApp.fetch(API_URL, {segredo, token, acao, payload})</div>
+        <div class="dbox hl">DP360_API</div>
+        <div class="darrow">↓</div>
+        <div class="dbox">Google Sheets <span class="dcap">(várias planilhas — ver seção 02)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <h2><span class="num">02</span>Planilhas</h2>
+    <p class="lede">Não existe um banco central — cada planilha tem um papel bem definido.</p>
+
+    <div class="twrap"><table>
+      <tr><th>Planilha</th><th>ID</th><th>Uso</th></tr>
+      <tr><td><b>DP360_MASTER</b></td><td><code>1wn_dxjBZrK9CPw8vjXwgor5ae3zvBiaRJuDWtoqb8fY</code></td><td>Fonte única de dados cadastrais. Aba <code>COLABORADORES</code> = todo mundo da empresa. Aba <code>GESTORES</code> em construção. Aba <code>SINCRONIZACAO_HISTORICO</code> = log de alterações do Raio-X.</td></tr>
+      <tr><td><b>DP360_CONFIG</b></td><td>dinâmico <span class="mono" style="font-size:11.5px">(PropertiesService)</span></td><td>Autenticação/controle de acesso: <code>USUARIOS</code>, <code>CREDENCIAIS</code>, <code>PERFIS</code>, <code>PERMISSOES</code>, <code>SESSOES</code>, <code>AUDITORIA</code>, <code>PARAMETROS</code>.</td></tr>
+      <tr><td><b>DP360_FERIAS</b></td><td><code>1gX_uwAY4Go4oaqDsPV4qZlN3l2ZFwWqtNuERzQy3WzQ</code></td><td>Abas <code>PERIODOS</code> e <code>SOLICITACOES</code> — férias normais e fim de ano.</td></tr>
+      <tr><td><b>Dp360 afastamentos</b></td><td><code>1zYYtJG8RyOcrPZiEkDNZtXWr0AZKrkgS3DuaV9zukO0</code></td><td>Aba <code>OCORRENCIAS</code> — histórico completo de afastamentos.</td></tr>
+      <tr><td><b>CONTROLE DE PAGAMENTO 2026</b></td><td><code>1QNgDYCdA9-l-R3Zk8IAojLQLZhJJ_2C87elDuPPFaOc</code></td><td>Compartilhada por Rescisão, Movimentações, Processo Trabalhista e Benefícios — <code>CONTROLE.2026</code>, <code>MOVIMENTACOES_CASOS</code>, <code>PROCESSOS_TRABALHISTAS</code>, <code>BENEFICIOS_LANCAMENTOS</code>, <code>BENEFICIOS_REGRAS</code>, <code>BENEFICIOS_DIAS_UTEIS</code>.</td></tr>
+    </table></div>
+
+    <p style="font-size:13px;color:var(--muted-2)">Cada módulo que usa a planilha "CONTROLE DE PAGAMENTO 2026" abre-a de forma independente (ID repetido em cada arquivo) — escolha deliberada de "módulos sem dependência rígida entre si", mas uma troca desse ID precisa ser replicada manualmente em cada um.</p>
+
+    <div class="callout warn">
+      <span class="ic">⚠️</span>
+      <p><b>Colunas são lidas pelo nome exato do cabeçalho</b> (linha 1), nunca pela posição. Renomear, adicionar espaço, ou trocar acento numa coluna faz o código parar de encontrá-la <b>silenciosamente</b> — o campo vem <code>undefined</code>, sem erro. Já causou dois incidentes reais (seção 10).</p>
+    </div>
+  </section>
+
+  <section id="s3">
+    <h2><span class="num">03</span>Autenticação e sessão</h2>
+    <ul style="padding-left:20px; color:var(--ink); font-size:14.5px; line-height:1.85">
+      <li>Login por e-mail + senha — <b>não</b> é OAuth do Google. Hash HMAC-SHA256 + salt em <code>CREDENCIAIS</code>.</li>
+      <li>Domínios permitidos (<code>DP360.DOMINIOS_PERMITIDOS</code>): <code>cieds.org.br</code>, <code>coletivoaprendiz.org.br</code>, <code>gmail.com</code>, <code>hotmail.com</code>.</li>
+      <li>Primeiro acesso / esqueci senha: código de 6 dígitos por e-mail (<code>SOLICITAR_CODIGO_CADASTRO</code>, expira em 15 min) → <code>CONFIRMAR_CADASTRO_SENHA</code>. Não existe fluxo separado de recuperação — é o mesmo caminho.</li>
+      <li>Token tipo JWT próprio (<code>_emitirToken_</code>), HMAC-SHA256, válido por <b>10 horas</b>, com lista de revogação.</li>
+      <li>5 tentativas erradas bloqueiam por 15 minutos. <b>Sem fluxo self-service de desbloqueio</b> — requer <code>desbloquearLogin(email)</code> direto no editor.</li>
+      <li>Todo login/logout/tentativa é registrado em <code>AUDITORIA</code>.</li>
+      <li>Quem pode logar: <code>USUARIOS.ATIVO = "Sim"</code> E <code>USUARIOS.PODE_LOGAR = "Sim"</code>, preenchidos por <code>sincronizarUsuariosAPartirDaMaster()</code> a partir da <code>COLABORADORES</code> — ver Incidente #2.</li>
+    </ul>
+  </section>
+
+  <section id="s4">
+    <h2><span class="num">04</span>Perfis, permissões e escopo</h2>
+    <ul style="padding-left:20px; color:var(--ink); font-size:14.5px; line-height:1.85">
+      <li>Perfil (<code>PERFIL</code>: <code>GESTOR</code>, <code>DP</code>, <code>ADMIN</code>) vem de <code>COLABORADORES.PERFIL_SISTEMA</code> na MASTER.</li>
+      <li>Permissões por ação na aba <code>PERMISSOES</code>; <code>_usuarioPodeAcao_(user, acao)</code> decide, aceita wildcard (ex.: <code>AFASTAMENTOS.*</code>).</li>
+      <li>Portal do DP só aceita perfis <code>DP</code>/<code>ADMIN</code> (<code>DP360.PERFIS_PORTAL_DP</code>).</li>
+      <li><b>Escopo de equipe</b>: <code>_equipeDoGestor_(email)</code> filtra <code>COLABORADORES</code> por <code>GESTOR_EMAIL === e-mail do usuário</code> — relação direta 1 campo → 1 gestor, sem hierarquia organizacional. Usada por Afastamentos, Rescisão, Movimentações, Benefícios.</li>
+      <li>O <b>Portal do Gestor força <code>visao:'GESTOR'</code></b> em toda chamada, mesmo pra usuários DP/ADMIN — o toggle "Visão geral" é só navegação.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="ic">🧭</span>
+      <p><b>Exceção hardcoded conhecida</b>: o módulo de Férias tem sua própria cópia do escopo (<code>_equipeFeriasDoGestor_</code>) com um caso especial fixo no código pra uma gestora específica (<code>marianazenicola.rj@cieds.org.br</code>), cuja equipe (11 pessoas nominadas) é resolvida por nome e guardada em <code>ScriptProperties</code> — a MASTER "ainda não representa corretamente a equipe dela". Só afeta Férias. Confirmar se ainda é necessário antes de tratar como definitivo.</p>
+    </div>
+  </section>
+
+  <section id="s5">
+    <h2><span class="num">05</span>Roteamento de ações</h2>
+    <p class="lede">Toda chamada ao <code>DP360_API</code> é um <code>POST</code> com corpo <code>{ segredo, token, acao, origem, payload }</code>.</p>
+
+    <div class="diagram">
+      <div class="tree">
+<div><span class="f">doPost(e)</span></div>
+<div>&nbsp;├─ <span class="k">PING, SOLICITAR_CODIGO_CADASTRO, CONFIRMAR_CADASTRO_SENHA,</span></div>
+<div>&nbsp;│&nbsp;&nbsp;<span class="k">AUTENTICAR, CONTEXTO, VALIDAR_TOKEN, LOGOUT, CARGA</span> <span class="f">→ Código.js</span></div>
+<div>&nbsp;└─ qualquer outra ação → <span class="v">executar(token, acao, payload)</span> <span class="f">(Ferias.js)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'FERIAS.*'</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ _feriasExecutar_ &nbsp;<span class="f">(Ferias.js — inclui Recibos)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'AFASTAMENTOS.*'</span> → afastExecutar &nbsp;&nbsp;&nbsp;<span class="f">(Afastamentos.js)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'RESCISAO.*'</span>&nbsp;&nbsp;&nbsp;&nbsp;→ rescExecutar &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">(Rescisão.js — inclui Homologação)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'PROCESSOTRAB.*'</span> → procTrabExecutar &nbsp;<span class="f">(Processotrab.js)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'MOVIMENTACAO.*'</span> → movExecutar &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">(Movimentacoes.js)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span class="k">'BENEFICIOS.*'</span>&nbsp;&nbsp;→ beneficiosExecutar &nbsp;<span class="f">(Beneficios.js)</span></div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span class="k">'RAIOX.*'</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ raioxExecutar &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">(Raiox.js)</span></div>
+      </div>
+    </div>
+
+    <p>Padrão comum a todos os módulos: um objeto de constantes (colunas/status/config), um router <code>xExecutar()</code>, um par <code>_ssX_()</code>/<code>_shX_()</code> de acesso à planilha, uma função <code>garantirAbaX()</code> que cria/repara colunas faltando (nunca reordena/remove), CRUD via <code>_sheetToObjects_</code>/<code>_atualizarLinha_</code>/<code>_headers_</code> (por nome de coluna), histórico append-only em <code>HISTORICO_JSON</code>, e uma função <code>diagnosticarX()</code> de checagem. Toda ação que muda estado chama <code>_auditar_(evento, email, acao, ok, mensagem, detalhe)</code>.</p>
+  </section>
+
+  <section id="s6">
+    <h2><span class="num">06</span>Módulo Férias</h2>
+    <p class="lede"><code>Ferias.js</code> — ~277KB, o maior arquivo do sistema. Cobre férias normais e a campanha de fim de ano (mesma planilha, mesmo motor de cálculo de saldo).</p>
+
+    <div class="twrap"><table class="actions">
+      <tr><th>Ação</th><th>O que faz</th></tr>
+      <tr><td><code>FERIAS.CONTEXTO</code> / <code>RESUMO</code></td><td>Tela cheia / versão leve pro painel.</td></tr>
+      <tr><td><code>FERIAS.SOLICITAR</code> / <code>CANCELAR</code></td><td>Gestor cria/cancela uma solicitação.</td></tr>
+      <tr><td><code>FERIAS.FILA</code> / <code>DEFERIR</code> / <code>INDEFERIR</code></td><td>Fila do DP e decisão.</td></tr>
+      <tr><td><code>FERIAS.CALENDARIO</code></td><td>Visão de calendário/custo mensal.</td></tr>
+      <tr><td><code>FERIAS.RECIBOS</code> +8 ações</td><td>Recibo de férias assinado via Autentique.</td></tr>
+      <tr><td><code>FERIAS.DEFINIR_TETO</code> / <code>PROVISAO</code> / <code>PAINEL_DP</code></td><td>Ferramentas financeiras/gerenciais do DP.</td></tr>
+      <tr><td><code>FERIAS.SOLICITAR_ABONO</code> +3 ações</td><td>Venda de dias (abono pecuniário).</td></tr>
+      <tr><td><code>FERIAS.ENVIAR_FINANCEIRO_LOTE</code> / <code>AGENDADAS</code></td><td>Envio em lote pro financeiro.</td></tr>
+      <tr><td><code>FERIAS.ELEGIVEIS_FIM_DE_ANO</code> / <code>AGENDADOS_FIM_DE_ANO</code> / <code>AGENDAR_FIM_DE_ANO</code></td><td>Campanha de fim de ano.</td></tr>
+      <tr><td><code>FERIAS.BUSCAR_COLABORADOR</code></td><td>Busca livre (usada pela busca global do Portal do DP).</td></tr>
+    </table></div>
+
+    <h3>Regra central: fração mínima de 14 dias <span style="color:var(--muted-2);font-weight:400">(CLT art. 134 §1º)</span></h3>
+    <p>Quando as férias são fracionadas, pelo menos uma fração precisa ter 14 dias corridos. O sistema estica automaticamente a fração pra consumir o saldo inteiro quando os 10 dias padrão não fechariam 14 nem sobraria saldo suficiente pra uma fração futura.</p>
+
+    <h3>Recibos de férias <span style="color:var(--muted-2);font-weight:400">(Ferias Recibo.gs.js, ~44KB)</span></h3>
+    <p>O PDF do recibo é gerado fora do sistema (Alterdata) e colocado manualmente numa pasta do Drive — o módulo <b>não gera o PDF</b>, ele acha o arquivo certo por nome (tokens do nome + datas), envia pro Autentique (DP primeiro, colaborador depois), acompanha o status, e arquiva o assinado numa segunda pasta.</p>
+    <div class="callout warn">
+      <span class="ic">⚠️</span>
+      <p>Correspondência de arquivo por nome é frágil — nome ambíguo devolve <code>AMBIGUO</code>, pedindo renomear incluindo as duas datas. Ações em lote se auto-limitam a 4,5 min (limite do Apps Script é 6 min).</p>
+    </div>
+
+    <p style="font-size:13px;color:var(--muted-2)"><b>Cache:</b> <code>feriasElegiveisFimDeAno</code>/<code>feriasAgendadosFimDeAno</code> usam <code>CacheService</code> (5 min) por gestor; listagem de recibos cacheia a varredura da pasta do Drive por 30 min (<code>forcar:true</code> força releitura).</p>
+  </section>
+
+  <section id="s7">
+    <h2><span class="num">07</span>Módulo Rescisão</h2>
+    <p class="lede"><code>Rescisão.js</code> (~108KB) + <code>Rescisao_Homologacao.js</code> (~53KB). Pedido de demissão pelo gestor, aprovação do DP, comparecimento, exame demissional, carta, conciliação de valores, financeiro, Autentique, e uma sub-área de <b>homologação</b> (TRCT assinado por empresa + funcionário + testemunhas).</p>
+
+    <p>Fonte de dados: planilha "CONTROLE DE PAGAMENTO 2026", aba <code>CONTROLE.2026</code> — colunas fixas indexadas por número em <code>RESC.COL</code> (ex.: <code>MATRICULA:1, NOME:5, DEMISSAO:15, ID_AUTENTIQUE:32, STATUS_AUTENTIQUE:34</code>).</p>
+
+    <p>Existe também a <b>"rescisão complementar"</b> — registro manual/retroativo, fora do fluxo normal, só pra manter indicadores e auditoria em dia (categorias de motivo incluem uma específica pra "Multa 477 CLT").</p>
+
+    <h3>Integração com Autentique</h3>
+    <p>GraphQL, endpoint em <code>RESC.AUTENTIQUE_ENDPOINT</code>, token em <code>_autentiqueToken_()</code>.</p>
+
+    <div class="callout warn">
+      <span class="ic">⚠️</span>
+      <p><b><code>deleteDocument</code> sozinho não bloqueia assinantes pendentes</b> — só remove da lista ("Apenas excluir"); quem já tinha o link ainda consegue assinar. O jeito certo ("Bloquear e excluir") é chamar <code>updateDocument</code> com <code>deadline_at</code> = agora <b>antes</b> de <code>deleteDocument</code>. <code>_autentiqueApagarDocumento_</code> já faz isso certo — qualquer cancelamento no Autentique, em qualquer módulo (Rescisão, Homologação, Recibos), <b>tem que reusar essa função</b>.</p>
+    </div>
+  </section>
+
+  <section id="s8">
+    <h2><span class="num">08</span>Outros módulos</h2>
+
+    <div class="modgrid">
+      <div class="mod">
+        <h4>Afastamentos.js · ~48KB</h4>
+        <p>Ciclo completo: atestado → (&gt;15 dias) INSS → perícia → decisão → exame ocupacional de retorno → retorno. Planilha própria, aba <code>OCORRENCIAS</code> (append-only). Acidente de trabalho gera RAT automático (rascunho) e avisa o técnico de segurança; calcula estabilidade de 12 meses (Lei 8.213/91 art. 118). Sem Autentique nesta fatia. Retorno bloqueado sem exame ocupacional preenchido.</p>
+      </div>
+      <div class="mod">
+        <h4>Movimentacoes.js · ~40KB</h4>
+        <p>Mudança contratual com aprovação em duas etapas — <b>RH primeiro, DP depois</b>. A decisão do RH vive num miniaplicativo separado, não-autenticado, fora deste repositório (link assinado por e-mail). Trava de divergência salarial (compara contra a moda do cargo/departamento). Trocar pra turno noturno gera automaticamente uma 2ª solicitação de adicional. Nomes de coluna de salário/cargo incertos, assumido no próprio código.</p>
+      </div>
+      <div class="mod">
+        <h4>Processotrab.js · ~21KB</h4>
+        <p>Pagamento de FGTS/INSS por decisão judicial/acordo. <b>Só DP — sem visão de gestor.</b> Status é sempre recalculado na leitura (Pago/Parcial/Pendente) a partir das datas de pagamento — editar a planilha direto não muda o status calculado. Depende de funções carregadas por <code>Rescisão.js</code>.</p>
+      </div>
+      <div class="mod">
+        <h4>Beneficios.js · ~41KB</h4>
+        <p>Vale-alimentação/refeição/transporte. Registra pedido vs. relatório do fornecedor pra conciliar, mais um motor de cálculo automático por competência (descontando férias/afastamento/rescisão). Não lê PDF de fornecedor direto — precisa de planilha normalizada. 12x36 usa metade dos dias corridos, não dias úteis.</p>
+      </div>
+    </div>
+
+    <h3 class="mono-h">Raiox.js · ~25KB</h3>
+    <p>Não é uma tela pro usuário final — é um motor de sincronização que o DP roda (manual ou por gatilho semanal) pra alinhar a <code>COLABORADORES</code> com o sistema de folha real, a partir de uma planilha exportada ("Raio-X"). Detecta quem <b>sumiu</b> do Raio-X e, sem caso de rescisão formal, <b>marca "Desligado" automaticamente</b> — sem aprovação humana no meio. Manda alerta por e-mail em inconsistências.</p>
+    <div class="callout warn">
+      <span class="ic">⚠️</span>
+      <p>O gatilho semanal (<code>criarGatilhoSincronizacaoRaioX</code>) tem o <b>ID da planilha de origem fixo no código</b> — se ela mudar de lugar, o gatilho continua batendo na antiga até alguém perceber e editar o código.</p>
+    </div>
+  </section>
+
+  <section id="s9">
+    <h2><span class="num">09</span>Portais — inventário de telas</h2>
+
+    <h3>Portal do DP</h3>
+    <p>Sidebar: <b>Painel Geral</b> (quadro estilo Trello), <b>Férias</b> (6 sub-abas, KPI strip de 12 métricas), <b>Afastamentos</b>, <b>Rescisão</b> (+ Homologação), <b>Trabalhista</b>, <b>Movimentações</b>, <b>Benefícios</b> — os últimos 5 só aparecem se o usuário tiver o módulo liberado. Busca global + sino de notificações (marcados "TESTE" no código, com instruções de remoção), modo escuro (3 variantes), avatar escolhível ("TESTE"), polling de 60s em Recibos/Homologação.</p>
+
+    <h3>Portal do Gestor</h3>
+    <p>Sidebar: <b>Painel</b>, <b>Férias</b>, <b>Afastamentos</b>, <b>Rescisão</b>, <b>Movimentações</b>, <b>Admissão</b> (travado, "em breve"). 4 temas de cor. Escopo sempre a própria equipe, mesmo pra DP/ADMIN.</p>
+    <div class="callout">
+      <span class="ic">🧊</span>
+      <p><b>Férias de Fim de Ano está com todo o código presente mas desativado de propósito</b> neste portal (<code>CAMPANHA_SO_FIM_DE_ANO</code> / <code>LOCKDOWN_FIM_DE_ANO</code>, ambas sempre <code>false</code>) — a funcionalidade foi migrada pro portal separado <code>Ferias_Fim_de_Ano</code>. Não é bug; só não redescobrir/reativar por engano.</p>
+    </div>
+
+    <h3>Ferias_Fim_de_Ano (portal espelho)</h3>
+    <p>Login próprio → aba <b>Pendentes</b> (quem pode agendar) e <b>Solicitados</b> (quem já agendou) → modal com até 2 opções de data por pessoa. Documentado em detalhe num registro à parte desta sessão de trabalho (bug do <code>OBS</code>/<code>OBSERVACAO</code>, correções de performance, correção em lote de acesso de usuários).</p>
+
+    <h3>Guias estáticos</h3>
+    <p><code>GUIA_FERIAS_FIM_DE_ANO_WEB</code>, <code>Guia_de_Afastamento</code>, <code>Guia_de_Movimentacoes</code> — FAQ/explicação em linguagem simples, sem chamada de API. Conteúdo espelhado no Manual de Uso.</p>
+  </section>
+
+  <section id="s10">
+    <h2><span class="num">10</span>Incidentes conhecidos</h2>
+    <p class="lede">Histórico útil pra manutenção futura — o tipo de coisa que se repete se ninguém souber que já aconteceu.</p>
+
+    <div class="incident">
+      <span class="id">INCIDENTE 01 · CORRIGIDO</span>
+      <h4>Coluna "OBS" vs "OBSERVACAO" (SOLICITACOES, férias fim de ano)</h4>
+      <p>O código sempre escreveu/leu <code>OBSERVACAO</code>, mas a coluna real se chama <code>OBS</code>. A marcação <code>FIM_DE_ANO_2026</code> nunca era gravada — ninguém saía da lista de pendentes nem aparecia como "solicitado". Corrigido em <code>Ferias.js</code>.</p>
+    </div>
+    <div class="incident">
+      <span class="id">INCIDENTE 02 · CORRIGIDO</span>
+      <h4>Sincronização antiga de usuários com coluna faltando</h4>
+      <p>Contas em <code>USUARIOS</code> criadas por uma versão antiga de <code>sincronizarUsuariosAPartirDaMaster()</code> (marca <code>ORIGEM = 'DP360_MASTER.GESTORES'</code>) ficaram com <code>CARGO/PERFIL/ATIVO/DOMINIO/PODE_LOGAR/ORIGEM</code> desalinhados uma casa pra esquerda — afetou 37 de 71 usuários. Travava login silenciosamente. <b>Se alguém relatar "não consigo logar" com senha certa, confira primeiro se <code>ATIVO</code> tem cara de domínio de e-mail em vez de "Sim"/"Não".</b></p>
+    </div>
+    <div class="incident">
+      <span class="id">INCIDENTE 03 · CORRIGIDO</span>
+      <h4><code>deleteDocument</code> do Autentique não bloqueia assinatura</h4>
+      <p>Ver seção 07 — solução: sempre <code>updateDocument</code> (deadline_at=agora) antes de <code>deleteDocument</code>, via <code>_autentiqueApagarDocumento_</code>.</p>
+    </div>
+    <div class="incident">
+      <span class="id">INCIDENTE 04 · CORRIGIDO</span>
+      <h4>Extensão ".pdf" vazando na comparação de nome exato</h4>
+      <p>Bug de homologação/TRCT — comparação de nome de arquivo incluía a extensão, sempre falhava. Corrigido, já em produção.</p>
+    </div>
+  </section>
+
+  <section id="s11">
+    <h2><span class="num">11</span>Deploy &amp; operação</h2>
+    <ul style="padding-left:20px; color:var(--ink); font-size:14.5px; line-height:1.9">
+      <li><b>Conta de deploy:</b> <code>autodppessoal@cieds.org.br</code> (conta de serviço, dona de todos os projetos) — nunca conta pessoal. Confirmar sempre antes de publicar.</li>
+      <li><b>Antes de qualquer <code>clasp push</code>:</b> puxar o conteúdo ao vivo pra uma pasta separada e comparar (<code>diff</code>) contra o que vai ser publicado — os projetos são editados manualmente, ao vivo, por outras pessoas.</li>
+      <li><b><code>clasp push</code> só atualiza o "HEAD"</b> — a URL <code>/exec</code> de produção fica presa numa versão publicada (<code>clasp deploy -i &lt;deploymentId&gt;</code>) até novo deploy.</li>
+      <li><b>Rodar função avulsa sem UI:</b> criar uma função <code>teste*</code> comum no editor e rodar "▶ Executar", lendo o resultado em "Registro de execução". Sempre remover o código temporário depois.</li>
+      <li><b>Performance:</b> a arquitetura de "portal espelho" custa uma segunda execução de Apps Script em toda ação — mitigado com cache (<code>CacheService</code>, 5 min) e empacotando dados que costumavam vir em chamadas separadas numa única ida à rede.</li>
+      <li><b>Saída de log grande:</b> <code>console.log</code> de JSON grande trunca ("Logging output too large") — resumir/agrupar dentro da função em vez de despejar tudo.</li>
+    </ul>
+  </section>
+
+</main>
+</div>
+
+<footer>DP360 · Documentação técnica interna · CIEDS</footer>
+
+<script>
+(function(){
+  var KEY='dp360_tecnica_theme';
+  var btn=document.getElementById('themeBtn');
+  function apply(t){
+    if(t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+  }
+  var saved=null;
+  try{ saved=localStorage.getItem(KEY); }catch(e){}
+  apply(saved);
+  btn.addEventListener('click', function(){
+    var current=document.documentElement.getAttribute('data-theme');
+    var prefersDark=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next;
+    if(!current) next = prefersDark ? 'light' : 'dark';
+    else if(current==='dark') next='light';
+    else next='dark';
+    apply(next);
+    try{ localStorage.setItem(KEY, next); }catch(e){}
+  });
+})();
+</script>

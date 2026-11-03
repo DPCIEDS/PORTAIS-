@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#247662; --brand-dark:#18564A; --brand-soft:#E3F1EC;
+  --accent:#B51061;
+  --ink:#17252a; --muted:#6b7c81; --line:#e6ecee; --bg:#f4f8f7;
+  --ok:#2A8E47; --ok-soft:#E7F5EC; --danger:#C9142E; --danger-soft:#FBEAEC;
+  --r:16px; --sh:0 4px 20px rgba(36,118,98,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+
+.topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:16px 20px;
+  display:flex;align-items:center;gap:12px}
+.topo img{height:30px}
+.topo .tt{flex:1}
+.topo .tt b{display:block;font-size:15px}
+.topo .tt span{font-size:11.5px;opacity:.85}
+.topo .usuario{text-align:right;font-size:12px}
+.topo .usuario b{display:block;font-size:12.5px}
+.topo .sair{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:99px;padding:6px 12px;
+  font-size:11.5px;font-weight:700;cursor:pointer;margin-left:8px}
+
+.wrap{max-width:640px;margin:20px auto 60px;padding:0 16px}
+
+.cartao-central{max-width:420px;margin:40px auto;background:#fff;border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--sh);padding:30px 26px;text-align:center}
+.cartao-central .emoji{font-size:34px;margin-bottom:8px}
+.cartao-central h2{margin:0 0 6px;font-size:20px}
+.cartao-central p{margin:0 auto 6px;color:var(--muted);font-size:14px;max-width:340px}
+
+/* ---------- LOGIN (hero de duas colunas + card) ---------- */
+.login-hero{min-height:calc(100vh - 62px);background-image:radial-gradient(var(--line) 1px, transparent 1px);
+  background-size:22px 22px;display:flex;align-items:center;padding:48px 24px}
+.login-grid{max-width:1120px;margin:0 auto;width:100%;display:grid;grid-template-columns:1.15fr .85fr;
+  gap:64px;align-items:center}
+@media(max-width:860px){.login-grid{grid-template-columns:1fr;gap:40px}}
+
+.login-selo{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:800;font-size:11.5px;
+  letter-spacing:.04em;text-transform:uppercase;margin-bottom:16px}
+.login-selo::before{content:'';width:18px;height:2px;background:var(--accent);display:inline-block}
+.login-marketing h1{margin:0 0 14px;font-size:32px;line-height:1.22;color:var(--ink)}
+.login-lead{margin:0 0 14px;font-size:19px;font-weight:700;color:var(--brand-dark);line-height:1.4}
+.login-desc{margin:0;font-size:14px;color:var(--muted);line-height:1.75;max-width:440px}
+
+.login-ilustra{display:flex;gap:14px;margin-top:40px}
+.li-card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 44px rgba(36,118,98,.16);
+  padding:14px;width:112px}
+.li-card.li-b{margin-top:26px;background:var(--brand);border-color:var(--brand)}
+.li-card.li-c{margin-top:-10px}
+.li-linha{display:block;height:7px;border-radius:99px;background:var(--line);margin-bottom:7px}
+.li-linha:last-child{margin-bottom:0}
+.li-linha.curta{width:55%}
+.li-linha.branca{background:rgba(255,255,255,.35)}
+.li-check{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  background:var(--ok);color:#fff;font-size:12px;font-weight:800;margin-top:4px}
+.li-avatar{display:block;width:26px;height:26px;border-radius:50%;background:var(--brand-soft);margin-bottom:9px}
+@media(max-width:860px){.login-ilustra{display:none}}
+
+.login-card{max-width:400px;width:100%;margin:0 auto;background:#fff;border:1px solid var(--line);
+  border-radius:16px;padding:34px 30px;box-shadow:0 16px 44px rgba(36,118,98,.16);text-align:center}
+.login-card h2{margin:0 0 6px;font-size:19px}
+.login-card p{color:var(--muted);font-size:13px;margin:0 0 20px}
+.campo-cab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.campo-cab label{margin-bottom:0!important}
+.campo-cab a{font-size:11.5px;color:var(--accent);font-weight:700;text-decoration:none}
+.campo-senha{position:relative}
+.campo-senha input{padding-right:40px}
+.campo-senha .olho{position:absolute;right:3px;top:3px;bottom:3px;width:32px;background:transparent;border:0;
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.campo-senha .olho:hover{color:var(--ink)}
+
+.campo{text-align:left;margin-bottom:12px}
+.campo label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.campo input{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;
+  font-family:inherit;outline:none}
+.campo input:focus{border-color:var(--brand)}
+
+.btn{width:100%;border:0;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;
+  font-family:inherit;margin-top:4px}
+.btn.primario{background:var(--brand);color:#fff}
+.btn.primario:disabled{opacity:.6;cursor:default}
+.btn.contorno{background:#fff;border:1.5px solid var(--brand);color:var(--brand)}
+.btn.texto{background:transparent;color:var(--muted);font-weight:600}
+
+.aviso{display:none;border-radius:11px;padding:11px 13px;font-size:13px;margin-bottom:12px;text-align:left}
+.aviso.mostra{display:block}
+.aviso{background:var(--danger-soft);color:#a3271b}
+.aviso.info{background:var(--brand-soft);color:var(--brand-dark)}
+.aviso.bom{background:var(--ok-soft);color:#0f5c33}
+
+.separador{height:1px;background:var(--line);margin:16px 0}
+.regras{font-size:11.5px;color:var(--muted);margin:2px 0 12px}
+
+.bloco{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  padding:22px 22px 18px;margin-bottom:18px}
+.bloco h1{margin:0 0 6px;font-size:20px}
+.bloco .sub{color:var(--muted);font-size:13.5px;margin:0 0 4px;line-height:1.6}
+.bloco .prazo{color:var(--brand);font-weight:700;font-size:13.5px;margin-top:8px}
+
+.guia{display:flex;align-items:center;gap:12px;text-decoration:none;border:1px solid var(--line);
+  border-left:4px solid var(--accent);border-radius:12px;padding:12px 14px;margin:14px 0 4px;background:var(--bg)}
+.guia .ico{font-size:22px}
+.guia .tx{flex:1;font-size:12.5px;color:var(--muted)}
+.guia .tx b{display:block;color:var(--ink);font-size:13.5px}
+.guia .cta{color:var(--accent);font-weight:700;font-size:13px;white-space:nowrap}
+
+.linha{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--line)}
+.linha:first-child{border-top:0}
+.linha.bloqueada{align-items:flex-start;padding-block:14px}
+.bola{width:38px;height:38px;border-radius:50%;background:var(--brand-soft);color:var(--brand-dark);flex:none;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.bola.cinza{background:var(--disabled-bg,#E9ECEC);color:var(--disabled-fg,#8B9598)}
+.linha .txt{flex:1;min-width:0}
+.linha .txt b{display:block;font-size:14px}
+.linha .txt span{font-size:12px;color:var(--muted)}
+.acao{background:var(--brand);color:#fff;border:0;border-radius:99px;padding:8px 16px;font-size:12.5px;
+  font-weight:700;cursor:pointer}
+.acao.indisponivel{background:var(--disabled-bg,#E9ECEC);color:var(--disabled-fg,#8B9598);
+  border:1px solid var(--disabled-line,#D7DEDE);cursor:not-allowed;margin-top:2px}
+
+/* Aviso embutido na linha: pessoa tem saldo, mas o prazo legal "conceder até" já venceu antes
+   das duas datas fixas da campanha de fim de ano — fica junto na mesma lista de Pendentes,
+   em vez de sumir sem explicação (ver bloqueados em FERIAS.ELEGIVEIS_FIM_DE_ANO). */
+.aviso-bloco{margin-top:5px;padding:9px 10px;background:var(--danger-soft);border-radius:9px}
+.aviso-titulo{display:block;color:var(--danger);font-weight:700;font-size:12px;line-height:1.4}
+.aviso-desc{display:block;color:var(--danger);opacity:.85;font-size:11.5px;line-height:1.5;margin-top:3px;font-weight:500}
+
+.vazio{text-align:center;color:var(--muted);font-size:14px;padding:26px 10px}
+
+.abas{display:flex;gap:8px;margin-bottom:14px}
+.aba{flex:1;border:1.5px solid var(--line);background:#fff;color:var(--muted);border-radius:11px;
+  padding:10px 8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.aba.ativa{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-dark)}
+.selo{display:inline-block;background:var(--ok-soft);color:#0f5c33;border-radius:99px;padding:3px 10px;
+  font-size:11px;font-weight:700;white-space:nowrap}
+
+.overlay{position:fixed;inset:0;background:rgba(9,40,47,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.overlay.aberto{display:flex}
+.modal{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:92vh;overflow:auto}
+@media(min-width:560px){ .overlay{align-items:center} .modal{border-radius:20px} }
+.modal-topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:18px 20px;
+  border-radius:20px 20px 0 0;position:relative}
+@media(min-width:560px){ .modal-topo{border-radius:20px 20px 0 0} }
+.modal-topo .nome{font-size:16px;font-weight:800}
+.modal-topo .sub{font-size:12.5px;opacity:.85}
+.fechar{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.18);border:0;color:#fff;width:30px;
+  height:30px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1}
+.modal-corpo{padding:20px}
+.opcao{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;
+  padding:13px 14px;margin-bottom:10px;cursor:pointer;font-size:13.5px}
+.opcao input{margin-top:2px}
+.explica{background:var(--brand-soft);color:var(--brand-dark);border-radius:11px;padding:12px 14px;
+  font-size:12.5px;line-height:1.55;margin:6px 0 14px}
+
+.girando{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+  border-radius:50%;animation:girar .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes girar{to{transform:rotate(360deg)}}
+
+#telaLoading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px}
+
+/* ================================================================================================
+   MICROINTERAÇÕES — mesmo tratamento do Portal do DP e do Portal do Gestor: entrada suave das
+   telas/listas, hover nos itens e nas opções do modal, feedback de clique nos botões, backdrop e
+   modal com fade/pop-in. Tudo em CSS puro, reaproveitando o truque de display:none → visível.
+   ================================================================================================ */
+@keyframes entrarConteudo{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes entrarOverlay{from{opacity:0}to{opacity:1}}
+@keyframes entrarModal{from{opacity:0;transform:scale(.96) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+#app{animation:entrarConteudo .32s ease both}
+
+.linha{transition:background .15s}
+.linha:hover{background:var(--bg)}
+.linha:nth-child(1){animation:entrarConteudo .3s ease both .02s}
+.linha:nth-child(2){animation:entrarConteudo .3s ease both .05s}
+.linha:nth-child(3){animation:entrarConteudo .3s ease both .08s}
+.linha:nth-child(4){animation:entrarConteudo .3s ease both .11s}
+.linha:nth-child(5){animation:entrarConteudo .3s ease both .14s}
+.linha:nth-child(6){animation:entrarConteudo .3s ease both .17s}
+.linha:nth-child(7){animation:entrarConteudo .3s ease both .2s}
+.linha:nth-child(8){animation:entrarConteudo .3s ease both .23s}
+
+.overlay.aberto{animation:entrarOverlay .18s ease}
+.overlay.aberto .modal{animation:entrarModal .22s cubic-bezier(.2,.9,.3,1.2)}
+
+.btn{transition:transform .12s,filter .12s}
+.btn:not(:disabled):hover{filter:brightness(1.06)}
+.btn:not(:disabled):active{transform:scale(.96)}
+
+.acao{transition:transform .12s,filter .12s}
+.acao:hover{filter:brightness(1.08)}
+.acao:active{transform:scale(.95)}
+
+.opcao{transition:border-color .15s,background .15s}
+.opcao:hover{border-color:var(--brand);background:var(--bg)}
+
+.bloco{transition:box-shadow .15s}
+
+@media(prefers-reduced-motion: reduce){
+  #app,.linha,.overlay.aberto,.overlay.aberto .modal{animation:none}
+  .btn,.acao,.opcao,.bloco{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== CABEÇALHO (visível também no login) ===== -->
+<div class="topo">
+  <img src="https://www.cieds.org.br/storage/settings/November2023/EpbAW45QebvsTGIqQIoi.svg" alt="CIEDS">
+  <div class="tt"><b>Férias de Fim de Ano</b><span>Departamento Pessoal · CIEDS</span></div>
+  <div class="usuario" id="topoUsuario" style="display:none"><b id="uNome"></b></div>
+  <button class="sair" id="btnSair" onclick="sair()" style="display:none">Sair</button>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="telaLogin" class="login-hero">
+  <div class="login-grid">
+
+    <div class="login-marketing">
+      <span class="login-selo">CIEDS · Departamento Pessoal</span>
+      <h1>Férias de Fim de Ano</h1>
+      <p class="login-lead">Agende as férias de fim de ano da sua equipe de forma simples e organizada.</p>
+      <p class="login-desc">Pra fechar o ano com leveza: duas janelas de férias já definidas, prontas para cada pessoa da sua equipe. As regras da lei a gente cuida por você.</p>
+
+      <div class="login-ilustra" aria-hidden="true">
+        <div class="li-card li-a">
+          <span class="li-linha"></span>
+          <span class="li-linha curta"></span>
+        </div>
+        <div class="li-card li-b">
+          <span class="li-linha branca"></span>
+          <span class="li-check">✓</span>
+        </div>
+        <div class="li-card li-c">
+          <span class="li-avatar"></span>
+          <span class="li-linha"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h2>Acesse o Portal</h2>
+      <p>Entre com seu e-mail institucional para agendar as férias de fim de ano da sua equipe.</p>
+
+      <div class="aviso" id="loginAviso"></div>
+
+      <div id="boxLogin">
+        <div class="campo">
+          <label>E-mail institucional</label>
+          <input type="email" id="inEmail" placeholder="seu.nome@cieds.org.br" autocomplete="username">
+        </div>
+        <div class="campo">
+          <div class="campo-cab">
+            <label>Senha</label>
+            <a href="#" onclick="abrirCadastro();return false">Esqueci minha senha</a>
+          </div>
+          <div class="campo-senha">
+            <input type="password" id="inSenha" placeholder="Digite sua senha" autocomplete="current-password">
+            <button type="button" class="olho" onclick="alternarSenhaVisivel()" aria-label="Mostrar senha" id="btnOlhoSenha">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn primario" id="btnEntrar" onclick="entrar()">Entrar</button>
+        <p style="margin-top:16px;font-size:13px">
+          Primeiro acesso?
+          <a href="#" onclick="abrirCadastro();return false" style="color:var(--accent);font-weight:700">Criar minha senha</a>
+        </p>
+      </div>
+
+      <div id="boxCadastro" style="display:none">
+        <p style="font-size:13px">Vamos enviar um código de 6 números para o seu e-mail. Com ele, você cria a sua senha.</p>
+        <div class="campo"><label>E-mail institucional</label>
+          <input type="email" id="cadEmail" placeholder="seu.nome@cieds.org.br"></div>
+        <button class="btn contorno" id="btnCodigo" onclick="pedirCodigo()">Enviar código para o meu e-mail</button>
+        <div class="separador"></div>
+        <div class="campo"><label>Código que chegou no e-mail</label>
+          <input type="text" id="cadCodigo" placeholder="000000" inputmode="numeric" maxlength="6"></div>
+        <div class="campo"><label>Crie sua senha</label>
+          <input type="password" id="cadSenha" placeholder="Mínimo de 8 caracteres" autocomplete="new-password"></div>
+        <div class="campo"><label>Repita a senha</label>
+          <input type="password" id="cadSenha2" placeholder="Digite de novo" autocomplete="new-password"></div>
+        <div class="regras">A senha precisa ter pelo menos <b>8 caracteres</b>, com <b>maiúscula, minúscula e número</b>.</div>
+        <button class="btn primario" id="btnSalvarSenha" onclick="salvarSenha()">Salvar minha senha</button>
+        <button class="btn texto" onclick="voltarLogin()">Voltar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== CARREGANDO ===== -->
+<div id="telaLoading" style="display:none">Carregando…</div>
+
+<!-- ===== APP ===== -->
+<div id="app" style="display:none">
+  <div class="wrap">
+    <div class="bloco">
+      <h1>Férias de fim de ano 2026</h1>
+      <p class="sub">Para o fim do ano, teremos duas opções de férias, com <b>10 dias cada</b>. Escolha uma delas para cada pessoa da sua equipe que tenha saldo disponível.</p>
+      <p class="prazo" id="prazoTxt"></p>
+
+      <a class="guia" href="https://script.google.com/macros/s/AKfycbxVmulJXf9roYVedvjnZhvWT6CAyABapI5OOWJIbnW52GMUMPUrzSFfJiJSh5oOT_Jt/exec" target="_blank" rel="noopener">
+        <span class="ico">📘</span>
+        <span class="tx"><b>Guia de Férias de Fim de Ano</b>Veja as opções de datas, entenda de forma simples a regra dos 14 dias e confira o passo a passo para fazer o agendamento.</span>
+        <span class="cta">Abrir →</span>
+      </a>
+    </div>
+
+    <div class="bloco">
+      <div class="abas">
+        <button class="aba ativa" id="abaPendentes" onclick="mostrarAba('pendentes')">Pendentes</button>
+        <button class="aba" id="abaAgendados" onclick="mostrarAba('agendados')">Solicitados</button>
+      </div>
+      <div id="lista"></div>
+      <div id="listaAgendados" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL AGENDAR ===== -->
+<div class="overlay" id="ov">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fecharModal()">&times;</button>
+      <div class="nome" id="mNome"></div>
+      <div class="sub" id="mSub"></div>
+    </div>
+    <div class="modal-corpo">
+      <div class="aviso" id="mAviso"></div>
+      <label class="opcao"><input type="radio" name="opc" id="opc1" value="OPCAO_1"><span id="opc1Txt"></span></label>
+      <label class="opcao"><input type="radio" name="opc" id="opc2" value="OPCAO_2"><span id="opc2Txt"></span></label>
+      <div class="explica">💡 Se os 10 dias não completarem a fração de 14 dias exigida por lei, o sistema aumenta os dias automaticamente, respeitando que as férias não podem começar em quinta, sexta, sábado ou domingo.</div>
+      <button class="btn primario" id="mBtn" onclick="enviar()">Enviar ao DP</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let TOKEN = '';
+let DADOS = null;           // resposta de srvElegiveisFimDeAno
+let DADOS_AGENDADOS = null; // resposta de srvAgendadosFimDeAno (carrega sob demanda)
+let ATUAL = null;           // colaborador sendo agendado
+let ABA_ATUAL = 'pendentes';
+const K_TOKEN = 'espelho_fimdeano_token';
+const K_EMAIL = 'espelho_fimdeano_email';
+
+/* ---- ponte com o servidor (mesmas funções srv do Codigo.gs copiado) ---- */
+// [TEMP-PERF] Loga no console do navegador quanto tempo cada chamada leva (ida e volta
+// completa) e, quando disponível, quanto desse tempo foi processamento no DP360_API
+// (r.tempoMs) — a diferença é a rede/"Apps Script duplo". Só instrumentação, remover depois.
+function chamar(fn){
+  const args = Array.prototype.slice.call(arguments, 1);
+  const t0 = performance.now();
+  return new Promise(function(ok, falha){
+    google.script.run
+      .withSuccessHandler(function(r){
+        const total = Math.round(performance.now() - t0);
+        const backend = (r && typeof r.tempoMs === 'number') ? r.tempoMs : null;
+        console.log('[PERF] ' + fn + ': ' + total + 'ms total' + (backend !== null ? ' (API: ' + backend + 'ms, overhead: ' + (total - backend) + 'ms)' : ' (sem tempoMs)'));
+        ok(r);
+      })
+      .withFailureHandler(function(e){
+        console.log('[PERF] ' + fn + ' FALHOU em ' + Math.round(performance.now() - t0) + 'ms');
+        falha(new Error(e && e.message ? e.message : String(e)));
+      })
+      [fn].apply(null, args);
+  });
+}
+
+function $(id){ return document.getElementById(id); }
+function ver(id, sim){ const e = $(id); if(e) e.style.display = sim ? '' : 'none'; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function iniciais(nome){ const p=String(nome||'').trim().split(/\s+/); if(!p[0])return '?'; return ((p[0][0]||'')+(p.length>1?(p[p.length-1][0]||''):'')).toUpperCase(); }
+function primeiroNome(nome){ const p=String(nome||'').trim().split(/\s+/)[0]||''; return p.charAt(0)+p.slice(1).toLowerCase(); }
+
+function aviso(id, msg, tipo){ const e=$(id); e.textContent=msg; e.className='aviso mostra '+(tipo||''); }
+function limpaAviso(id){ const e=$(id); if(e){ e.textContent=''; e.className='aviso'; } }
+function ocupado(b, txt){ b.disabled=true; b._antes=b.innerHTML; b.innerHTML='<span class="girando"></span>'+txt; }
+function livre(b){ b.disabled=false; if(b._antes) b.innerHTML=b._antes; }
+
+/* ---- início ---- */
+window.addEventListener('DOMContentLoaded', function(){
+  const e = localStorage.getItem(K_EMAIL) || '';
+  if(e){ $('inEmail').value=e; $('cadEmail').value=e; }
+  ['inEmail','inSenha'].forEach(id => $(id).addEventListener('keydown', ev => { if(ev.key==='Enter') entrar(); }));
+  document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', ev => { if(ev.target===o) o.classList.remove('aberto'); }));
+
+  const t = localStorage.getItem(K_TOKEN);
+  if(t){ TOKEN = t; abrirApp(); }
+});
+
+/* ---- login ---- */
+function alternarSenhaVisivel(){
+  const input = $('inSenha');
+  const visivel = input.type === 'text';
+  input.type = visivel ? 'password' : 'text';
+  $('btnOlhoSenha').setAttribute('aria-label', visivel ? 'Mostrar senha' : 'Ocultar senha');
+}
+
+function abrirCadastro(){ limpaAviso('loginAviso'); const e=$('inEmail').value.trim(); if(e)$('cadEmail').value=e; ver('boxLogin',false); ver('boxCadastro',true); }
+function voltarLogin(){ limpaAviso('loginAviso'); ver('boxCadastro',false); ver('boxLogin',true); }
+
+async function pedirCodigo(){
+  limpaAviso('loginAviso');
+  const email = $('cadEmail').value.trim().toLowerCase();
+  if(!email) return aviso('loginAviso','Digite o seu e-mail institucional.');
+  const b=$('btnCodigo'); ocupado(b,'Enviando…');
+  try{
+    const r = await chamar('srvSolicitarCodigo', email);
+    localStorage.setItem(K_EMAIL, email);
+    aviso('loginAviso', (r && r.mensagem) || 'Código enviado! Confira a sua caixa de entrada.', 'info');
+    $('cadCodigo').focus();
+  }catch(e){ aviso('loginAviso', e.message); } finally{ livre(b); }
+}
+
+async function salvarSenha(){
+  limpaAviso('loginAviso');
+  const email=$('cadEmail').value.trim().toLowerCase();
+  const codigo=$('cadCodigo').value.trim();
+  const s1=$('cadSenha').value, s2=$('cadSenha2').value;
+  if(!email) return aviso('loginAviso','Digite o seu e-mail.');
+  if(!codigo) return aviso('loginAviso','Digite o código que chegou no seu e-mail.');
+  if(s1!==s2) return aviso('loginAviso','As duas senhas não são iguais.');
+  const b=$('btnSalvarSenha'); ocupado(b,'Salvando…');
+  try{
+    await chamar('srvDefinirSenha', email, codigo, s1);
+    $('inEmail').value=email; $('inSenha').value='';
+    voltarLogin();
+    aviso('loginAviso','Pronto! Sua senha foi criada. Agora é só entrar.', 'bom');
+    $('inSenha').focus();
+  }catch(e){ aviso('loginAviso', e.message); } finally{ livre(b); }
+}
+
+async function entrar(){
+  limpaAviso('loginAviso');
+  const email=$('inEmail').value.trim().toLowerCase();
+  const senha=$('inSenha').value;
+  if(!email) return aviso('loginAviso','Digite o seu e-mail.');
+  if(!senha) return aviso('loginAviso','Digite a sua senha.');
+  const b=$('btnEntrar'); ocupado(b,'Entrando…');
+  try{
+    const r = await chamar('srvLogin', email, senha);
+    TOKEN = r.token;
+    localStorage.setItem(K_TOKEN, TOKEN);
+    localStorage.setItem(K_EMAIL, email);
+    $('inSenha').value='';
+    await abrirApp(r.elegiveis);
+  }catch(e){ aviso('loginAviso', e.message); } finally{ livre(b); }
+}
+
+async function sair(){
+  try{ await chamar('srvLogout', TOKEN); }catch(e){}
+  localStorage.removeItem(K_TOKEN); TOKEN=''; DADOS=null; DADOS_AGENDADOS=null; ABA_ATUAL='pendentes';
+  ver('app',false); ver('telaLoading',false); ver('telaLogin',true);
+  ver('topoUsuario',false); ver('btnSair',false);
+}
+
+/* ---- app (só fim de ano) ---- */
+// dadosIniciais: quando o login já trouxe a lista de elegíveis junto (ver entrar()),
+// evita pedir ela de novo — só busca se não vier (ex.: sessão salva reaberta sem login).
+async function abrirApp(dadosIniciais){
+  ver('telaLogin',false); ver('app',false); ver('telaLoading',true);
+  try{
+    DADOS = dadosIniciais || await chamar('srvElegiveisFimDeAno', TOKEN);
+  }catch(e){
+    // token inválido/expirado: volta pro login
+    localStorage.removeItem(K_TOKEN); TOKEN='';
+    ver('telaLoading',false); ver('telaLogin',true);
+    ver('topoUsuario',false); ver('btnSair',false);
+    aviso('loginAviso', e.message || 'Sua sessão expirou. Entre novamente.');
+    return;
+  }
+  ver('telaLoading',false); ver('app',true);
+  ver('topoUsuario',true); ver('btnSair',true);
+  render();
+}
+
+function render(){
+  if(DADOS && DADOS.inicioGestor && DADOS.prazoGestor){
+    $('prazoTxt').textContent = '🗓️ Período de Agendamento das férias no sistema: ' + DADOS.inicioGestor + ' até ' + DADOS.prazoGestor + '.';
+  }
+
+  // ainda não abriu: agendamento começa numa data futura
+  if(DADOS && DADOS.aindaNaoAbriu){
+    $('lista').innerHTML = '<div class="vazio">O agendamento das férias de fim de ano ainda não abriu.<br>Volte a partir de ' + esc(DADOS.inicioGestor) + '.</div>';
+    return;
+  }
+
+  // fora do prazo: campanha encerrada
+  if(DADOS && DADOS.dentroDoPrazo === false){
+    $('lista').innerHTML = '<div class="vazio">A campanha de agendamento de férias de fim de ano está encerrada.<br>Fale com o Departamento Pessoal em caso de dúvida.</div>';
+    return;
+  }
+
+  const elegiveis = ((DADOS && DADOS.colaboradores) || []).map(a => Object.assign({tipo:'elegivel'}, a));
+  // Gente da equipe com saldo, mas fora da campanha porque o prazo legal "conceder até" já
+  // venceu antes das duas datas fixas de dezembro — entra na MESMA lista de Pendentes, só que
+  // com o botão desabilitado e um aviso, em vez de sumir sem explicação (ver bloqueados em
+  // FERIAS.ELEGIVEIS_FIM_DE_ANO, Ferias.js).
+  const bloqueados = ((DADOS && DADOS.bloqueados) || []).map(b => Object.assign({tipo:'bloqueado'}, b));
+
+  const lista = elegiveis.concat(bloqueados).sort((a,b) => a.nome.localeCompare(b.nome));
+  if(!lista.length){
+    $('lista').innerHTML = '<div class="vazio">Ninguém na sua equipe tem saldo disponível para as férias de fim de ano no momento.</div>';
+    return;
+  }
+
+  $('lista').innerHTML = lista.map(a => a.tipo === 'bloqueado'
+    ? '<div class="linha bloqueada">' +
+        '<div class="bola cinza">' + esc(iniciais(a.nome)) + '</div>' +
+        '<div class="txt"><b>' + esc(a.nome) + '</b>' +
+          '<div class="aviso-bloco">' +
+            '<span class="aviso-titulo">⚠️ Não é possível agendar as férias de fim de ano</span>' +
+            '<span class="aviso-desc">Este colaborador possui férias vencidas desde ' + esc(a.concederAte) + '. Antes de solicitar as férias de fim de ano, é necessário regularizar o período vencido junto ao DP.</span>' +
+          '</div>' +
+        '</div>' +
+        '<button class="acao indisponivel" disabled>Indisponível</button>' +
+      '</div>'
+    : '<div class="linha">' +
+        '<div class="bola">' + esc(iniciais(a.nome)) + '</div>' +
+        '<div class="txt"><b>' + esc(a.nome) + '</b><span>Saldo: ' + a.saldo + ' dia(s)</span></div>' +
+        '<button class="acao" onclick="abrir(\'' + a.idPeriodo + '\')">agendar</button>' +
+      '</div>'
+  ).join('');
+}
+
+/* ---- aba Agendados ---- */
+async function mostrarAba(aba){
+  ABA_ATUAL = aba;
+  $('abaPendentes').classList.toggle('ativa', aba==='pendentes');
+  $('abaAgendados').classList.toggle('ativa', aba==='agendados');
+  ver('lista', aba==='pendentes');
+  ver('listaAgendados', aba==='agendados');
+
+  if(aba==='agendados' && !DADOS_AGENDADOS){
+    $('listaAgendados').innerHTML = '<div class="vazio">Carregando…</div>';
+    try{
+      DADOS_AGENDADOS = await chamar('srvAgendadosFimDeAno', TOKEN);
+    }catch(e){
+      $('listaAgendados').innerHTML = '<div class="vazio">Não foi possível carregar os solicitados agora.</div>';
+      return;
+    }
+    renderAgendados();
+  }
+}
+
+function renderAgendados(){
+  const lista = (DADOS_AGENDADOS && DADOS_AGENDADOS.colaboradores) || [];
+  if(!lista.length){
+    $('listaAgendados').innerHTML = '<div class="vazio">Ninguém da sua equipe tem férias de fim de ano solicitadas ainda.</div>';
+    return;
+  }
+
+  $('listaAgendados').innerHTML = lista.map(a =>
+    '<div class="linha">' +
+      '<div class="bola">' + esc(iniciais(a.nome)) + '</div>' +
+      '<div class="txt"><b>' + esc(a.nome) + '</b><span>' + esc(a.inicio) + ' a ' + esc(a.fim) + ' · ' + a.dias + ' dia(s)</span></div>' +
+      '<span class="selo">solicitado</span>' +
+    '</div>'
+  ).join('');
+}
+
+function abrir(idPeriodo){
+  const a = ((DADOS && DADOS.colaboradores) || []).find(x => x.idPeriodo === idPeriodo);
+  if(!a) return;
+  ATUAL = a;
+  $('mNome').textContent = a.nome;
+  $('mSub').textContent = 'Saldo disponível: ' + a.saldo + ' dia(s)';
+
+  const o1 = (a.opcoes||[]).find(o => o.id === 'OPCAO_1');
+  const o2 = (a.opcoes||[]).find(o => o.id === 'OPCAO_2');
+  $('opc1').closest('.opcao').style.display = o1 ? 'flex' : 'none';
+  $('opc2').closest('.opcao').style.display = o2 ? 'flex' : 'none';
+  if(o1) $('opc1Txt').textContent = 'Opção 1: ' + o1.inicio + ' a ' + o1.fim + ' (' + o1.dias + ' dias)';
+  if(o2) $('opc2Txt').textContent = 'Opção 2: ' + o2.inicio + ' a ' + o2.fim + ' (' + o2.dias + ' dias)';
+  $('opc1').checked = false; $('opc2').checked = false;
+
+  limpaAviso('mAviso');
+  $('ov').classList.add('aberto');
+}
+function fecharModal(){ $('ov').classList.remove('aberto'); }
+
+async function enviar(){
+  limpaAviso('mAviso');
+  let opcao = '';
+  if($('opc1').checked) opcao = 'OPCAO_1';
+  else if($('opc2').checked) opcao = 'OPCAO_2';
+  if(!opcao) return aviso('mAviso','Escolha a opção.');
+
+  const b=$('mBtn'); ocupado(b,'Enviando…');
+  try{
+    const r = await chamar('srvAgendarFimDeAno', TOKEN, ATUAL.idPeriodo, opcao);
+    fecharModal();
+    // recarrega a lista (quem foi agendado sai) e força recarregar a aba Agendados
+    DADOS = await chamar('srvElegiveisFimDeAno', TOKEN);
+    DADOS_AGENDADOS = null;
+    render();
+    if(ABA_ATUAL==='agendados') mostrarAba('agendados');
+    aviso('mAviso','', '');
+    alert((r && r.mensagem) || 'Enviado ao DP!');
+  }catch(e){ aviso('mAviso', e.message); } finally{ livre(b); }
+}
+</script>
+</body>
+</html>

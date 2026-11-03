@@ -1,0 +1,828 @@
+<script>
+let CTX = null;
+let ATUAL = null;
+let STATUS_ATUAL = 'livre';
+let TOKEN_SESSAO = '';
+
+const STORAGE_TOKEN = 'portalFeriasTokenGestor';
+const STORAGE_EMAIL = 'portalFeriasEmailGestor';
+
+/* ---------- google.script.run como Promise ---------- */
+function chamar(fn, ...args){
+  return new Promise((res, rej) => {
+    google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args);
+  });
+}
+
+/* ---------- correção de data local ---------- */
+function dataISOParaDataLocal(iso){
+  if(!iso) return null;
+
+  const partes = String(iso).split('-');
+
+  const ano = Number(partes[0]);
+  const mes = Number(partes[1]);
+  const dia = Number(partes[2]);
+
+  return new Date(ano, mes - 1, dia, 12, 0, 0);
+}
+
+function hojeLocalISO(){
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+
+  return ano + '-' + mes + '-' + dia;
+}
+
+/* ---------- inicialização ---------- */
+window.addEventListener('DOMContentLoaded', function(){
+  const overlay = document.getElementById('overlay');
+  if(overlay){
+    overlay.addEventListener('click', function(e){
+      if(e.target.id === 'overlay') fecharModal();
+    });
+  }
+
+  const salvoEmail = localStorage.getItem(STORAGE_EMAIL) || '';
+  const salvoToken = localStorage.getItem(STORAGE_TOKEN) || '';
+
+  if(salvoEmail){
+    const le = document.getElementById('loginEmail');
+    const ce = document.getElementById('cadEmail');
+    if(le) le.value = salvoEmail;
+    if(ce) ce.value = salvoEmail;
+  }
+
+  ['loginSenha', 'loginEmail'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      el.addEventListener('keydown', function(e){
+        if(e.key === 'Enter') entrarComSenha();
+      });
+    }
+  });
+
+  ['cadCodigo', 'cadSenha', 'cadSenha2'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){
+      el.addEventListener('keydown', function(e){
+        if(e.key === 'Enter') salvarSenhaComCodigo();
+      });
+    }
+  });
+
+  if(salvoToken){
+    carregarComToken(salvoToken);
+  } else {
+    mostrarLogin();
+  }
+});
+
+function mostrar(id, exibir){
+  const el = document.getElementById(id);
+  if(el) el.style.display = exibir ? '' : 'none';
+}
+
+function mostrarLogin(){
+  mostrar('login', true);
+  mostrar('loading', false);
+  mostrar('denied', false);
+  mostrar('app', false);
+  limparErroLogin();
+}
+
+function mostrarLoading(){
+  mostrar('login', false);
+  mostrar('loading', true);
+  mostrar('denied', false);
+  mostrar('app', false);
+}
+
+function mostrarNegado(msg){
+  mostrar('login', false);
+  mostrar('loading', false);
+  mostrar('app', false);
+  mostrar('denied', true);
+  document.getElementById('deniedMsg').textContent = msg || 'Acesso não liberado.';
+}
+
+function mostrarErroLogin(msg){
+  const el = document.getElementById('loginErro');
+  el.textContent = msg || 'Não foi possível concluir a operação.';
+  el.classList.add('show');
+}
+
+function limparErroLogin(){
+  const el = document.getElementById('loginErro');
+  if(el){
+    el.textContent = '';
+    el.classList.remove('show');
+  }
+}
+
+function abrirCadastroSenha(){
+  limparErroLogin();
+  const emailLogin = String(document.getElementById('loginEmail').value || '').trim();
+  if(emailLogin) document.getElementById('cadEmail').value = emailLogin;
+  document.getElementById('boxLogin').style.display = 'none';
+  document.getElementById('boxCadastroSenha').style.display = 'block';
+}
+
+function voltarParaLogin(){
+  limparErroLogin();
+  const emailCad = String(document.getElementById('cadEmail').value || '').trim();
+  if(emailCad) document.getElementById('loginEmail').value = emailCad;
+  document.getElementById('boxCadastroSenha').style.display = 'none';
+  document.getElementById('boxLogin').style.display = 'block';
+}
+
+async function enviarCodigoSenha(){
+  limparErroLogin();
+  const email = String(document.getElementById('cadEmail').value || '').toLowerCase().trim();
+
+  if(!email){
+    mostrarErroLogin('Informe seu e-mail institucional.');
+    return;
+  }
+
+  const btn = document.getElementById('btnCodigo');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando código…';
+
+  try{
+    const r = await chamar('solicitarCodigoSenha', email);
+    localStorage.setItem(STORAGE_EMAIL, email);
+    mostrarErroLogin(r && r.mensagem ? r.mensagem : 'Código enviado.');
+    document.getElementById('cadCodigo').focus();
+  }catch(e){
+    mostrarErroLogin(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Enviar código para meu e-mail';
+  }
+}
+
+async function salvarSenhaComCodigo(){
+  limparErroLogin();
+  const email = String(document.getElementById('cadEmail').value || '').toLowerCase().trim();
+  const codigo = String(document.getElementById('cadCodigo').value || '').trim();
+  const senha = String(document.getElementById('cadSenha').value || '');
+  const senha2 = String(document.getElementById('cadSenha2').value || '');
+
+  if(!email) return mostrarErroLogin('Informe seu e-mail institucional.');
+  if(!codigo) return mostrarErroLogin('Informe o código recebido por e-mail.');
+  if(!senha) return mostrarErroLogin('Informe a nova senha.');
+  if(senha !== senha2) return mostrarErroLogin('As senhas digitadas não conferem.');
+
+  const btn = document.getElementById('btnSalvarSenha');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Salvando senha…';
+
+  try{
+    const r = await chamar('definirSenhaComCodigo', email, codigo, senha);
+    localStorage.setItem(STORAGE_EMAIL, email);
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginSenha').value = '';
+    voltarParaLogin();
+    mostrarErroLogin(r && r.mensagem ? r.mensagem : 'Senha cadastrada. Faça login.');
+    document.getElementById('loginSenha').focus();
+  }catch(e){
+    mostrarErroLogin(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Salvar senha';
+  }
+}
+
+async function entrarComSenha(){
+  limparErroLogin();
+  const email = String(document.getElementById('loginEmail').value || '').toLowerCase().trim();
+  const senha = String(document.getElementById('loginSenha').value || '');
+
+  if(!email) return mostrarErroLogin('Informe seu e-mail institucional.');
+  if(!senha) return mostrarErroLogin('Informe a senha do portal.');
+
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Entrando…';
+
+  try{
+    const r = await chamar('loginComSenha', email, senha);
+
+    if(!r || !r.ok){
+      if(r && r.precisaCadastro){
+        abrirCadastroSenha();
+        document.getElementById('cadEmail').value = email;
+      }
+      mostrarErroLogin(r && r.mensagem ? r.mensagem : 'Login não autorizado.');
+      return;
+    }
+
+    TOKEN_SESSAO = r.token;
+    CTX = r.contexto;
+    localStorage.setItem(STORAGE_TOKEN, TOKEN_SESSAO);
+    localStorage.setItem(STORAGE_EMAIL, email);
+
+    mostrarAplicacao();
+  }catch(e){
+    mostrarErroLogin(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+async function carregarComToken(token){
+  TOKEN_SESSAO = token;
+  mostrarLoading();
+
+  try{
+    CTX = await chamar('getContexto', TOKEN_SESSAO);
+    mostrarAplicacao();
+  }catch(e){
+    localStorage.removeItem(STORAGE_TOKEN);
+    TOKEN_SESSAO = '';
+    mostrarLogin();
+    mostrarErroLogin(e.message || 'Sua sessão expirou. Entre novamente.');
+  }
+}
+
+function mostrarAplicacao(){
+  if(!CTX){
+    mostrarNegado('Não foi possível carregar o contexto do portal.');
+    return;
+  }
+
+  if(CTX.marca && CTX.marca.logo) {
+    document.getElementById('logo').src = CTX.marca.logo;
+  }
+
+  document.getElementById('who').innerHTML =
+    '<div class="name">'+escapeHtml(CTX.gestor || '')+'</div>'+
+    '<div class="mail">'+escapeHtml(CTX.email || '')+'</div>'+
+    '<a href="#" class="trocar" onclick="logoutPortal();return false;">Sair / trocar usuário</a>';
+
+  if(!CTX.autorizado){
+    mostrarNegado(
+      'O e-mail '+(CTX.email || '')+' não está cadastrado como gestor na planilha de férias. '+
+      'Fale com o Departamento Pessoal para liberar seu acesso.'
+    );
+    return;
+  }
+
+  mostrar('login', false);
+  mostrar('loading', false);
+  mostrar('denied', false);
+  mostrar('app', true);
+
+  document.getElementById('greet').textContent =
+    'Olá, '+ (CTX.gestor ? CTX.gestor.split(' ')[0] : 'gestor') +'! 👋';
+
+  if(CTX.politicaUrl && CTX.politicaUrl.indexOf('COLE-AQUI') === -1){
+    const b = document.getElementById('politicaBanner');
+    if(b){ b.href = CTX.politicaUrl; b.style.display = 'flex'; }
+    const ml = document.getElementById('modalPoliticaLink');
+    if(ml){ ml.href = CTX.politicaUrl; }
+  }
+
+  renderStats();
+  renderStatusPanel();
+  selecionarStatus(STATUS_ATUAL || 'livre');
+}
+
+function logoutPortal(){
+  localStorage.removeItem(STORAGE_TOKEN);
+  TOKEN_SESSAO = '';
+  CTX = null;
+  document.getElementById('loginSenha').value = '';
+  voltarParaLogin();
+  mostrarLogin();
+}
+
+function recarregar(){
+  if(TOKEN_SESSAO){
+    carregarComToken(TOKEN_SESSAO);
+  } else {
+    mostrarLogin();
+  }
+}
+
+/* ---------- resumo superior ---------- */
+function renderStats(){
+  const eq = CTX.equipe || [];
+  const hist = CTX.historico || [];
+
+  const pend = eq.filter(x => chaveStatus(x) === 'pendente').length;
+  const disp = eq.filter(x => chaveStatus(x) === 'livre' && Number(x.diasAGozar || 0) > 0).length;
+  const total = eq.length + hist.length;
+
+  document.getElementById('stats').innerHTML =
+    stat(total, 'registros') +
+    stat(disp, 'disponíveis p/ agendar') +
+    stat(pend, 'aguardando DP');
+}
+
+function renderStatusPanel(){
+  const eq = CTX.equipe || [];
+  const hist = CTX.historico || [];
+
+  const qtdLivre = eq.filter(x => chaveStatus(x) === 'livre' && Number(x.diasAGozar || 0) > 0).length;
+  const qtdPendente = eq.filter(x => chaveStatus(x) === 'pendente').length;
+  const qtdDeferido = eq.filter(x => chaveStatus(x) === 'deferido').length;
+
+  const qtdIndeferidoBase = eq.filter(x => chaveStatus(x) === 'indeferido').length;
+  const qtdIndeferido = hist.length + qtdIndeferidoBase;
+
+  setTxt('qtdLivre', qtdLivre);
+  setTxt('qtdPendente', qtdPendente);
+  setTxt('qtdDeferido', qtdDeferido);
+  setTxt('qtdIndeferido', qtdIndeferido);
+}
+
+function setTxt(id, valor){
+  const el = document.getElementById(id);
+  if(el) el.textContent = valor;
+}
+
+function stat(n,l){ 
+  return '<div class="stat"><b>'+n+'</b><span>'+l+'</span></div>'; 
+}
+
+/* ---------- filtros de status ---------- */
+function selecionarStatus(status){
+  STATUS_ATUAL = status;
+
+  document.querySelectorAll('.status-card').forEach(btn => {
+    btn.classList.toggle('ativo', btn.dataset.status === status);
+  });
+
+  filtrar();
+}
+
+function listaPorStatus(){
+  const eq = CTX.equipe || [];
+  const hist = CTX.historico || [];
+
+  if(STATUS_ATUAL === 'indeferido'){
+    const indeferidosBase = eq.filter(c => chaveStatus(c) === 'indeferido');
+    return hist.concat(indeferidosBase);
+  }
+
+  if(STATUS_ATUAL === 'livre'){
+    return eq.filter(c => chaveStatus(c) === 'livre' && Number(c.diasAGozar || 0) > 0);
+  }
+
+  return eq.filter(c => chaveStatus(c) === STATUS_ATUAL);
+}
+
+function chaveStatus(c){
+  return c && c.status && c.status.chave ? c.status.chave : 'livre';
+}
+
+function rotuloStatus(c){
+  return c && c.status && c.status.rotulo ? c.status.rotulo : 'Disponível';
+}
+
+/* ---------- cards ---------- */
+function iniciais(nome){
+  const p = String(nome || '').trim().split(/\s+/);
+
+  if(!p.length || !p[0]) return '';
+
+  return ((p[0] || '')[0] || '').toUpperCase() +
+         ((p[p.length - 1] || '')[0] || '').toUpperCase();
+}
+
+function diasAte(iso){
+  if(!iso) return null;
+
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+
+  const data = dataISOParaDataLocal(iso);
+  data.setHours(0,0,0,0);
+
+  return Math.round((data - hoje)/86400000);
+}
+
+function urgClass(iso){
+  const d = diasAte(iso);
+
+  if(d === null) return '';
+  if(d < 30) return 'urg-red';
+  if(d < 60) return 'urg-amber';
+
+  return '';
+}
+
+function render(lista){
+  const grid = document.getElementById('grid');
+
+  if(!lista.length){ 
+    grid.innerHTML = '<div class="empty">Nenhum colaborador encontrado neste filtro.</div>'; 
+    return; 
+  }
+
+  grid.innerHTML = lista.map((c) => {
+    const chave = chaveStatus(c);
+    const origemArquivo = c.origem === 'arquivo';
+
+    const podeAgendar =
+      chave === 'livre' &&
+      !origemArquivo &&
+      Number(c.diasAGozar || 0) > 0;
+
+    let textoBloqueio = '';
+
+    if(chave === 'pendente'){
+      textoBloqueio = 'Solicitação em análise pelo DP';
+    } else if(chave === 'deferido'){
+      textoBloqueio = 'Férias já agendadas';
+    } else if(chave === 'indeferido' || origemArquivo){
+      textoBloqueio = 'Solicitação negada pelo DP';
+    } else if(Number(c.diasAGozar || 0) <= 0){
+      textoBloqueio = 'Sem saldo de dias';
+    }
+
+    const idx = idxDe(c);
+
+    const onclick = podeAgendar && idx >= 0
+      ? `onclick="abrirModal(${idx})"`
+      : '';
+
+    const periodoFerias = (c.dataInicio || c.dataFim)
+      ? `<div class="info-extra">Férias: <b>${escapeHtml(c.dataInicio || '—')} a ${escapeHtml(c.dataFim || '—')}</b></div>`
+      : '';
+
+    const motivo = c.motivoRecusa
+      ? `<div class="info-extra motivo">Motivo: <b>${escapeHtml(c.motivoRecusa)}</b></div>`
+      : '';
+
+    const arquivado = c.dataArquivamento
+      ? `<div class="info-extra">Arquivado em: <b>${escapeHtml(c.dataArquivamento)}</b></div>`
+      : '';
+
+    return `
+      <div class="card ${podeAgendar ? '' : 'locked'}" ${onclick}>
+        <span class="badge ${escapeHtml(chave)}">${escapeHtml(rotuloStatus(c))}</span>
+
+        <div class="head">
+          <div class="avatar">${escapeHtml(iniciais(c.nome))}</div>
+          <div>
+            <div class="name">${escapeHtml(c.nome || '')}</div>
+            <div class="period">Período aquisitivo: ${escapeHtml(c.periodo || '—')}</div>
+          </div>
+        </div>
+
+        <div class="rowinfo">
+          <div class="pill">
+            <div class="k">Dias a gozar</div>
+            <div class="v">${Number(c.diasAGozar || 0)}</div>
+          </div>
+
+          <div class="pill ${urgClass(c.concederAteISO)}">
+            <div class="k">Conceder até</div>
+            <div class="v">${escapeHtml(c.concederAte || '—')}</div>
+          </div>
+        </div>
+
+        ${periodoFerias}
+        ${motivo}
+        ${arquivado}
+
+        ${
+          podeAgendar
+            ? `<div class="cta">Agendar férias →</div>`
+            : `<div class="cta" style="color:var(--muted)">${escapeHtml(textoBloqueio)}</div>`
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+function idxDe(c){ 
+  return (CTX.equipe || []).indexOf(c); 
+}
+
+function filtrar(){
+  const input = document.getElementById('filtro');
+  const q = normalizarBusca(input ? input.value : '');
+
+  let lista = listaPorStatus();
+
+  if(q){
+    lista = lista.filter(c => {
+      const texto = [
+        c.nome,
+        c.periodo,
+        c.concederAte,
+        c.dataInicio,
+        c.dataFim,
+        c.motivoRecusa,
+        rotuloStatus(c)
+      ].join(' ');
+
+      return normalizarBusca(texto).includes(q);
+    });
+  }
+
+  render(lista);
+}
+
+function normalizarBusca(s){
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function escapeHtml(s){
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* ---------- modal ---------- */
+function abrirModal(i){
+  ATUAL = CTX.equipe[i];
+
+  if(!ATUAL) {
+    toast('Registro não encontrado. Atualize a página.', 'bad');
+    return;
+  }
+
+  if(chaveStatus(ATUAL) !== 'livre'){
+    toast('Este registro não está disponível para nova solicitação.', 'bad');
+    return;
+  }
+
+  document.getElementById('mNome').textContent = ATUAL.nome || '';
+
+  document.getElementById('mSub').textContent =
+    'Período aquisitivo '+(ATUAL.periodo || '—')+
+    ' · '+ATUAL.diasAGozar+' dias a gozar';
+
+  document.getElementById('mHint').textContent =
+    'Máximo: '+ATUAL.diasAGozar+' dias. Se agendar menos, o saldo fica disponível para novo agendamento.';
+
+  document.getElementById('mDias').max = ATUAL.diasAGozar;
+  document.getElementById('mInicio').value = '';
+  document.getElementById('mDias').value = '';
+  document.getElementById('mResumo').classList.remove('show');
+
+  hideErr();
+
+  document.getElementById('mInicio').min = ATUAL.inicioMinimoISO || hojeLocalISO();
+
+  const hintAquis = document.getElementById('mHintAquis');
+  if(hintAquis){
+    hintAquis.textContent = ATUAL.fimPeriodoAquisISO
+      ? 'O gozo só pode começar a partir de ' + fmtISOparaBR(ATUAL.fimPeriodoAquisISO) +
+        ' (fim do período aquisitivo). Não é permitido iniciar em quinta, sexta ou fim de semana.'
+      : 'Não é permitido iniciar as férias em quinta, sexta ou fim de semana.';
+  }
+
+  const mp = document.getElementById('modalPolitica');
+  if(mp){ mp.style.display = (CTX.politicaUrl && CTX.politicaUrl.indexOf('COLE-AQUI') === -1) ? 'block' : 'none'; }
+
+  if(ATUAL.concederAteISO){
+    document.getElementById('mInicio').max = ATUAL.concederAteISO;
+  } else {
+    document.getElementById('mInicio').removeAttribute('max');
+  }
+
+  document.getElementById('mRevisao').style.display = 'none';
+  document.getElementById('mBtn').style.display = 'block';
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function fecharModal(){ 
+  document.getElementById('overlay').classList.remove('open'); 
+}
+
+function recalcular(){
+  hideErr();
+
+  const ini = document.getElementById('mInicio').value;
+  const dias = parseInt(document.getElementById('mDias').value,10);
+  const box = document.getElementById('mResumo');
+
+  if(!ini || !dias){ 
+    box.classList.remove('show'); 
+    return; 
+  }
+
+  if(dias > ATUAL.diasAGozar){ 
+    showErr('Você tem apenas '+ATUAL.diasAGozar+' dias a gozar.'); 
+    box.classList.remove('show'); 
+    return; 
+  }
+
+  const inicio = dataISOParaDataLocal(ini);
+
+  if(ATUAL.inicioMinimoISO && ini < ATUAL.inicioMinimoISO){
+    showErr('O início não pode ser anterior a ' + fmtISOparaBR(ATUAL.inicioMinimoISO) +
+            ' (fim do período aquisitivo).');
+    box.classList.remove('show'); return;
+  }
+
+  const dow = inicio.getDay();
+  if(DIAS_INICIO_BLOQUEADOS.indexOf(dow) > -1){
+    showErr('As férias não podem começar em ' + nomeDiaSemana(dow) +
+            '. Escolha um dia de segunda a quarta-feira.');
+    box.classList.remove('show'); return;
+  }
+
+  const ferR = motivoFeriado(ini);
+  if(ferR){ showErr(ferR); box.classList.remove('show'); return; }
+
+  const fim = new Date(inicio); 
+  fim.setDate(fim.getDate() + dias - 1);
+
+  const saldo = ATUAL.diasAGozar - dias;
+
+  box.innerHTML =
+    'Férias de <b>'+fmt(inicio)+'</b> a <b>'+fmt(fim)+'</b> ('+dias+' dias).' +
+    (saldo > 0
+      ? ' <br>Saldo restante: <b>'+saldo+' dias</b> ficará disponível para novo agendamento.'
+      : ''
+    );
+
+  box.classList.add('show');
+}
+
+function fmt(d){ 
+  return d.toLocaleDateString('pt-BR'); 
+}
+
+function fmtISOparaBR(iso){
+  if(!iso) return '';
+  const p = String(iso).split('-');
+  if(p.length !== 3) return iso;
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function nomeDiaSemana(dow){
+  return ['domingo','segunda-feira','terça-feira','quarta-feira',
+          'quinta-feira','sexta-feira','sábado'][dow] || '';
+}
+
+// Dias de início bloqueados (espelha o servidor): qui, sex, sáb, dom.
+const DIAS_INICIO_BLOQUEADOS = [4, 5, 6, 0];
+
+// Trava de feriado no cliente (espelha o servidor), usando CTX.feriados.
+function motivoFeriado(iso){
+  if(!CTX || !CTX.feriados) return null;
+
+  if(CTX.bloquearInicioFeriado && CTX.feriados[iso]){
+    return 'As férias não podem começar em ' + fmtISOparaBR(iso) +
+           ' — é feriado nacional (' + CTX.feriados[iso] + ').';
+  }
+
+  if(CTX.bloquearVesperaFeriado){
+    const p = iso.split('-');
+    const base = new Date(+p[0], +p[1]-1, +p[2], 12);
+    const n = CTX.diasVesperaFeriado || 2;
+
+    for(let k=1; k<=n; k++){
+      const d = new Date(base); d.setDate(d.getDate()+k);
+      const dISO = d.getFullYear() + '-' +
+                   String(d.getMonth()+1).padStart(2,'0') + '-' +
+                   String(d.getDate()).padStart(2,'0');
+      if(CTX.feriados[dISO]){
+        return 'As férias não podem começar em ' + fmtISOparaBR(iso) +
+               ' — é véspera do feriado ' + fmtISOparaBR(dISO) +
+               ' (' + CTX.feriados[dISO] + ').';
+      }
+    }
+  }
+
+  return null;
+}
+
+function showErr(m){ 
+  const e = document.getElementById('mErr'); 
+  e.textContent = m; 
+  e.classList.add('show'); 
+}
+
+function hideErr(){ 
+  document.getElementById('mErr').classList.remove('show'); 
+}
+
+// Valida tudo e mostra o resumo de conferência (passo anti-erro).
+function revisar(){
+  hideErr();
+
+  const ini = document.getElementById('mInicio').value;
+  const dias = parseInt(document.getElementById('mDias').value,10);
+
+  if(!ini) return showErr('Escolha a data de início.');
+  if(!dias || dias < 1) return showErr('Informe a quantidade de dias.');
+  if(dias > ATUAL.diasAGozar) return showErr('Máximo de '+ATUAL.diasAGozar+' dias.');
+
+  if(ATUAL.inicioMinimoISO && ini < ATUAL.inicioMinimoISO)
+    return showErr('O início não pode ser anterior a ' + fmtISOparaBR(ATUAL.inicioMinimoISO) +
+                   ' (fim do período aquisitivo).');
+
+  const inicio = dataISOParaDataLocal(ini);
+
+  if(DIAS_INICIO_BLOQUEADOS.indexOf(inicio.getDay()) > -1)
+    return showErr('As férias não podem começar em ' + nomeDiaSemana(inicio.getDay()) +
+                   '. Escolha um dia de segunda a quarta-feira.');
+
+  const ferR = motivoFeriado(ini);
+  if(ferR) return showErr(ferR);
+
+  const fim = new Date(inicio); fim.setDate(fim.getDate() + dias - 1);
+  const saldo = ATUAL.diasAGozar - dias;
+
+  document.getElementById('mRevisaoTxt').innerHTML =
+    '<div class="rb-linha"><span>Colaborador</span><b>'+escapeHtml(ATUAL.nome || '')+'</b></div>'+
+    '<div class="rb-linha"><span>Período</span><b>'+fmt(inicio)+' a '+fmt(fim)+'</b></div>'+
+    '<div class="rb-linha"><span>Dias</span><b>'+dias+' dia(s)</b></div>'+
+    (saldo > 0
+      ? '<div class="rb-obs">Sobrarão <b>'+saldo+' dia(s)</b> para agendar depois.</div>'
+      : '');
+
+  document.getElementById('mBtn').style.display = 'none';
+  document.getElementById('mRevisao').style.display = 'block';
+}
+
+function voltarRevisao(){
+  document.getElementById('mRevisao').style.display = 'none';
+  document.getElementById('mBtn').style.display = 'block';
+}
+
+async function enviar(){
+  const ini = document.getElementById('mInicio').value;
+  const dias = parseInt(document.getElementById('mDias').value,10);
+
+  // Revalida (defesa em profundidade); o servidor valida de novo.
+  if(!ini) return showErr('Escolha a data de início.');
+  if(!dias || dias < 1) return showErr('Informe a quantidade de dias.');
+  if(dias > ATUAL.diasAGozar) return showErr('Máximo de '+ATUAL.diasAGozar+' dias.');
+  if(ATUAL.inicioMinimoISO && ini < ATUAL.inicioMinimoISO)
+    return showErr('O início não pode ser anterior a ' + fmtISOparaBR(ATUAL.inicioMinimoISO) + '.');
+  const dowEnv = dataISOParaDataLocal(ini).getDay();
+  if(DIAS_INICIO_BLOQUEADOS.indexOf(dowEnv) > -1)
+    return showErr('As férias não podem começar em ' + nomeDiaSemana(dowEnv) + '.');
+  const ferE = motivoFeriado(ini);
+  if(ferE) return showErr(ferE);
+
+  const btn = document.getElementById('mBtnConfirmar');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Enviando…';
+
+  try{
+    const r = await chamar('enviarSolicitacao', {
+      token: TOKEN_SESSAO,
+      id: ATUAL.id,
+      dataInicio: ini,
+      dias: dias
+    });
+
+    fecharModal();
+    toast(r.mensagem, 'ok');
+
+    CTX = await chamar('getContexto', TOKEN_SESSAO);
+
+    renderStats();
+    renderStatusPanel();
+
+    // Se sobrou saldo, leva o gestor direto para "Disponíveis" (onde a nova linha aparece).
+    if(r && r.saldo && r.saldo > 0){
+      selecionarStatus('livre');
+    } else {
+      filtrar();
+    }
+
+  }catch(e){
+    showErr(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '✓ Confirmar envio';
+  }
+}
+
+/* ---------- toast ---------- */
+let toastT = null;
+
+function toast(msg, tipo){
+  const t = document.getElementById('toast');
+
+  t.textContent = msg; 
+  t.className = 'toast show ' + (tipo || '');
+
+  clearTimeout(toastT); 
+  toastT = setTimeout(() => t.classList.remove('show'), 5200);
+}
+</script>

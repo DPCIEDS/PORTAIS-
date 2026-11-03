@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    try{
+      var temaSalvo = localStorage.getItem('portal_dp_tema');
+      if(temaSalvo && temaSalvo.indexOf('escuro') === 0) document.documentElement.setAttribute('data-tema', temaSalvo);
+    }catch(e){}
+  </script>
+  <?!= include('Estilos'); ?>
+</head>
+<body>
+
+<header class="topo">
+  <button class="menu-btn" id="btnMenu" onclick="alternarMenuDP()" aria-label="Menu" style="display:none">
+    <span></span><span></span><span></span>
+  </button>
+  <img id="logo" src="https://www.cieds.org.br/storage/settings/November2023/EpbAW45QebvsTGIqQIoi.svg" alt="CIEDS">
+  <div class="t">
+    <b>Portal do DP</b>
+    <span>Departamento Pessoal · CIEDS</span>
+  </div>
+
+  <!-- TESTE: busca global + sino de avisos no centro do cabeçalho (fácil de remover, ver comentário no Script.html) -->
+  <div class="topo-centro" id="topoCentro" style="display:none">
+    <div class="topo-busca">
+      <div class="busca-flutuante busca-flutuante-topo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input type="text" id="buscaGlobal" placeholder="Buscar colaborador…" autocomplete="off"
+          oninput="buscaGlobalInput(this.value)" onfocus="buscaGlobalInput(this.value)">
+      </div>
+      <div class="topo-dropdown topo-busca-resultados" id="buscaGlobalResultados" style="display:none"></div>
+    </div>
+    <div class="sino-wrap">
+      <button class="sino-aviso" id="sinoAviso" onclick="alternarSinoAviso()" aria-label="Avisos" title="Avisos">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="sino-badge" id="sinoBadge" style="display:none">0</span>
+      </button>
+      <div class="topo-dropdown sino-resultados" id="sinoResultados" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="u" id="usuario"></div>
+</header>
+
+<div class="fundo-menu" id="fundoMenuDP" onclick="fecharMenuDP()"></div>
+
+<div class="abas" id="abas" style="display:none">
+  <div class="abas-cab">
+    <!-- TESTE: avatar escolhível (fácil de remover, ver comentário no Script.html). A troca é
+         feita em Configurações — aqui é só a exibição do avatar atual. -->
+    <div class="avatar-atual" id="avatarAtual"></div>
+    <div class="n" id="abasNome"></div>
+    <div class="email" id="abasEmail"></div>
+  </div>
+
+  <div class="abas-lista">
+    <button class="aba on" data-aba="painelgeral" onclick="ir('painelgeral')" id="abaPainelGeral">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ciano)"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg> Painel Geral</span>
+    </button>
+    <button class="aba" data-aba="rescisao" onclick="ir('rescisao')" id="abaResc" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg> <span id="abaRescNome">Rescisão</span></span>
+      <span class="n" id="nResc" style="display:none"></span>
+    </button>
+    <button class="aba" data-abas="fila,calendario,abonos,prazos,agendadas,recibos" onclick="ir('fila')" id="abaFerias">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ok)"><path d="M22 12a10.06 10.06 0 0 0-20 0Z"></path><path d="M12 12v8a2 2 0 0 0 4 0"></path><path d="M12 2v1"></path></svg> Férias</span>
+      <span class="n" id="nFeriasBadge" style="display:none"></span>
+    </button>
+    <button class="aba" data-aba="afastamentos" onclick="ir('afastamentos')" id="abaAfast" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> Afastamentos</span>
+      <span class="n" id="nAfast" style="display:none"></span>
+    </button>
+    <button class="aba" data-aba="movimentacao" onclick="ir('movimentacao')" id="abaMov" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--roxo)"><path d="m8 3-4 4 4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path></svg> Movimentações</span>
+      <span class="n" id="nMov" style="display:none"></span>
+    </button>
+    <button class="aba" data-aba="trabalhista" onclick="ir('trabalhista')" id="abaProcTrab" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><path d="M12 3v18"></path><path d="M7 21h10"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path></svg> Trabalhista</span>
+      <span class="n" id="nProcTrab" style="display:none"></span>
+    </button>
+    <button class="aba" data-aba="beneficios" onclick="ir('beneficios')" id="abaBen" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--laranja)"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"></path><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"></path></svg> Benefícios</span>
+    </button>
+    <button class="aba" data-aba="admissao" onclick="ir('admissao')" id="abaAdm" style="display:none">
+      <span class="aba-grupo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ciano)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path></svg> Admissões</span>
+      <span class="n" id="nAdm" style="display:none"></span>
+    </button>
+  </div>
+
+  <div class="abas-rodape">
+    <span class="sair" onclick="sair()">↩ Sair da conta</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="tema-switch" onclick="alternarTemaRapido()" aria-label="Alternar modo claro/escuro" title="Claro/Escuro">
+        <span class="ic" style="color:#F5B301"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></span>
+        <span class="ic" style="color:#7C93C4"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></span>
+        <span class="bola"></span>
+      </button>
+      <button class="config-btn" onclick="abrirConfig()" aria-label="Configurações" title="Configurações"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="telaLogin" class="login-hero">
+  <div class="login-grid">
+
+    <div class="login-marketing">
+      <span class="login-selo">CIEDS · Departamento Pessoal</span>
+      <h1>Portal do Departamento Pessoal</h1>
+      <p class="login-lead">Gestão de pessoas de forma simples, rápida e organizada.</p>
+      <p class="login-desc">Centralizando rotinas e informações do Departamento Pessoal em um ambiente institucional seguro, claro e preparado para o dia a dia.</p>
+
+      <div class="login-ilustra" aria-hidden="true">
+        <div class="li-card li-a">
+          <span class="li-linha"></span>
+          <span class="li-linha curta"></span>
+        </div>
+        <div class="li-card li-b">
+          <span class="li-linha branca"></span>
+          <span class="li-check">✓</span>
+        </div>
+        <div class="li-card li-c">
+          <span class="li-avatar"></span>
+          <span class="li-linha"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h2>Acesse o Portal do DP</h2>
+      <p>Área restrita ao Departamento Pessoal.</p>
+
+      <div class="msg" id="loginMsg"></div>
+
+      <div id="boxLogin">
+        <div class="campo">
+          <label>E-mail institucional</label>
+          <input type="email" id="inEmail" placeholder="seu.nome@cieds.org.br" autocomplete="username">
+        </div>
+        <div class="campo">
+          <div class="campo-cab">
+            <label>Senha</label>
+            <a href="#" onclick="irPrimeiroAcesso();return false">Esqueci minha senha</a>
+          </div>
+          <div class="campo-senha">
+            <input type="password" id="inSenha" placeholder="Digite sua senha" autocomplete="current-password">
+            <button type="button" class="olho" onclick="alternarSenhaVisivel()" aria-label="Mostrar senha" id="btnOlhoSenha">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <button class="b pri" id="btnEntrar" onclick="entrar()">Entrar</button>
+        <p style="margin-top:16px;font-size:13px">
+          Primeiro acesso?
+          <a href="#" onclick="irPrimeiroAcesso();return false" style="color:var(--accent);font-weight:700">Criar minha senha</a>
+        </p>
+      </div>
+
+      <!-- PRIMEIRO ACESSO: passo 1 — pedir código -->
+      <div id="boxCodigo" style="display:none">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">
+          Digite seu e-mail institucional. Vamos enviar um código de 6 dígitos para você criar sua senha.
+        </p>
+        <div class="campo">
+          <label>E-mail institucional</label>
+          <input type="email" id="inEmailCod" placeholder="seu.nome@cieds.org.br">
+        </div>
+        <button class="b pri" id="btnCodigo" onclick="pedirCodigo()">Enviar código</button>
+        <p style="margin-top:14px;font-size:13px">
+          <a href="#" onclick="voltarLogin();return false" style="color:var(--muted)">← Voltar</a>
+        </p>
+      </div>
+
+      <!-- PRIMEIRO ACESSO: passo 2 — código + nova senha -->
+      <div id="boxSenha" style="display:none">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">
+          Enviamos um código para <b id="emailEnviado"></b>. Confira seu e-mail (inclusive o spam).
+        </p>
+        <div class="campo">
+          <label>Código de 6 dígitos</label>
+          <input type="text" id="inCodigo" inputmode="numeric" maxlength="6" placeholder="000000">
+        </div>
+        <div class="campo">
+          <label>Criar senha</label>
+          <input type="password" id="inNovaSenha" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="campo">
+          <label>Repetir a senha</label>
+          <input type="password" id="inNovaSenha2" placeholder="Digite de novo">
+        </div>
+        <button class="b pri" id="btnSenha" onclick="criarSenha()">Criar senha e entrar</button>
+        <p style="margin-top:14px;font-size:13px">
+          <a href="#" onclick="voltarLogin();return false" style="color:var(--muted)">← Voltar</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== CARREGANDO ===================== -->
+<div id="telaLoading" style="display:none">
+  <div class="wrap">
+    <div class="esq"></div><div class="esq"></div><div class="esq"></div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" style="display:none">
+  <div class="wrap">
+
+    <div class="kpis" id="kpis"></div>
+
+    <!-- PAINEL GERAL (Trello automático) -->
+    <section id="secPainelGeral">
+      <h1 id="painelGeralTitulo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ciano)"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg> Painel Geral</h1>
+      <p class="sub">Visão consolidada de tudo que exige sua atenção. Clique em um cartão para acessar diretamente o módulo correspondente.</p>
+      <div style="margin:14px 0 18px"><button class="b pri" style="width:auto;padding:10px 18px" onclick="abrirImportarRaioX()">Importar Raio-X</button></div>
+      <div class="trello" id="trelloBoard"></div>
+    </section>
+
+    <!-- [2026-10-15] FÉRIAS COM O VISUAL DA RESCISÃO: cabeçalho e cartões de etapa (aparecem nas 6 telas de Férias).
+         Os 12 indicadores saíram do topo e ficam no botão "Indicadores". -->
+    <div class="fer-escopo fer-topo" id="feriasSubnav" style="display:none">
+      <div class="resc-cabeca">
+        <div>
+          <h1>Férias</h1>
+          <p class="resc-subtitulo">Do pedido do gestor ao recibo assinado.</p>
+        </div>
+        <div class="resc-cabeca-acoes">
+          <button type="button" class="resc-btn-sec" onclick="abrirFerIndicadores()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 5-6"></path></svg>
+            Indicadores
+          </button>
+          <button type="button" class="resc-btn-pri" onclick="abrirNovoAbono()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            Registrar venda de dias
+          </button>
+        </div>
+      </div>
+
+      <nav class="resc-etapas fer-etapas" aria-label="Etapas de férias">
+        <div class="resc-etapas-cartoes">
+          <button type="button" class="sub resc-etapa on" data-sub="fila" onclick="ir('fila')">
+            <span class="resc-etapa-nome">Fila de decisão</span><span class="contagem" id="nFila">–</span>
+            <span class="fer-etapa-nota" id="ferNotaFila"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="abonos" onclick="ir('abonos')">
+            <span class="resc-etapa-nome">Venda de dias</span><span class="contagem" id="nAbono">–</span>
+            <span class="fer-etapa-nota" id="ferNotaAbonos"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="prazos" onclick="ir('prazos')">
+            <span class="resc-etapa-nome">Prazos vencidos</span><span class="contagem" id="nPrazo">–</span>
+            <span class="fer-etapa-nota" id="ferNotaPrazos"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="agendadas" onclick="ir('agendadas')">
+            <span class="resc-etapa-nome">Agendadas</span><span class="contagem" id="nFinanceiro">–</span>
+            <span class="fer-etapa-nota" id="ferNotaAgendadas"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="recibos" onclick="ir('recibos')">
+            <span class="resc-etapa-nome">Recibos</span><span class="contagem" id="nRecibos">–</span>
+            <span class="fer-etapa-nota" id="ferNotaRecibos"></span>
+          </button>
+        </div>
+        <div class="resc-etapas-extra">
+          <button type="button" class="sub resc-link" data-sub="calendario" onclick="ir('calendario')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+            Calendário de pagamento
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <!-- FILA -->
+    <section id="secFila" class="fer-escopo" style="display:none">
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="filaBusca" placeholder="Pesquisar por nome, departamento ou gestor" aria-label="Pesquisar na fila" oninput="ferFiltrar('fila', 'busca', this.value)">
+        </label>
+        <select id="filaFiltroTipo" class="resc-filtro" aria-label="Filtrar por tipo" onchange="ferFiltrar('fila', 'tipo', this.value)">
+          <option value="">Tipo: Todos</option><option value="ferias">Férias</option><option value="fimdeano">Férias de fim de ano</option>
+        </select>
+        <select id="filaFiltroSit" class="resc-filtro" aria-label="Filtrar por prazo de resposta" onchange="ferFiltrar('fila', 'sit', this.value)">
+          <option value="">Prazo: Todos</option><option value="fora">Fora do prazo de resposta</option><option value="perto">Perto do prazo</option><option value="no">No prazo</option>
+        </select>
+        <div class="resc-ferramentas-fim fer-info" id="filaInfo"></div>
+      </div>
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaFila"></div></div>
+    </section>
+
+    <!-- CALENDÁRIO -->
+    <section id="secCalendario" class="fer-escopo" style="display:none">
+      <div class="fer-cal-topo">
+        <div>
+          <h2 class="fer-h2">Previsão de pagamento de férias</h2>
+          <p class="resc-subtitulo" id="calPeriodo"></p>
+        </div>
+        <ul class="fer-legenda" id="calLegenda" aria-label="Legenda das barras"></ul>
+      </div>
+      <div class="fer-cal-resumo" id="calResumo"></div>
+      <div class="fer-cal-meses" id="calMeses"></div>
+      <details class="fer-cal-ajuda">
+        <summary>Como ler o calendário</summary>
+        <dl>
+          <dt>Planejadas</dt><dd>férias já confirmadas pelo DP.</dd>
+          <dt>Pendentes</dt><dd>pedidos aguardando decisão. Ainda não contam para o estouro do teto.</dd>
+          <dt>Compulsórias</dt><dd>saldos sem agendamento, que caem no mês do prazo legal.</dd>
+          <dt>Assistência</dt><dd>departamentos com "Lote" no nome ou Escritório Social, calculados em linha própria.</dd>
+          <dt>Vencidas</dt><dd>o prazo já passou: o valor é pago em dobro (art. 137 da CLT).</dd>
+          <dt>Exceção JM</dt><dd>Jovens Mensageiros em ago/set de 2026, exceção temporária por volume atípico.</dd>
+          <dt>Teto</dt><dd>limite de pagamento do mês. A barra mostra quanto do teto está ocupado; clique em "Editar teto" no mês para mudar.</dd>
+        </dl>
+      </details>
+    </section>
+
+    <!-- VENDA DE DIAS -->
+    <section id="secAbonos" class="fer-escopo" style="display:none">
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="abonosBusca" placeholder="Pesquisar por nome ou matrícula" aria-label="Pesquisar pedidos de venda de dias" oninput="ferFiltrar('abonos', 'busca', this.value)">
+        </label>
+        <select id="abonosFiltroSit" class="resc-filtro" aria-label="Filtrar por prazo legal" onchange="ferFiltrar('abonos', 'sit', this.value)">
+          <option value="">Prazo legal: Todos</option><option value="no">No prazo legal</option><option value="fora">Fora do prazo legal</option>
+        </select>
+        <div class="resc-ferramentas-fim fer-info">O pedido confirmado libera a venda de dias no agendamento.</div>
+      </div>
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaAbonos"></div></div>
+    </section>
+
+    <!-- PRAZOS -->
+    <section id="secPrazos" class="fer-escopo" style="display:none">
+      <div class="resc-abas" id="prazosAbas" role="tablist" aria-label="Situação do prazo">
+        <button type="button" role="tab" class="sub on" data-sub="vencidas" aria-selected="true" onclick="prazosIr('vencidas')">Vencidas, pagas em dobro <span class="contagem" id="prazosCont_vencidas">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="criticos" aria-selected="false" onclick="prazosIr('criticos')">Vencem em até 60 dias <span class="contagem" id="prazosCont_criticos">–</span></button>
+      </div>
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="prazosBusca" placeholder="Pesquisar por nome ou gestor" aria-label="Pesquisar prazos" oninput="ferFiltrar('prazos', 'busca', this.value)">
+        </label>
+        <select id="prazosFiltroGestor" class="resc-filtro" aria-label="Filtrar por gestor" onchange="ferFiltrar('prazos', 'gestor', this.value)"><option value="">Gestor: Todos</option></select>
+        <div class="resc-ferramentas-fim fer-info" id="vencInfo"></div>
+      </div>
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaVencidos"></div></div>
+    </section>
+
+    <!-- AGENDADAS -->
+    <section id="secAgendadas" class="fer-escopo" style="display:none">
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="agendBusca" placeholder="Pesquisar por nome ou departamento" aria-label="Pesquisar férias agendadas" oninput="ferFiltrar('agendadas', 'busca', this.value)">
+        </label>
+        <select id="agendFiltroMes" class="resc-filtro" aria-label="Filtrar por mês de início" onchange="ferFiltrar('agendadas', 'mes', this.value)"><option value="">Início: Todos os meses</option></select>
+        <select id="agendFiltroDepto" class="resc-filtro" aria-label="Filtrar por departamento" onchange="ferFiltrar('agendadas', 'depto', this.value)"><option value="">Departamento: Todos</option></select>
+        <select id="agendFiltroFin" class="resc-filtro" aria-label="Filtrar pela situação no financeiro" onchange="ferFiltrar('agendadas', 'fin', this.value)">
+          <option value="">Financeiro: Todas</option><option value="nao">Não enviadas</option><option value="no">Enviadas no prazo</option><option value="fora">Enviadas fora do prazo</option>
+        </select>
+        <div class="resc-ferramentas-fim">
+          <span class="fer-info" id="agendInfo"></span>
+          <!-- [2026-10-29] BI Férias do Alterdata: preenche valor líquido, identidade e banco de cada férias -->
+          <button type="button" class="resc-btn-sec" id="ferfinBtnBI" onclick="$('ferfinArqBI').click()" title="Relatório BI Férias do Alterdata (.xls ou .xlsx)">Importar BI Férias</button>
+          <input type="file" id="ferfinArqBI" accept=".xls,.xlsx" hidden onchange="ferfinImportarBI(this)">
+          <button class="btn-atualizar" title="Atualizar lista" aria-label="Atualizar lista" onclick="carregarAgendadas()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div id="ferfinBIRes"></div>
+      <div id="listaAgendadas"></div>
+    </section>
+
+
+    <!-- RECIBOS DE FÉRIAS -->
+    <section id="secRecibos" class="fer-escopo" style="display:none">
+      <div class="resc-abas" id="recibosSubnav" role="tablist" aria-label="Situação do recibo">
+        <button type="button" role="tab" class="sub on" data-sub="pendentes" onclick="recibosIr('pendentes')">Sem recibo <span class="contagem" id="recibosCont_pendentes">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="prontosEnvio" onclick="recibosIr('prontosEnvio')">Prontos para envio <span class="contagem" id="recibosCont_prontosEnvio">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="enviados" onclick="recibosIr('enviados')">Enviados <span class="contagem" id="recibosCont_enviados">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="assinados" onclick="recibosIr('assinados')">Assinados <span class="contagem" id="recibosCont_assinados">–</span></button>
+      </div>
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="recibosBusca" placeholder="Pesquisar por nome" aria-label="Pesquisar recibos" oninput="recibosBuscar(this.value)">
+        </label>
+        <div class="resc-ferramentas-fim">
+          <button class="btn-atualizar" id="btnEnviarTodosRecibos" style="display:none" title="Enviar todos os prontos para o Autentique" aria-label="Enviar todos os prontos para o Autentique" onclick="abrirEnviarTodosRecibos()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <span class="badge-lote" id="badgeEnviarTodosRecibos" style="display:none">0</span>
+          </button>
+          <button class="btn-atualizar" id="btnBaixarTodosRecibos" style="display:none" title="Baixar e arquivar todos os assinados" aria-label="Baixar e arquivar todos os assinados" onclick="abrirBaixarTodosRecibos()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span class="badge-lote" id="badgeBaixarTodosRecibos" style="display:none">0</span>
+          </button>
+          <button class="btn-atualizar" title="Atualizar lista" aria-label="Atualizar lista" onclick="atualizarRecibos(this)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaRecibos"></div></div>
+    </section>
+
+    <!-- AFASTAMENTOS -->
+    <section id="secAfastamentos" style="display:none">
+      <h1><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> Afastamentos</h1>
+      <p class="sub">Acompanhamento completo do afastamento: perícia, decisão do INSS, prorrogações, exame ocupacional e retorno ao trabalho.</p>
+      <div class="subnav" id="afastSubnav">
+        <button class="sub on" data-sub="atestado" onclick="afastIr('atestado')">Em atestado<span class="contagem" id="afastCont_atestado" style="display:none">0</span></button>
+        <button class="sub" data-sub="inss" onclick="afastIr('inss')">Encaminhados INSS<span class="contagem" id="afastCont_inss" style="display:none">0</span></button>
+        <button class="sub" data-sub="prorrogados" onclick="afastIr('prorrogados')">Prorrogados<span class="contagem" id="afastCont_prorrogados" style="display:none">0</span></button>
+        <button class="sub" data-sub="retorno" onclick="afastIr('retorno')">Aguardando retorno<span class="contagem" id="afastCont_retorno" style="display:none">0</span></button>
+        <button class="sub" data-sub="encerrados" onclick="afastIr('encerrados')">Encerrados<span class="contagem" id="afastCont_encerrados" style="display:none">0</span></button>
+      </div>
+      <div class="painel"><div class="painel-corpo" id="listaAfast"></div></div>
+    </section>
+
+    <!-- RESCISÃO -->
+    <section id="secRescisao" style="display:none">
+      <div class="resc-cabeca">
+        <div>
+          <h1 id="rescTitulo">Rescisão</h1>
+          <p class="resc-subtitulo" id="rescSubtitulo">Da solicitação ao arquivamento da documentação assinada.</p>
+        </div>
+        <div id="rescAcoes" class="resc-cabeca-acoes">
+          <button type="button" class="resc-btn-sec" onclick="abrirRescComplementar()">Rescisão complementar</button>
+          <button type="button" class="resc-btn-pri" onclick="abrirRescNova()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            Nova rescisão
+          </button>
+        </div>
+      </div>
+
+      <nav class="resc-etapas" id="rescSubnav" aria-label="Etapas da rescisão">
+        <div class="resc-etapas-cartoes">
+          <button type="button" class="sub resc-etapa on" data-sub="solicitadas" onclick="rescIr('solicitadas')"><span class="resc-etapa-nome">Solicitadas</span><span class="contagem" id="rescCont_solicitadas">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="agendadas" onclick="rescIr('agendadas')"><span class="resc-etapa-nome">Agendadas</span><span class="contagem" id="rescCont_agendadas">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="compareceram" onclick="rescIr('compareceram')"><span class="resc-etapa-nome">Exame</span><span class="contagem" id="rescCont_compareceram">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="conciliacao" onclick="rescIr('conciliacao')"><span class="resc-etapa-nome">Conciliação</span><span class="contagem" id="rescCont_conciliacao">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="homologacao" onclick="rescIr('homologacao')"><span class="resc-etapa-nome">Homologação</span><span class="contagem" id="rescCont_homologacao">–</span></button>
+        </div>
+        <div class="resc-etapas-extra">
+          <button type="button" class="sub resc-link" data-sub="arquivados" onclick="rescIr('arquivados')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M10 12h4"></path></svg>
+            Arquivados <span class="contagem" id="rescCont_arquivados">–</span>
+          </button>
+          <button type="button" class="sub resc-link" data-sub="canceladas" onclick="rescIr('canceladas')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6M9 9l6 6"></path></svg>
+            Canceladas <span class="contagem" id="rescCont_canceladas">–</span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="resc-abas" id="homologSubnav" role="tablist" aria-label="Situação da homologação" style="display:none">
+        <button type="button" role="tab" class="sub on" data-sub="pendentes" aria-selected="true" onclick="homologIr('pendentes')">Pendentes <span class="contagem" id="homologCont_pendentes">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="prontosEnvio" aria-selected="false" onclick="homologIr('prontosEnvio')">Prontos para envio <span class="contagem" id="homologCont_prontosEnvio">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="enviadas" aria-selected="false" onclick="homologIr('enviadas')">Enviadas <span class="contagem" id="homologCont_enviadas">–</span></button>
+        <button type="button" role="tab" class="sub" data-sub="prontas" aria-selected="false" onclick="homologIr('prontas')">Documentação assinada <span class="contagem" id="homologCont_prontas">–</span></button>
+      </div>
+
+      <div id="homologBuscaBox" class="resc-ferramentas" style="display:none">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="homologBusca" placeholder="Pesquisar por nome ou matrícula" aria-label="Pesquisar por nome ou matrícula" oninput="homologBuscar(this.value)">
+        </label>
+        <select id="homologFiltroMes" class="resc-filtro" aria-label="Filtrar por mês de demissão" onchange="homologFiltrar('mes', this.value)" style="display:none"><option value="">Mês: Todos</option></select>
+        <select id="homologFiltroTipo" class="resc-filtro" aria-label="Filtrar por tipo de demissão" onchange="homologFiltrar('tipo', this.value)" style="display:none"><option value="">Tipo: Todos</option></select>
+        <div class="resc-ferramentas-fim">
+          <button class="btn-atualizar" id="btnEnviarTodasHomolog" style="display:none" title="Enviar todas as prontas para o Autentique" aria-label="Enviar todas as prontas para o Autentique" onclick="abrirEnviarTodasHomologacoes()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span class="badge-lote" id="badgeEnviarTodasHomolog" style="display:none">0</span>
+          </button>
+          <button class="btn-atualizar" id="btnBaixarTodasHomolog" style="display:none" title="Baixar e arquivar todas as assinadas" aria-label="Baixar e arquivar todas as assinadas" onclick="abrirBaixarTodasHomologacoes()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span class="badge-lote" id="badgeBaixarTodasHomolog" style="display:none">0</span>
+          </button>
+          <button class="btn-atualizar" title="Atualizar lista" aria-label="Atualizar lista" onclick="atualizarHomolog(this)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaResc"></div></div>
+      <div id="rescIndicadores"></div>
+    </section>
+
+    <!-- PROCESSOS TRABALHISTAS -->
+    <section id="secTrabalhista" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <h1><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warn)"><path d="M12 3v18"></path><path d="M7 21h10"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path></svg> Processos Trabalhistas</h1>
+          <p class="sub">Controle dos pagamentos de FGTS e INSS determinados judicialmente em processos trabalhistas.</p>
+        </div>
+        <button class="b pri" style="width:auto" onclick="abrirProcTrabNovo()">+ Novo processo</button>
+      </div>
+      <div class="subnav" id="procSubnav">
+        <button class="sub on" data-sub="atrasados" onclick="procIr('atrasados')">Atrasados<span class="contagem" id="procCont_atrasados" style="display:none">0</span></button>
+        <button class="sub" data-sub="pendentes" onclick="procIr('pendentes')">Pendentes<span class="contagem" id="procCont_pendentes" style="display:none">0</span></button>
+        <button class="sub" data-sub="parciais" onclick="procIr('parciais')">Parciais<span class="contagem" id="procCont_parciais" style="display:none">0</span></button>
+        <button class="sub" data-sub="pagos" onclick="procIr('pagos')">Pagos<span class="contagem" id="procCont_pagos" style="display:none">0</span></button>
+      </div>
+      <div class="painel"><div class="painel-corpo" id="listaProcTrab"></div></div>
+    </section>
+
+    <!-- MOVIMENTAÇÕES -->
+    <!-- [2026-10-21] Visual da Rescisão/Férias (classe fer-escopo): cartões de etapa, busca e filtro por tipo,
+         tabela com o que muda e os alertas, e a caixa de decisão com o resumo do pedido. -->
+    <section id="secMovimentacao" class="fer-escopo" style="display:none">
+      <div class="resc-cabeca">
+        <div>
+          <h1>Movimentações</h1>
+          <p class="resc-subtitulo">Do pedido do gestor ao lançamento na folha: o RH aprova primeiro, depois o DP decide.</p>
+        </div>
+      </div>
+
+      <nav class="resc-etapas" id="movEtapas" aria-label="Situação das movimentações">
+        <div class="resc-etapas-cartoes">
+          <button type="button" class="sub resc-etapa on" data-sub="aguardandoDP" onclick="movIr('aguardandoDP')">
+            <span class="resc-etapa-nome">Aguardando o DP</span><span class="contagem" id="movCont_aguardandoDP">–</span>
+            <span class="fer-etapa-nota" id="movNota_aguardandoDP"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="decididas" onclick="movIr('decididas')">
+            <span class="resc-etapa-nome">Decididas pelo DP</span><span class="contagem" id="movCont_decididas">–</span>
+            <span class="fer-etapa-nota" id="movNota_decididas"></span>
+          </button>
+          <button type="button" class="sub resc-etapa" data-sub="reprovadasPeloRH" onclick="movIr('reprovadasPeloRH')">
+            <span class="resc-etapa-nome">Reprovadas pelo RH</span><span class="contagem" id="movCont_reprovadasPeloRH">–</span>
+            <span class="fer-etapa-nota" id="movNota_reprovadasPeloRH"></span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="resc-ferramentas">
+        <label class="resc-busca">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input type="search" id="movBusca" placeholder="Pesquisar por nome, departamento ou gestor" aria-label="Pesquisar nas movimentações" oninput="movFiltrar('busca', this.value)">
+        </label>
+        <select id="movFiltroTipo" class="resc-filtro" aria-label="Filtrar por tipo de movimentação" onchange="movFiltrar('tipo', this.value)">
+          <option value="">Tipo: Todos</option>
+          <option value="TRANSFERENCIA_DEPARTAMENTO">Transferência de departamento</option>
+          <option value="ALTERACAO_TURNO">Alteração de turno</option>
+          <option value="ALTERACAO_CARGA_HORARIA">Alteração de carga horária</option>
+          <option value="ALTERACAO_SALARIO">Alteração de salário</option>
+          <option value="ALTERACAO_CARGO">Alteração de cargo</option>
+          <option value="ADICIONAL_PAGAMENTO">Pagamento de adicional</option>
+          <option value="OUTRO">Outro</option>
+        </select>
+        <div class="resc-ferramentas-fim fer-info" id="movInfo"></div>
+      </div>
+      <div class="painel resc-painel"><div class="painel-corpo" id="listaMov"></div></div>
+    </section>
+
+    <!-- BENEFÍCIOS -->
+    <!-- BENEFÍCIOS · [2026-10-21] cálculo corrigido (era a aba "Benefícios (teste)"): prévia com dias úteis e faltas,
+         pedido gravado pelo cálculo, importação do relatório por arquivo ou colando, conciliação, lotes e regras.
+         O conteúdo de cada aba é montado pelo renderBeneficios (Script.html, prefixo bx). -->
+    <section id="secBeneficios" style="display:none">
+      <h1><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--laranja)"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"></path><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"></path></svg> Benefícios</h1>
+      <p class="sub">Cálculo do mês com os dados do DP360 (colaboradores, férias, afastamentos e desligamentos) e a tabela de valores por departamento. O pedido sai do cálculo e é conferido com o relatório do fornecedor.</p>
+      <div class="subnav" id="bxAbas">
+        <button class="sub on" data-bx="calcular">Calcular</button>
+        <button class="sub" data-bx="importar">Importar</button>
+        <button class="sub" data-bx="conciliar">Conciliar</button>
+        <button class="sub" data-bx="lotes">Lotes</button>
+        <button class="sub" data-bx="regras">Regras</button>
+      </div>
+      <div class="bx-barra">
+        <div class="bx-campo"><label for="bxComp">Competência</label><select id="bxComp"></select></div>
+        <div class="bx-campo"><label for="bxForn">Fornecedor</label>
+          <select id="bxForn"><option value="PLUXEE">Pluxee</option><option value="RIOCARD">RioCard</option><option value="JAEH">Jaeh</option><option value="OUTRO">Outro</option></select></div>
+        <div class="bx-campo"><label for="bxTipo">Tipo de benefício</label><select id="bxTipo"></select></div>
+        <div class="bx-etapas" id="bxEtapas" aria-label="Andamento desta competência"></div>
+        <button class="bx-b" id="bxReset" style="margin-left:auto">Recarregar dados</button>
+      </div>
+      <div id="bxTela"></div>
+    </section>
+
+    <!-- ADMISSÕES -->
+    <section id="secAdmissao" style="display:none">
+      <!-- [2026-10-14] Mesmo visual da Rescisão (pedido da Taynara): cartões de etapa com contagem,
+           busca e filtros, e as listas em tabela com a ação principal num botão e as outras no menu ⋮. -->
+      <div class="resc-cabeca">
+        <div>
+          <h1>Admissão</h1>
+          <p class="resc-subtitulo">Do cadastro recebido pelo formulário ao kit admissional assinado e arquivado.</p>
+        </div>
+        <div class="resc-cabeca-acoes">
+          <button type="button" class="resc-btn-sec" onclick="admGerarRiocardLote(this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>
+            Gerar RioCard em lote<span class="adm-riocard-qtd" id="admRiocardQtd"></span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="resc-etapas adm-etapas" id="admSubnav" aria-label="Etapas da admissão">
+        <div class="resc-etapas-cartoes">
+          <button type="button" class="sub resc-etapa on" data-sub="cadastros" onclick="admEtapa('cadastros')"><span class="resc-etapa-nome">Cadastros</span><span class="contagem" id="admCont_cadastros">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="pendentes" onclick="admEtapa('pendentes')"><span class="resc-etapa-nome">Kit pendente</span><span class="contagem" id="admKitCont_pendentes">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="enviados" onclick="admEtapa('enviados')"><span class="resc-etapa-nome">Kit enviado</span><span class="contagem" id="admKitCont_enviados">–</span></button>
+          <button type="button" class="sub resc-etapa" data-sub="assinados" onclick="admEtapa('assinados')"><span class="resc-etapa-nome">Kit assinado</span><span class="contagem" id="admKitCont_assinados">–</span></button>
+        </div>
+      </nav>
+
+      <!-- CADASTROS -->
+      <div id="admPainelCadastros">
+        <div class="resc-ferramentas">
+          <label class="resc-busca">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+            <input type="search" id="admBusca" placeholder="Pesquisar por nome ou CPF" aria-label="Pesquisar por nome ou CPF" oninput="admBuscar(this.value)">
+          </label>
+          <select id="admFiltroMes" class="resc-filtro" aria-label="Filtrar por mês de admissão" onchange="admFiltrar('mes', this.value)" style="display:none"><option value="">Mês: Todos</option></select>
+          <select id="admFiltroSituacao" class="resc-filtro" aria-label="Filtrar por situação" onchange="admFiltrar('situacao', this.value)" style="display:none"><option value="">Situação: Todos</option></select>
+          <div class="resc-ferramentas-fim">
+            <button class="btn-atualizar" title="Atualizar lista" aria-label="Atualizar lista" onclick="admAtualizarLista(this)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="painel resc-painel"><div class="painel-corpo" id="listaAdm"></div></div>
+      </div>
+
+      <!-- KIT ADMISSIONAL (envio/verificação/download no Autentique) -->
+      <div id="admPainelKit" style="display:none">
+        <div class="resc-ferramentas">
+          <label class="resc-busca">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+            <input type="search" id="admKitBusca" placeholder="Pesquisar por nome ou protocolo" aria-label="Pesquisar por nome ou protocolo" oninput="admKitBuscar(this.value)">
+          </label>
+          <select id="admKitFiltroMes" class="resc-filtro" aria-label="Filtrar por mês de admissão" onchange="admKitFiltrarMes(this.value)" style="display:none"><option value="">Mês: Todos</option></select>
+          <div class="resc-ferramentas-fim">
+            <button class="btn-atualizar" id="btnEnviarTodosAdmKit" aria-label="Enviar todos os pendentes para o Autentique" style="display:none" title="Enviar todos os pendentes para o Autentique" onclick="abrirEnviarTodosAdmKit()">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              <span class="badge-lote" id="badgeEnviarTodosAdmKit" style="display:none">0</span>
+            </button>
+            <button class="btn-atualizar" id="btnVerificarTodosAdmKit" aria-label="Verificar assinatura de todos os enviados" style="display:none" title="Verificar assinatura de todos os enviados" onclick="verificarTodosAdmKit(this)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"></path>
+              </svg>
+            </button>
+            <button class="btn-atualizar" id="btnBaixarTodosAdmKit" aria-label="Baixar e arquivar todos os assinados" style="display:none" title="Baixar e arquivar todos os assinados" onclick="abrirBaixarTodosAdmKit()">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span class="badge-lote" id="badgeBaixarTodosAdmKit" style="display:none">0</span>
+            </button>
+            <button class="btn-atualizar" title="Atualizar lista" aria-label="Atualizar lista" onclick="atualizarAdmKit(this)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="painel resc-painel"><div class="painel-corpo" id="listaAdmKit"></div></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ===================== MODAL: INDEFERIR ===================== -->
+<div class="ov" id="ovConfig">
+  <div class="md" style="max-width:420px">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovConfig')">&times;</button>
+      <b>Personalizar o portal</b>
+    </div>
+    <div class="md-corpo">
+      <!-- TESTE: avatar escolhível (fácil de remover, ver comentário no Script.html) -->
+      <div class="config-linha">
+        <div class="tit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ciano);vertical-align:-2px;margin-right:2px"><circle cx="12" cy="12" r="9"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8 15c1 1.5 2.5 2 4 2s3-.5 4-2"></path></svg> Avatar</div>
+        <div class="desc">Escolha o rostinho que aparece em cima do seu nome, na barra lateral.</div>
+        <div class="avatar-picker-config" id="avatarPickerConfig"></div>
+      </div>
+
+      <div class="config-linha">
+        <div class="tit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--roxo);vertical-align:-2px;margin-right:2px"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"></path></svg> Aparência</div>
+        <div class="desc">Escolha o tema. O ícone de lua na barra lateral alterna rápido entre claro e o escuro escolhido aqui.</div>
+        <div class="tema-opcoes">
+          <label class="tema-op"><input type="radio" name="tema" value="claro" onchange="aplicarTema(this.value)"><span class="amostra tema-claro"></span>Claro</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-cinza" onchange="aplicarTema(this.value)"><span class="amostra tema-cinza"></span>Cinza neutro</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-azul" onchange="aplicarTema(this.value)"><span class="amostra tema-azul"></span>Azul-marinho</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-preto" onchange="aplicarTema(this.value)"><span class="amostra tema-preto"></span>Preto</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- [2026-10-15] Indicadores de Férias (antes eram 12 cartões fixos no topo de todas as telas de Férias) -->
+<div class="ov" id="ovFerIndicadores">
+  <div class="md fer-md-ind" role="dialog" aria-modal="true" aria-labelledby="ferIndTitulo">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovFerIndicadores')" aria-label="Fechar">&times;</button>
+      <b id="ferIndTitulo">Indicadores de férias</b>
+      <span>Calculados quando o painel de férias carrega.</span>
+    </div>
+    <div class="md-corpo" id="ferIndicadoresCorpo"></div>
+  </div>
+</div>
+
+<div class="ov" id="ovNao">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovNao')">&times;</button>
+      <b>Não confirmar estas datas</b>
+      <span id="naoNome"></span>
+    </div>
+    <div class="md-corpo">
+      <div class="msg" id="naoMsg"></div>
+      <div class="campo">
+        <label>O que você quer explicar ao gestor?</label>
+        <textarea id="naoMotivo" rows="3" placeholder="Ex.: nesse mês já temos muita gente fora da equipe. Podemos ver outra janela?"></textarea>
+        <div class="dica">Este texto vai no e-mail para o gestor. Os dias voltam para o saldo automaticamente.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="b gh" style="flex:1;padding:12px" onclick="fechar('ovNao')">Voltar</button>
+        <button class="b nao" style="flex:1;padding:12px" id="naoBtn" onclick="confirmarNao()">Enviar ao gestor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER DOCUMENTOS DA HOMOLOGAÇÃO ===================== -->
+<div class="ov" id="ovVerHomolog">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovVerHomolog')">&times;</button>
+      <b>Documentos encontrados</b>
+      <span id="verHomologNome"></span>
+    </div>
+    <div class="md-corpo" id="verHomologCorpo"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CANCELAR ENVIO DA HOMOLOGAÇÃO ===================== -->
+<div class="ov" id="ovCancelarHomolog">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovCancelarHomolog')">&times;</button>
+      <b>Cancelar envio</b>
+      <span id="cancelarHomologNome"></span>
+    </div>
+    <div class="md-corpo">
+      <p>O documento será <b>apagado no Autentique</b> e ninguém mais vai conseguir assinar. Essa ação não tem volta — se precisar, terá que enviar de novo.</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovCancelarHomolog')">Voltar</button>
+        <button class="b sim" id="btnConfirmarCancelarHomolog" onclick="confirmarCancelarHomologacao()">Sim, cancelar e apagar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CANCELAR ENVIO DA RESCISÃO AO AUTENTIQUE (FATIA 2) ===================== -->
+<div class="ov" id="ovCancelarRescAutentique">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovCancelarRescAutentique')">&times;</button>
+      <b>Cancelar envio</b>
+      <span id="cancelarRescAutentiqueNome"></span>
+    </div>
+    <div class="md-corpo">
+      <p>O documento será <b>apagado no Autentique</b> e ninguém mais vai conseguir assinar. O caso volta pra "Enviado ao financeiro", pronto pra reenviar. Essa ação não tem volta.</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovCancelarRescAutentique')">Voltar</button>
+        <button class="b sim" id="btnConfirmarCancelarRescAutentique" onclick="confirmarRescCancelarAutentique()">Sim, cancelar e apagar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ENVIAR TODAS AS HOMOLOGAÇÕES ===================== -->
+<div class="ov" id="ovEnviarTodasHomolog">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovEnviarTodasHomolog')">&times;</button>
+      <b>Enviar todas para o Autentique</b>
+    </div>
+    <div class="md-corpo">
+      <p id="enviarTodasHomologTexto"></p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovEnviarTodasHomolog')">Voltar</button>
+        <button class="b sim" id="btnConfirmarEnviarTodasHomolog" onclick="confirmarEnviarTodasHomologacoes()">Sim, enviar todas</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: BAIXAR TODAS AS HOMOLOGAÇÕES ASSINADAS ===================== -->
+<div class="ov" id="ovBaixarTodasHomolog">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovBaixarTodasHomolog')">&times;</button>
+      <b>Baixar e arquivar todas</b>
+    </div>
+    <div class="md-corpo">
+      <p>O sistema verificará no Autentique quais homologações já foram assinadas por todas as partes e fará o download automático dos documentos, arquivando-os na pasta de assinados no Drive. Homologações com assinatura pendente não serão incluídas. Deseja continuar?</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovBaixarTodasHomolog')">Voltar</button>
+        <button class="b sim" id="btnConfirmarBaixarTodasHomolog" onclick="confirmarBaixarTodasHomologacoes()">Sim, baixar e arquivar</button>
+      </div>
+      <div class="msg" id="baixarTodasHomologMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER RECIBO DE FÉRIAS ===================== -->
+<div class="ov" id="ovVerRecibo">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovVerRecibo')">&times;</button>
+      <b>Recibo encontrado</b>
+      <span id="verReciboNome"></span>
+    </div>
+    <div class="md-corpo" id="verReciboCorpo"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CANCELAR ENVIO DO RECIBO ===================== -->
+<div class="ov" id="ovCancelarRecibo">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovCancelarRecibo')">&times;</button>
+      <b>Cancelar envio</b>
+      <span id="cancelarReciboNome"></span>
+    </div>
+    <div class="md-corpo">
+      <p>O documento será <b>apagado no Autentique</b> e ninguém mais vai conseguir assinar. Essa ação não tem volta — se precisar, terá que enviar de novo.</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovCancelarRecibo')">Voltar</button>
+        <button class="b sim" id="btnConfirmarCancelarRecibo" onclick="confirmarCancelarRecibo()">Sim, cancelar e apagar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ENVIAR TODOS OS RECIBOS ===================== -->
+<div class="ov" id="ovEnviarTodosRecibos">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovEnviarTodosRecibos')">&times;</button>
+      <b>Enviar todos para o Autentique</b>
+    </div>
+    <div class="md-corpo">
+      <p id="enviarTodosRecibosTexto"></p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovEnviarTodosRecibos')">Voltar</button>
+        <button class="b sim" id="btnConfirmarEnviarTodosRecibos" onclick="confirmarEnviarTodosRecibos()">Sim, enviar todos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: BAIXAR TODOS OS RECIBOS ASSINADOS ===================== -->
+<div class="ov" id="ovBaixarTodosRecibos">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovBaixarTodosRecibos')">&times;</button>
+      <b>Baixar e arquivar todos</b>
+    </div>
+    <div class="md-corpo">
+      <p>O sistema verificará no Autentique quais recibos já foram assinados por todas as partes e fará o download automático dos documentos, arquivando-os na pasta de assinados no Drive. Recibos com assinatura pendente não serão incluídos. Deseja continuar?</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovBaixarTodosRecibos')">Voltar</button>
+        <button class="b sim" id="btnConfirmarBaixarTodosRecibos" onclick="confirmarBaixarTodosRecibos()">Sim, baixar e arquivar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER KIT ADMISSIONAL ===================== -->
+<div class="ov" id="ovVerAdmKit">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovVerAdmKit')">&times;</button>
+      <b>Kit admissional encontrado</b>
+      <span id="verAdmKitNome"></span>
+    </div>
+    <div class="md-corpo" id="verAdmKitCorpo"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CANCELAR ENVIO DO KIT ADMISSIONAL ===================== -->
+<div class="ov" id="ovCancelarAdmKit">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovCancelarAdmKit')">&times;</button>
+      <b>Cancelar envio</b>
+      <span id="cancelarAdmKitNome"></span>
+    </div>
+    <div class="md-corpo">
+      <p>O documento será <b>apagado no Autentique</b> e ninguém mais vai conseguir assinar. Essa ação não tem volta — se precisar, terá que enviar de novo.</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovCancelarAdmKit')">Voltar</button>
+        <button class="b sim" id="btnConfirmarCancelarAdmKit" onclick="confirmarCancelarAdmKit()">Sim, cancelar e apagar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ENVIAR TODOS OS KITS ===================== -->
+<div class="ov" id="ovEnviarTodosAdmKit">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fecharEnviarTodosAdmKit()">&times;</button>
+      <b>Enviar todos para o Autentique</b>
+    </div>
+    <div class="md-corpo">
+      <p id="enviarTodosAdmKitTexto"></p>
+      <!-- [2026-10-05] Barra de progresso do envio em grupos -->
+      <div class="prog-envio" id="enviarTodosAdmKitProg" style="display:none">
+        <div class="prog-trilho"><div class="prog-barra" id="enviarTodosAdmKitBarra"></div></div>
+        <div class="prog-info"><span id="enviarTodosAdmKitContagem"></span><b id="enviarTodosAdmKitPct">0%</b></div>
+        <div class="prog-status" id="enviarTodosAdmKitStatus"></div>
+        <div class="prog-erros" id="enviarTodosAdmKitErros"></div>
+      </div>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" id="btnVoltarEnviarTodosAdmKit" onclick="fecharEnviarTodosAdmKit()">Voltar</button>
+        <button class="b sim" id="btnConfirmarEnviarTodosAdmKit" onclick="confirmarEnviarTodosAdmKit()">Sim, enviar todos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: BAIXAR TODOS OS KITS ASSINADOS ===================== -->
+<div class="ov" id="ovBaixarTodosAdmKit">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovBaixarTodosAdmKit')">&times;</button>
+      <b>Baixar e arquivar todos</b>
+    </div>
+    <div class="md-corpo">
+      <p>O sistema verificará no Autentique quais kits já foram assinados por todas as partes e fará o download automático dos documentos, arquivando-os na pasta de assinados no Drive. Kits com assinatura pendente não serão incluídos. Deseja continuar?</p>
+      <div class="campo" style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="b" onclick="fechar('ovBaixarTodosAdmKit')">Voltar</button>
+        <button class="b sim" id="btnConfirmarBaixarTodosAdmKit" onclick="confirmarBaixarTodosAdmKit()">Sim, baixar e arquivar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: PROVISÃO ===================== -->
+<div class="ov" id="ovProv">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovProv')">&times;</button>
+      <b id="provNome"></b>
+      <span id="provSub"></span>
+    </div>
+    <div class="md-corpo" id="provCorpo"></div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: REGISTRAR ABONO ===================== -->
+<div class="ov" id="ovAbono">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovAbono')">&times;</button>
+      <b id="abNome"></b>
+      <span id="abSub"></span>
+    </div>
+    <div class="md-corpo">
+      <div class="msg" id="abMsg"></div>
+
+      <div class="campo">
+        <label>Quando o colaborador pediu a venda dos dias?</label>
+        <input type="date" id="abData">
+        <div class="dica" id="abDica"></div>
+      </div>
+
+      <label style="display:flex;gap:9px;align-items:flex-start;background:var(--warn-soft);border-radius:9px;
+        padding:11px 13px;margin-bottom:13px;font-size:12.5px;line-height:1.5;cursor:pointer">
+        <input type="checkbox" id="abExcecao" onchange="toggleExcecao()" style="margin-top:2px">
+        <span>Registrar como <b>exceção</b> (o pedido está fora do prazo legal, mas o DP decidiu aceitar)</span>
+      </label>
+
+      <div class="campo" id="abBoxJust" style="display:none">
+        <label>Justificativa da exceção</label>
+        <textarea id="abJust" rows="2" placeholder="Ex.: pedido verbal comprovado, registrado em ata do DP."></textarea>
+        <div class="dica">Obrigatória. Fica na trilha de auditoria com o seu nome.</div>
+      </div>
+
+      <button class="b pri" id="abBtn" onclick="confirmarAbono()">Registrar e liberar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== AFASTAMENTOS: modais ===================== -->
+<div class="ov" id="ovAfastPericia"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovAfastPericia')">&times;</button><b>Agendar perícia</b><span>Registro do agendamento comunicado pelo colaborador</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="apMsg"></div>
+    <div class="campo"><label>Data do agendamento</label><input type="date" id="apData"></div>
+    <div class="campo"><label>Comprovante <span style="font-weight:400">(opcional)</span></label><input type="file" id="apArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="apBtn" onclick="confirmarAfastPericia()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovAfastDecisao"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovAfastDecisao')">&times;</button><b>Registrar decisão do INSS</b><span>Comunicado de Decisão</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="adMsg"></div>
+    <div class="campo"><label>Resultado</label>
+      <select id="adResultado">
+        <option value="DEFERIDO">Deferido</option>
+        <option value="INDEFERIDO">Indeferido</option>
+        <option value="PRORROGADO">Prorrogado</option>
+      </select>
+    </div>
+    <div class="campo"><label>Comunicado de decisão <span style="font-weight:400">(opcional)</span></label><input type="file" id="adArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="adBtn" onclick="confirmarAfastDecisao()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovAfastProrrogar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovAfastProrrogar')">&times;</button><b>Prorrogar afastamento</b><span>Novo atestado, período seguinte</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="apzMsg"></div>
+    <div class="campo"><label>Dias do novo atestado</label><input type="number" id="apzDias" min="1" step="1"></div>
+    <div class="campo"><label>Data de início <span style="font-weight:400">(opcional — padrão: dia seguinte ao fim anterior)</span></label><input type="date" id="apzInicio"></div>
+    <div class="campo"><label>Novo atestado <span style="font-weight:400">(opcional)</span></label><input type="file" id="apzArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="apzBtn" onclick="confirmarAfastProrrogar()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovAfastExame"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovAfastExame')">&times;</button><b>Exame ocupacional de retorno</b><span>Obrigatório (NR-7) antes do retorno</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="aeMsg"></div>
+    <div class="campo"><label>Data do exame</label><input type="date" id="aeData"></div>
+    <div class="campo"><label>Resultado</label>
+      <select id="aeResultado"><option value="APTO">Apto</option><option value="INAPTO">Inapto</option></select>
+    </div>
+    <div class="campo"><label>Atestado do exame <span style="font-weight:400">(opcional)</span></label><input type="file" id="aeArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="aeBtn" onclick="confirmarAfastExame()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovAfastRetornar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovAfastRetornar')">&times;</button><b>Confirmar retorno ao trabalho</b><span>Encerra a ocorrência</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="arMsg"></div>
+    <div class="campo"><label>Data do retorno</label><input type="date" id="arData"></div>
+    <button class="b pri" id="arBtn" onclick="confirmarAfastRetornar()">Confirmar retorno</button>
+  </div>
+</div></div>
+
+<!-- ===================== RESCISÃO: modais ===================== -->
+<div class="ov" id="ovRescAgendar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescAgendar')">&times;</button><b>Agendar comparecimento</b></div>
+  <div class="md-corpo">
+    <div class="msg" id="raMsg"></div>
+    <div class="campo"><label>Data</label><input type="date" id="raData"></div>
+    <div class="campo"><label>Local</label><input type="text" id="raLocal"></div>
+    <div class="campo"><label>Horário <span style="font-weight:400">(opcional)</span></label><input type="text" id="raHorario" placeholder="Ex.: 14h"></div>
+    <button class="b pri" id="raBtn" onclick="confirmarRescAgendar()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescRegistrarDireto"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescRegistrarDireto')">&times;</button><b>Registrar direto</b><span>Pedido de demissão sem agendamento nem redução de aviso</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="rrdMsg"></div>
+    <p>Confirma que <b id="rrdNome"></b> compareceu e pediu demissão diretamente, sem passar por agendamento?</p>
+    <button class="b pri" id="rrdBtn" onclick="confirmarRescRegistrarDireto()">Confirmar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescComparecimento"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescComparecimento')">&times;</button><b>Registrar comparecimento</b></div>
+  <div class="md-corpo">
+    <div class="msg" id="rcMsg"></div>
+    <div class="campo"><label>O colaborador compareceu?</label>
+      <select id="rcCompareceu" onchange="toggleRcCompareceu()"><option value="sim">Sim</option><option value="nao">Não</option></select>
+    </div>
+    <div class="campo" id="rcBoxAviso"><label>Opção de aviso prévio</label>
+      <select id="rcAvisoOpcao"><option value="7_DIAS">Redução de 7 dias corridos</option><option value="2_HORAS">Redução de 2 horas por dia</option></select>
+    </div>
+    <div class="campo" id="rcBoxNovaData" style="display:none"><label>Novo agendamento <span style="font-weight:400">(opcional)</span></label><input type="date" id="rcNovaData"></div>
+    <button class="b pri" id="rcBtn" onclick="confirmarRescComparecimento()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescExame"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescExame')">&times;</button><b>Marcar exame demissional</b></div>
+  <div class="md-corpo">
+    <div class="msg" id="reMsg"></div>
+    <div class="campo"><label>Data do exame</label><input type="date" id="reData"></div>
+    <button class="b pri" id="reBtn" onclick="confirmarRescExame()">Salvar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescExameDispensar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescExameDispensar')">&times;</button><b>Dispensar exame demissional</b><span>Exame anterior com menos de 90 dias — não gera automação de exame</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="redMsg"></div>
+    <div class="campo"><label>Motivo</label><input type="text" id="redMotivo"></div>
+    <button class="b pri" id="redBtn" onclick="confirmarRescExameDispensar()">Confirmar dispensa</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescDesligar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescDesligar')">&times;</button><b>Confirmar desligamento</b><span>Dispara as automações de TI e e-mail demissional</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="rdMsg"></div>
+    <div class="campo"><label>Data do desligamento</label><input type="date" id="rdData"></div>
+    <button class="b pri" id="rdBtn" onclick="confirmarRescDesligar()">Confirmar desligamento</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescAnexar"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescAnexar')">&times;</button><b>Anexar rescisão calculada</b><span>PDF do Alterdata</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="rxMsg"></div>
+    <div class="campo"><label>Arquivo</label><input type="file" id="rxArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="rxBtn" onclick="confirmarRescAnexar()">Enviar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescValores"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescValores')">&times;</button><b>Confirmar valores</b><span>TRCT e FGTS (rateio manual)</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="rvMsg"></div>
+    <div class="campo"><label>Valores encontrados no documento</label><div id="rvCandidatos"></div></div>
+    <div class="campo"><label>Valor líquido do TRCT</label><input type="text" id="rvTrct" placeholder="Ex.: 1.234,56"></div>
+    <div class="campo"><label>FGTS</label><input type="text" id="rvFgts" placeholder="Ex.: 334,11"></div>
+    <button class="b pri" id="rvBtn" onclick="confirmarRescValores()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- ===================== MODAL: NOVA RESCISÃO (incluída pelo DP) ===================== -->
+<div class="ov" id="ovRescNova"><div class="md rf-md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescNova')" aria-label="Fechar">&times;</button><b>Nova rescisão</b><span>Incluída direto pelo DP, para qualquer colaborador da empresa</span></div>
+  <div class="md-corpo">
+    <div class="rf-sec">
+      <label class="rf-tit" for="rnColabBusca">Colaborador</label>
+      <div class="campo rf-busca" id="rnColabCampo">
+        <svg class="rf-lupa" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+        <input type="text" id="rnColabBusca" placeholder="Digite o nome ou a matrícula" autocomplete="off">
+        <svg class="rf-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+        <div class="topo-dropdown" id="rnColabDrop" style="display:none"></div>
+        <input type="hidden" id="rnColabId">
+      </div>
+    </div>
+
+    <div class="rf-sec">
+      <div class="rf-tit" id="rnTipoTit">Tipo de rescisão</div>
+      <select id="rnTipo" onchange="onRnTipoChange()" hidden></select>
+      <div class="rf-opcoes rf-seg-grupo" id="rnTipoOpcoes" role="radiogroup" aria-labelledby="rnTipoTit" data-alvo="rnTipo" data-muda="onRnTipoChange"></div>
+    </div>
+
+    <div class="rf-sec">
+      <div class="rf-tit" id="rnModoTit">Como vai ser feita</div>
+      <input type="hidden" id="rnModo" value="DP_CONTATA">
+      <div class="rf-seg rf-seg-grupo" role="radiogroup" aria-labelledby="rnModoTit" data-alvo="rnModo">
+        <button type="button" role="radio" data-v="DP_CONTATA" onclick="rfSeg(this)"><b>DP vai contatar</b><small>O DP fala com o colaborador</small></button>
+        <button type="button" role="radio" data-v="APLICAR" onclick="rfSeg(this)"><b>Já foi aplicada</b><small>Só registrar no sistema</small></button>
+      </div>
+      <div id="rnBoxAviso" style="display:none">
+        <div class="rf-subtit" id="rnAvisoTit">Aviso prévio</div>
+        <input type="hidden" id="rnAvisoModalidade" value="TRABALHADO">
+        <div class="rf-seg rf-seg-grupo" role="radiogroup" aria-labelledby="rnAvisoTit" data-alvo="rnAvisoModalidade">
+          <button type="button" role="radio" data-v="TRABALHADO" onclick="rfSeg(this)"><b>Trabalhado</b></button>
+          <button type="button" role="radio" data-v="INDENIZADO" onclick="rfSeg(this)"><b>Indenizado</b></button>
+        </div>
+      </div>
+      <div id="rnBoxCarta" style="display:none">
+        <div class="rf-subtit">Carta de pedido de demissão <em class="rf-opc">opcional</em></div>
+        <label class="rf-arquivo" for="rnArquivoCarta">
+          <input type="file" id="rnArquivoCarta" accept="application/pdf,image/*" onchange="rfArquivo('rnArquivoCarta')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          <span><b data-vazio="Clique para anexar a carta">Clique para anexar a carta</b><small>PDF ou foto</small></span>
+        </label>
+      </div>
+      <div id="rnBoxLaudo" style="display:none">
+        <div class="rf-subtit">Laudo de Insuficiência <em class="rf-opc">opcional</em></div>
+        <label class="rf-arquivo" for="rnArquivoLaudo">
+          <input type="file" id="rnArquivoLaudo" accept="application/pdf,image/*" onchange="rfArquivo('rnArquivoLaudo')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          <span><b data-vazio="Clique para anexar o laudo">Clique para anexar o laudo</b><small>PDF ou foto</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="rf-sec">
+      <label class="rf-tit" for="rnJustificativa">Justificativa</label>
+      <div class="campo"><textarea id="rnJustificativa" rows="3" placeholder="Explique o motivo da rescisão"></textarea></div>
+    </div>
+
+    <div class="rf-alerta" id="rnBoxEstabilidade" style="display:none">
+      <div class="rf-alerta-tit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+        Estabilidade ativa
+      </div>
+      <div id="rnEstabilidadeAviso" class="rf-alerta-txt"></div>
+      <label class="rf-conf">
+        <input type="checkbox" id="rnConfirmarEstabilidade">
+        <span>Confirmo que quero prosseguir com a dispensa mesmo com a estabilidade ativa.</span>
+      </label>
+      <div class="campo">
+        <label for="rnJustificativaEstabilidade">Justificativa da dispensa durante a estabilidade</label>
+        <textarea id="rnJustificativaEstabilidade" rows="3" placeholder="Explique o motivo — isso normalmente gera reintegração ou indenização."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="md-rodape">
+    <div class="msg" id="rnMsg" role="alert"></div>
+    <div class="rf-acoes">
+      <button type="button" class="b gh" onclick="fechar('ovRescNova')">Cancelar</button>
+      <button type="button" class="b pri" id="rnBtn" onclick="confirmarRescNova()">Registrar rescisão</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="ov" id="ovRescComplementar"><div class="md rf-md rf-largo">
+  <div class="md-cab"><button class="x" onclick="fechar('ovRescComplementar')" aria-label="Fechar">&times;</button><b>Rescisão complementar</b><span>Registro para auditoria e indicadores</span></div>
+  <div class="md-corpo">
+    <div class="rf-sec">
+      <div class="rf-tit">Colaborador</div>
+      <div class="rf-grade rf-g-1-2">
+        <div class="campo"><label for="rcxMatricula">Matrícula</label><input type="text" id="rcxMatricula" inputmode="numeric" autocomplete="off"></div>
+        <div class="campo"><label for="rcxNome">Nome</label><input type="text" id="rcxNome" autocomplete="off"></div>
+      </div>
+      <div class="rf-grade rf-g-2">
+        <div class="campo"><label for="rcxDemissao">Data da demissão original</label><input type="date" id="rcxDemissao"></div>
+        <div class="campo"><label for="rcxTipo">Tipo de demissão <em class="rf-opc">opcional</em></label><input type="text" id="rcxTipo" placeholder="Ex.: Dispensa sem justa causa"></div>
+      </div>
+    </div>
+
+    <div class="rf-sec">
+      <div class="rf-tit">Valores</div>
+      <div class="rf-grade rf-g-2">
+        <div class="campo"><label for="rcxTrctComp">Valor complementar</label><div class="rf-moeda"><span aria-hidden="true">R$</span><input type="text" id="rcxTrctComp" placeholder="300,00" inputmode="decimal"></div></div>
+        <div class="campo"><label for="rcxTrct">TRCT original <em class="rf-opc">opcional</em></label><div class="rf-moeda"><span aria-hidden="true">R$</span><input type="text" id="rcxTrct" placeholder="1.234,56" inputmode="decimal"></div></div>
+      </div>
+    </div>
+
+    <div class="rf-sec">
+      <div class="rf-tit">Pagamento</div>
+      <div class="rf-grade rf-g-2">
+        <div class="campo"><label for="rcxEnvioFin">Envio ao financeiro <em class="rf-opc">opcional</em></label><input type="date" id="rcxEnvioFin"></div>
+        <div class="campo"><label for="rcxPagamento">Data do pagamento <em class="rf-opc">opcional</em></label><input type="date" id="rcxPagamento"></div>
+      </div>
+    </div>
+
+    <div class="rf-sec">
+      <div class="rf-tit" id="rcxMotivoTit">Motivo</div>
+      <select id="rcxMotivo" onchange="toggleRcxCausa()" hidden></select>
+      <div class="rf-opcoes rf-seg-grupo" id="rcxMotivoOpcoes" role="radiogroup" aria-labelledby="rcxMotivoTit" data-alvo="rcxMotivo" data-muda="toggleRcxCausa"></div>
+      <div class="campo" id="rcxBoxCausa" style="display:none"><label for="rcxCausa">Causa do atraso</label><select id="rcxCausa"></select></div>
+      <div class="campo"><label for="rcxCaso">Caso de rescisão de origem <em class="rf-opc">opcional</em></label><input type="text" id="rcxCaso" placeholder="ID do caso, se houver"></div>
+      <div class="campo"><label for="rcxObs">Observação <em class="rf-opc">opcional</em></label><textarea id="rcxObs" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="md-rodape">
+    <div class="msg" id="rcxMsg" role="alert"></div>
+    <div class="rf-acoes">
+      <button type="button" class="b gh" onclick="fechar('ovRescComplementar')">Cancelar</button>
+      <button type="button" class="b pri" id="rcxBtn" onclick="confirmarRescComplementar()">Registrar complementar</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== PROCESSOS TRABALHISTAS: modais ===================== -->
+<div class="ov" id="ovProcTrabNovo"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovProcTrabNovo')">&times;</button><b>Novo processo trabalhista</b><span>Controle de FGTS/INSS a pagar</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="ptMsg"></div>
+    <div class="campo"><label>Número do processo</label><input type="text" id="ptProcesso"></div>
+    <div class="campo"><label>Matrícula <span style="font-weight:400">(opcional)</span></label><input type="text" id="ptMatricula"></div>
+    <div class="campo"><label>Nome do colaborador</label><input type="text" id="ptNome"></div>
+    <div class="campo"><label>Valor do FGTS <span style="font-weight:400">(deixe em branco se não houver)</span></label><input type="text" id="ptFgts" placeholder="Ex.: 1.234,56"></div>
+    <div class="campo"><label>Valor do INSS <span style="font-weight:400">(deixe em branco se não houver)</span></label><input type="text" id="ptInss" placeholder="Ex.: 800,00"></div>
+    <div class="campo"><label>Data da decisão/acordo</label><input type="date" id="ptDecisao"></div>
+    <div class="campo"><label>Prazo de pagamento</label><input type="date" id="ptPrazo"></div>
+    <div class="campo"><label>Escritório responsável <span style="font-weight:400">(opcional)</span></label><input type="text" id="ptEscritorio"></div>
+    <div class="campo"><label>Caso de rescisão de origem <span style="font-weight:400">(opcional)</span></label><input type="text" id="ptCaso"></div>
+    <div class="campo"><label>Observação <span style="font-weight:400">(opcional)</span></label><textarea id="ptObs" rows="2"></textarea></div>
+    <button class="b pri" id="ptBtn" onclick="confirmarProcTrabNovo()">Registrar</button>
+  </div>
+</div></div>
+
+<div class="ov" id="ovProcPagamento"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovProcPagamento')">&times;</button><b id="ppTitulo">Registrar pagamento</b></div>
+  <div class="md-corpo">
+    <div class="msg" id="ppMsg"></div>
+    <div class="campo"><label>Data do pagamento</label><input type="date" id="ppData"></div>
+    <div class="campo"><label>Guia paga <span style="font-weight:400">(opcional)</span></label><input type="file" id="ppArquivo" accept="application/pdf,image/*"></div>
+    <button class="b pri" id="ppBtn" onclick="confirmarProcPagamento()">Salvar</button>
+  </div>
+</div></div>
+
+<!-- ===================== MODAL: DECIDIR MOVIMENTAÇÃO ===================== -->
+<!-- [2026-10-21] Resumo do pedido (com o caminho Gestor → RH → DP) e escolha Aprovar/Reprovar antes de salvar.
+     Sem a parte de decisão, a mesma caixa serve para "Ver detalhes" das já decididas. -->
+<div class="ov" id="ovMovDecidir"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovMovDecidir')">&times;</button><b id="mdTitulo">Decidir movimentação</b><span id="mdSub">Lançamento final na folha</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="mdMsg"></div>
+    <div id="mdCorpoInfo"></div>
+    <div id="mdDecisao">
+      <h4 class="mov-md-tit">Decisão do DP</h4>
+      <div class="mov-escolha" role="radiogroup" aria-label="Decisão do DP">
+        <button type="button" class="mov-op ok" id="mdOpAprovar" role="radio" aria-checked="false" onclick="movEscolher('APROVADA')"><b>Aprovar</b><span>Entra na folha e o gestor é avisado</span></button>
+        <button type="button" class="mov-op cr" id="mdOpReprovar" role="radio" aria-checked="false" onclick="movEscolher('REPROVADA')"><b>Reprovar</b><span>O gestor recebe o motivo por e-mail</span></button>
+      </div>
+      <div class="campo" id="mdBoxFolha" style="display:none">
+        <label for="mdFolha">Folha em que vai refletir</label>
+        <input type="month" id="mdFolha">
+        <div class="dica">Já vem com a competência de início pedida pelo gestor.</div>
+      </div>
+      <div class="campo" id="mdBoxMotivo" style="display:none">
+        <label for="mdMotivo">Motivo trabalhista da reprovação</label>
+        <textarea id="mdMotivo" rows="3" placeholder="O gestor recebe este texto por e-mail."></textarea>
+      </div>
+      <button class="b pri" id="mdBtnConfirmar" onclick="confirmarDecidirMov()" disabled>Escolha aprovar ou reprovar</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== MODAL: IMPORTAR RAIO-X ===================== -->
+<!-- [2026-10-14] Redesenhada: 1) escolher a planilha (arquivo ou Google), 2) conferir colunas e
+     números e confirmar, 3) resultado da importação (antes a caixa fechava e o resultado sumia). -->
+<div class="ov" id="ovRaioX"><div class="md">
+  <div class="md-cab"><button class="x" id="raioxFechar" onclick="fecharRaioX()">&times;</button><b>Importar Raio-X</b><span>Atualiza a base de colaboradores com o relatório do Alterdata</span></div>
+  <div class="md-corpo">
+    <ol class="rx-passos" id="raioxPassos">
+      <li data-p="1"><i>1</i>Planilha</li>
+      <li data-p="2"><i>2</i>Conferência</li>
+      <li data-p="3"><i>3</i>Resultado</li>
+    </ol>
+    <div class="msg" id="raioxMsg"></div>
+
+    <div id="raioxEtapa1">
+      <div class="rx-fonte">
+        <button type="button" class="on" id="raioxFonteArq" onclick="raioxFonte('arquivo')">Arquivo do computador</button>
+        <button type="button" id="raioxFonteGoo" onclick="raioxFonte('google')">Planilha do Google</button>
+      </div>
+      <div id="raioxPainelArq">
+        <label class="rx-drop" id="raioxDrop" for="raioxArquivo">
+          <input type="file" id="raioxArquivo" accept=".xlsx,.xls,.csv" onchange="raioxArquivoEscolhido()">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+          <b id="raioxDropTit">Arraste o arquivo aqui ou clique para escolher</b>
+          <span id="raioxDropSub">Excel (.xlsx) ou CSV exportado do Alterdata</span>
+        </label>
+      </div>
+      <div id="raioxPainelGoo" style="display:none">
+        <div class="campo">
+          <label for="raioxSheetId">Link ou ID da planilha</label>
+          <input type="text" id="raioxSheetId" placeholder="https://docs.google.com/spreadsheets/d/…" oninput="raioxMudouOrigem()">
+          <div class="dica">A planilha precisa estar compartilhada com autodppessoal@cieds.org.br (pode ser como leitor).</div>
+        </div>
+      </div>
+      <button class="b pri" id="raioxBtnPreview" onclick="previewRaioX()" disabled>Validar planilha</button>
+    </div>
+
+    <div id="raioxEtapa2" style="display:none">
+      <div class="rx-origem"><span id="raioxOrigem"></span><a href="#" onclick="raioxVoltar();return false">Trocar planilha</a></div>
+      <div class="rx-kpis" id="raioxKpis"></div>
+      <h4 class="rx-tit">Colunas encontradas</h4>
+      <div class="rx-cols" id="raioxCols"></div>
+      <div class="rx-aviso">
+        <b>O que acontece ao importar</b>
+        <ul>
+          <li>Atualiza cargo, departamento, salário e os demais dados de quem já está na base. Toda mudança fica no histórico.</li>
+          <li>Inclui quem é novo no Raio-X.</li>
+          <li><b>Marca como desligado quem não aparece neste Raio-X</b> e não tem rescisão no portal (PJ fica de fora).</li>
+          <li>Recalcula os períodos de férias e, se houver inconsistência de desligamento, avisa rescisao@cieds.org.br.</li>
+        </ul>
+      </div>
+      <label class="rx-conf"><input type="checkbox" id="raioxConfirmo" onchange="raioxAtualizarBotoes()"> Conferi: é o Raio-X completo e mais recente.</label>
+      <div class="rx-acoes">
+        <button class="b gh" id="raioxBtnVoltar" onclick="raioxVoltar()">Voltar</button>
+        <button class="b sim" id="raioxBtnImportar" onclick="confirmarImportarRaioX()" disabled>Importar Raio-X</button>
+      </div>
+    </div>
+
+    <div id="raioxEtapa3" style="display:none">
+      <div id="raioxResultado"></div>
+      <button class="b pri" onclick="fecharRaioX()">Concluir</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== MODAL: ENVIAR AO FINANCEIRO ===================== -->
+
+<!-- ===================== MODAL: NOVO PEDIDO DE VENDA DE DIAS ===================== -->
+<div class="ov" id="ovNovoAbono"><div class="md">
+  <div class="md-cab"><button class="x" onclick="fechar('ovNovoAbono')">&times;</button><b>Registrar pedido de venda de dias</b><span>Qualquer colaborador da empresa, período aquisitivo em curso</span></div>
+  <div class="md-corpo">
+    <div class="msg" id="naMsg"></div>
+
+    <div class="campo">
+      <label>Colaborador</label>
+      <input type="text" id="naColabBusca" placeholder="Digite o nome..." autocomplete="off">
+      <div class="topo-dropdown" id="naColabDrop" style="display:none"></div>
+      <input type="hidden" id="naIdPeriodo">
+    </div>
+
+    <div class="msg" id="naInfoColab" style="display:none"></div>
+
+    <div class="campo">
+      <label>Quantos dias quer vender</label>
+      <input type="number" id="naDias" min="1" step="1" value="10">
+    </div>
+
+    <button class="b pri" id="naBtn" onclick="confirmarNovoAbono()">Registrar</button>
+  </div>
+</div></div>
+
+<!-- ===================== MODAL: FICHA DA ADMISSÃO ===================== -->
+<div class="ov" id="ovAdmFicha">
+  <div class="md">
+    <div class="md-cab">
+      <button class="x" onclick="fechar('ovAdmFicha')">&times;</button>
+      <b id="admFichaNome"></b>
+      <span id="admFichaSub"></span>
+    </div>
+    <div class="md-corpo">
+      <div class="msg" id="admFichaMsg"></div>
+      <div id="admFichaCorpo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- [FIX 2026-09-28] O balão de avisos tinha saído no lote de edições de 03/09 (f14e01f): desde então
+     toast() só escrevia no console e nenhum aviso de sucesso ou erro aparecia na tela. -->
+<div class="toast" id="toast"></div>
+
+<?!= include('Script'); ?>
+</body>
+</html>
+

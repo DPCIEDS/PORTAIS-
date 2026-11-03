@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia de Afastamento · Para Gestores · CIEDS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#0E5A6B; --brand-dark:#093F4B; --brand-soft:#E7F1F3;
+  --accent:#E4007C; --ink:#17252a; --muted:#6b7c81; --line:#e6ecee; --bg:#f5f8f9;
+  --ok:#1a8a4b; --ok-soft:#e9f7ef; --no:#c0392b; --no-soft:#fdeceb;
+  --warn:#c47f00; --warn-soft:#fdf4e3;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+.capa{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:54px 28px;text-align:center}
+.capa .emoji{font-size:52px}
+.capa h1{margin:14px 0 6px;font-size:32px;letter-spacing:-.5px}
+.capa p{margin:0;opacity:.82;font-size:15px;max-width:520px;margin:0 auto}
+.capa .sel{display:inline-block;margin-top:18px;background:rgba(255,255,255,.16);padding:7px 16px;
+  border-radius:99px;font-size:12.5px;font-weight:700}
+.wrap{max-width:880px;margin:0 auto;padding:34px 22px 80px}
+
+.atencao{background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:16px;
+  padding:22px 26px;margin-bottom:32px;box-shadow:0 4px 20px rgba(9,63,75,.07)}
+.atencao b{color:var(--accent);display:block;font-size:15px;margin-bottom:6px}
+.atencao p{margin:0;font-size:14.5px}
+
+h2{font-size:21px;margin:38px 0 4px;display:flex;align-items:center;gap:10px}
+h2 .n{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.sub{color:var(--muted);font-size:14px;margin:0 0 18px 40px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.c{background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px;box-shadow:0 4px 20px rgba(9,63,75,.06)}
+.c .ic{font-size:28px;display:block;margin-bottom:10px}
+.c b{display:block;font-size:15px;margin-bottom:5px}
+.c p{margin:0;font-size:13.5px;color:var(--muted)}
+.c.sim{border-top:4px solid var(--ok)}
+.c.nao{border-top:4px solid var(--no)}
+.c.talvez{border-top:4px solid var(--warn)}
+
+.linha{display:flex;gap:8px;align-items:stretch;margin-top:16px;flex-wrap:wrap}
+.etapa{background:#fff;border:2px solid var(--brand);border-radius:12px;padding:14px 16px;text-align:center;flex:1;min-width:120px}
+.etapa b{display:block;font-size:14px;color:var(--brand)}
+.etapa span{font-size:12px;color:var(--muted)}
+.etapa.forte{background:var(--brand-soft)}
+.seta{display:flex;align-items:center;font-size:20px;color:var(--muted);font-weight:800}
+
+.destaque{background:var(--brand-soft);border-radius:16px;padding:24px 26px;margin-top:20px}
+.destaque b{color:var(--brand);font-size:15.5px}
+.destaque p{margin:8px 0 0;font-size:14px}
+.destaque.alerta{background:var(--no-soft)}
+.destaque.alerta b{color:var(--no)}
+.destaque.aviso{background:var(--warn-soft)}
+.destaque.aviso b{color:var(--warn)}
+
+.passos{counter-reset:p}
+.passo{background:#fff;border:1px solid var(--line);border-radius:15px;padding:18px 20px 18px 62px;position:relative;
+  margin-bottom:11px;box-shadow:0 4px 20px rgba(9,63,75,.05)}
+.passo:before{counter-increment:p;content:counter(p);position:absolute;left:18px;top:18px;width:28px;height:28px;
+  border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:flex;
+  align-items:center;justify-content:center}
+.passo b{display:block;font-size:15px;margin-bottom:3px}
+.passo p{margin:0;font-size:13.5px;color:var(--muted)}
+
+.faq{background:#fff;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;overflow:hidden}
+.faq summary{padding:15px 18px;font-weight:700;font-size:14.5px;cursor:pointer;list-style:none;display:flex;
+  justify-content:space-between;gap:10px;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:'+';color:var(--accent);font-size:20px;font-weight:800}
+.faq[open] summary:after{content:'−'}
+.faq .r{padding:0 18px 17px;font-size:14px;color:var(--muted)}
+
+.rodape{text-align:center;color:var(--muted);font-size:12.5px;margin-top:46px;padding-top:22px;border-top:1px solid var(--line)}
+@media(max-width:640px){
+  .capa h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+
+<div class="capa">
+  <div class="emoji">🩺</div>
+  <h1>Guia de Afastamento</h1>
+  <p>Como registrar o afastamento de alguém da sua equipe — de um atestado de poucos dias a um acidente de trabalho.</p>
+  <div class="sel">Para gestores · Departamento Pessoal · CIEDS</div>
+</div>
+
+<div class="wrap">
+
+  <div class="atencao">
+    <b>O essencial em uma frase</b>
+    <p>Quando alguém da sua equipe apresentar um atestado, registre no portal e anexe o documento.
+    O sistema cuida do resto: guarda o atestado, avisa o DP e, quando for o caso, aciona o INSS ou o técnico de segurança.</p>
+  </div>
+
+  <h2><span class="n">1</span> Os três caminhos de um afastamento</h2>
+  <p class="sub">Todo afastamento começa igual — com um atestado. O que muda é o que vem depois.</p>
+  <div class="cards">
+    <div class="c sim">
+      <span class="ic">📄</span>
+      <b>Até 15 dias</b>
+      <p>Responsabilidade da empresa. Você registra, anexa o atestado, e pronto. O colaborador é pago normalmente.</p>
+    </div>
+    <div class="c talvez">
+      <span class="ic">🏥</span>
+      <b>Mais de 15 dias</b>
+      <p>A partir do 16º dia é o INSS quem paga. O sistema envia ao colaborador as orientações e o DUT para a perícia.</p>
+    </div>
+    <div class="c nao">
+      <span class="ic">⚠️</span>
+      <b>Acidente de trabalho</b>
+      <p>Além de tudo acima, aciona o técnico de segurança para emitir a CAT. Você marca isso ao registrar.</p>
+    </div>
+  </div>
+
+  <h2><span class="n">2</span> A regra dos 15 dias</h2>
+  <p class="sub">É o divisor de águas de todo afastamento por doença.</p>
+
+  <div class="linha">
+    <div class="etapa forte">
+      <b>Dias 1 a 15</b>
+      <span>A empresa paga. Fica tudo interno.</span>
+    </div>
+    <div class="seta">→</div>
+    <div class="etapa">
+      <b>Dia 16 em diante</b>
+      <span>O INSS assume. Precisa de perícia.</span>
+    </div>
+  </div>
+
+  <div class="destaque">
+    <b>O que o sistema faz sozinho quando passa de 15 dias</b>
+    <p>Assim que você registra um afastamento com mais de 15 dias, o colaborador e você recebem por e-mail:
+    as orientações de como agendar a perícia no Meu INSS, o DUT (documento que ele leva à perícia),
+    e o pedido para enviar de volta o comprovante de agendamento e o resultado. Você não precisa redigir nada.</p>
+  </div>
+
+  <h2><span class="n">3</span> Quando é acidente de trabalho</h2>
+  <p class="sub">Acidente tem um caminho próprio — e um prazo curto. Não deixe para depois.</p>
+
+  <div class="cards">
+    <div class="c nao">
+      <span class="ic">🔧</span>
+      <b>Típico</b>
+      <p>Aconteceu durante o trabalho: uma queda, um corte, um esforço que machucou.</p>
+    </div>
+    <div class="c nao">
+      <span class="ic">🚗</span>
+      <b>De trajeto</b>
+      <p>Aconteceu no caminho de casa para o trabalho, ou do trabalho para casa.</p>
+    </div>
+    <div class="c nao">
+      <span class="ic">🫁</span>
+      <b>Doença ocupacional</b>
+      <p>Uma doença causada pela atividade — por exemplo, lesão por esforço repetitivo.</p>
+    </div>
+  </div>
+
+  <div class="destaque alerta">
+    <b>Por que registrar como acidente importa</b>
+    <p>Ao marcar "acidente de trabalho" no portal e preencher os dados, o sistema gera o RAT já preenchido
+    e envia ao técnico de segurança, que emite a CAT (Comunicação de Acidente de Trabalho). A CAT é uma
+    obrigação legal e protege o colaborador — ela garante os direitos dele junto ao INSS, inclusive a
+    estabilidade no emprego após o retorno. Sem CAT, esses direitos ficam em risco.</p>
+  </div>
+
+  <h2><span class="n">4</span> Como registrar, passo a passo</h2>
+  <p class="sub">Do atestado na sua mão ao registro completo, em poucos minutos.</p>
+
+  <div class="passos">
+    <div class="passo">
+      <b>Abra o portal e vá em Afastamentos</b>
+      <p>No menu lateral, clique em 🩺 Afastamentos e depois em "Registrar afastamento".</p>
+    </div>
+    <div class="passo">
+      <b>Escolha o colaborador e o tipo</b>
+      <p>Selecione quem se afastou e o tipo (auxílio-doença, licença-maternidade, etc). Você só vê a sua equipe.</p>
+    </div>
+    <div class="passo">
+      <b>Informe início, dias e CID</b>
+      <p>A data de início e quantos dias diz o atestado. O CID é opcional. O sistema calcula o retorno previsto.</p>
+    </div>
+    <div class="passo">
+      <b>Foi acidente de trabalho? Marque a caixinha</b>
+      <p>Se foi, marque "Este afastamento é por acidente de trabalho" e preencha os campos que aparecem:
+      data, hora, local, parte lesionada e um breve relato.</p>
+    </div>
+    <div class="passo">
+      <b>Anexe o atestado</b>
+      <p>Um PDF ou uma foto do atestado. Ele fica guardado com segurança, vinculado ao colaborador.</p>
+    </div>
+    <div class="passo">
+      <b>Registrar</b>
+      <p>Pronto. O sistema faz os avisos automáticos conforme o caso — INSS, técnico de segurança, DP.</p>
+    </div>
+  </div>
+
+  <h2><span class="n">5</span> Depois que você registra</h2>
+  <p class="sub">O que o colaborador precisa fazer, e o que você acompanha.</p>
+
+  <div class="destaque aviso">
+    <b>Se foi para o INSS (mais de 15 dias)</b>
+    <p>O colaborador precisa agendar a perícia no Meu INSS e, depois dela, enviar o resultado (Comunicado de
+    Decisão) ao DP. Sem esse documento, o DP não consegue regularizar a situação na folha nem organizar o
+    retorno. O e-mail automático já explica tudo isso a ele — mas um empurrãozinho seu ajuda.</p>
+  </div>
+
+  <div class="destaque">
+    <b>Quando o afastamento termina</b>
+    <p>No fim do período, o colaborador retorna. Em afastamentos longos, pode haver exame médico de retorno
+    antes de voltar ao posto. O DP conduz essa parte — você só precisa estar ciente da data prevista de retorno,
+    que aparece no card do afastamento no portal.</p>
+  </div>
+
+  <h2><span class="n">6</span> Dúvidas frequentes</h2>
+
+  <details class="faq">
+    <summary>O atestado é de 3 dias. Preciso registrar mesmo assim?</summary>
+    <div class="r">Sim. Todo atestado deve ser registrado, mesmo os curtos. É assim que o DP tem o controle das ausências
+    e consegue conciliar tudo com a folha. Atestados de poucos dias são responsabilidade da empresa e não vão ao INSS,
+    mas o registro continua importante.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Não tenho certeza se foi acidente de trabalho. O que faço?</summary>
+    <div class="r">Na dúvida, registre o afastamento normalmente e fale com o DP antes de marcar como acidente.
+    O DP ajuda a avaliar. Mas atenção: se foi acidente, o registro correto protege o colaborador — então não
+    deixe de sinalizar quando houver indício de que a lesão tem relação com o trabalho ou com o trajeto.</div>
+  </details>
+
+  <details class="faq">
+    <summary>O que é o RAT e o que é a CAT?</summary>
+    <div class="r">O RAT (Relatório de Acidente do Trabalho) é o documento interno que reúne as informações do acidente —
+    é o que você preenche no portal. A CAT (Comunicação de Acidente de Trabalho) é o documento oficial enviado ao
+    governo, emitido pelo técnico de segurança a partir do RAT. Você cuida do RAT; o técnico cuida da CAT.</div>
+  </details>
+
+  <details class="faq">
+    <summary>O colaborador me mandou o atestado por WhatsApp. Serve?</summary>
+    <div class="r">Serve. Você pode anexar uma foto do atestado no momento do registro. O importante é que o documento
+    fique guardado no sistema, vinculado ao colaborador. Prefira uma foto nítida, onde dê para ler a data, os dias
+    e a assinatura do médico.</div>
+  </details>
+
+  <details class="faq">
+    <summary>E se o colaborador precisar prorrogar o afastamento?</summary>
+    <div class="r">Quando ele trouxer um novo atestado prorrogando, registre como um novo afastamento, com a nova
+    data de início e os novos dias. O DP acompanha a sequência. Em afastamentos pelo INSS, a prorrogação também
+    passa por nova perícia — as orientações vão no e-mail automático.</div>
+  </details>
+
+  <details class="faq">
+    <summary>Quem mais fica sabendo quando eu registro?</summary>
+    <div class="r">O DP é sempre avisado. Em afastamentos que vão ao INSS, o colaborador recebe as orientações.
+    Em acidentes de trabalho, o técnico de segurança recebe o RAT, com você e o DP em cópia. Tudo fica registrado
+    e rastreável.</div>
+  </details>
+
+  <div class="rodape">
+    Guia de Afastamento · Departamento Pessoal · CIEDS<br>
+    Em caso de dúvida, fale com o DP — estamos aqui para ajudar.
+  </div>
+
+</div>
+
+</body>
+</html>

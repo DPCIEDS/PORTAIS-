@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#247662; --brand-dark:#18564A; --brand-soft:#E3F1EC;
+  --accent:#B51061; --accent-soft:#F8E8F0;
+  --ink:#17252a; --muted:#6b7c81; --line:#e6ecee; --bg:#f4f8f7;
+  --ok:#2A8E47; --ok-soft:#E7F5EC;
+  --warn:#c47f00; --warn-soft:#fdf4e3;
+  --danger:#C9142E; --danger-soft:#FBEAEC;
+  --r:16px;
+  --sh:0 4px 20px rgba(36,118,98,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+
+.topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:32px 22px 46px;
+  text-align:center}
+.topo .selo{display:inline-block;background:rgba(255,255,255,.14);padding:5px 14px;border-radius:99px;
+  font-size:11.5px;font-weight:700;letter-spacing:.3px;margin-bottom:14px}
+.topo h1{margin:0 0 8px;font-size:26px}
+.topo p{margin:0 auto;opacity:.85;font-size:14px;max-width:520px}
+
+.wrap{max-width:760px;margin:-26px auto 60px;padding:0 18px}
+
+/* ---- cartão "O essencial" (resumo pra leitura rápida) ---- */
+.essencial{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  padding:20px 22px;margin-bottom:20px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.ess-item{display:flex;gap:12px;align-items:flex-start}
+.ess-ico{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:19px}
+.ess-item b{display:block;font-size:14px;color:var(--ink);line-height:1.35}
+.ess-item small{font-size:12.5px;color:var(--muted)}
+
+.sec{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  padding:26px 26px 22px;margin-bottom:20px}
+.sec h2{margin:0 0 6px;font-size:18px;display:flex;align-items:center;gap:10px}
+.sec h2 .n{background:var(--brand);color:#fff;width:26px;height:26px;border-radius:50%;font-size:12.5px;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.sec>p.desc{margin:0 0 18px;color:var(--muted);font-size:13.5px}
+
+.tipos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tipo{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.tipo b{display:block;font-size:13.5px;margin-bottom:4px}
+.tipo span{font-size:12.5px;color:var(--muted);line-height:1.5}
+.tipo.destaque{border-color:#BFDCCF;background:var(--ok-soft)}
+.tipo .janela{display:block;font-size:14px;color:var(--brand-dark);font-weight:700;margin-bottom:2px}
+.tipo .dias{display:inline-block;font-size:11px;font-weight:800;color:var(--ok);
+  background:#fff;border:1px solid #BFDCCF;border-radius:99px;padding:2px 9px;margin-top:6px}
+
+.nota{margin:14px 0 0;font-size:13px;color:var(--muted)}
+
+.timeline{position:relative;padding-left:34px}
+.timeline::before{content:'';position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.etapa{position:relative;padding-bottom:22px}
+.etapa:last-child{padding-bottom:0}
+.etapa::before{content:attr(data-n);position:absolute;left:-34px;top:0;width:28px;height:28px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.etapa b{display:block;font-size:14px;margin-bottom:3px}
+.etapa span{font-size:13px;color:var(--muted);display:block}
+.etapa .quem{display:inline-block;margin-top:6px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.quem.dp{background:var(--brand-soft);color:var(--brand-dark)}
+.quem.voce{background:var(--accent-soft);color:var(--accent)}
+.data-forte{color:var(--brand-dark);font-weight:800;white-space:nowrap}
+.etapa span.data-forte{display:inline}
+
+.explica{background:var(--brand-soft);color:var(--brand-dark);border-radius:12px;padding:14px 16px;
+  font-size:13px;line-height:1.55;margin-top:14px}
+.explica.aviso-cor{background:var(--warn-soft);color:#8a5b00}
+.explica.ok-cor{background:var(--ok-soft);color:#185F3B}
+
+.tranquilo{display:flex;gap:12px;align-items:flex-start;background:var(--ok-soft);border:1px solid #BFDCCF;
+  border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.tranquilo .ico{font-size:20px;flex:none;line-height:1.3}
+.tranquilo b{display:block;font-size:14px;color:#185F3B;margin-bottom:2px}
+.tranquilo span{font-size:13px;color:#3E7259;line-height:1.55}
+
+.exemplo{border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:14px;background:var(--bg)}
+.exemplo b.titulo{display:block;font-size:13.5px;margin-bottom:10px;color:var(--brand-dark)}
+.exemplo .passo{display:flex;gap:10px;padding:7px 0;font-size:13px;color:var(--ink);align-items:flex-start}
+.exemplo .passo .tag{flex:none;font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:#fff;
+  border:1px solid var(--line);color:var(--muted)}
+.exemplo .passo.final{background:var(--ok-soft);border-radius:10px;padding:10px 12px;margin-top:6px}
+.exemplo .passo.final .tag{background:var(--ok);color:#fff;border-color:var(--ok)}
+
+.desfechos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px}
+.desfecho{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px}
+.desfecho.ok{border-color:#BFDCCF;background:var(--ok-soft)}
+.desfecho b{display:block;font-size:13.5px;margin-bottom:4px}
+.desfecho p{margin:0;font-size:12.5px;color:var(--muted)}
+
+.faq{border-top:1px solid var(--line);padding:14px 0}
+.faq:first-child{border-top:0;padding-top:0}
+.faq b{display:block;font-size:13.5px;margin-bottom:4px}
+.faq p{margin:0;font-size:13px;color:var(--muted)}
+
+.rodape{text-align:center;font-size:12px;color:var(--muted);padding:10px 18px 30px}
+.rodape .contato{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 22px;
+  max-width:420px;margin:0 auto 18px;box-shadow:var(--sh)}
+.rodape .contato b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+.rodape .contato a{color:var(--brand);font-weight:700;text-decoration:none}
+
+@media(max-width:560px){
+  .topo h1{font-size:21px}
+  .sec{padding:20px 18px}
+}
+</style>
+</head>
+<body>
+
+  <div class="topo">
+    <span class="selo">DEPARTAMENTO PESSOAL · CIEDS</span>
+    <h1>Férias de Fim de Ano 2026</h1>
+    <p>Um guia rápido pra você organizar o descanso do seu time com tranquilidade.</p>
+  </div>
+
+  <div class="wrap">
+
+    <!-- O ESSENCIAL (leitura de 10 segundos) -->
+    <div class="essencial">
+      <div class="ess-item">
+        <span class="ess-ico">🗓️</span>
+        <div><b>Agende de 09/09 a 22/09/2026</b><small>fora dessa janela, o agendamento não abre</small></div>
+      </div>
+      <div class="ess-item">
+        <span class="ess-ico">🌴</span>
+        <div><b>Duas opções de 10 dias</b><small>15–24/12 ou 28/12–06/01</small></div>
+      </div>
+      <div class="ess-item">
+        <span class="ess-ico">✅</span>
+        <div><b>O DP responde até 08/10/2026</b><small>você é avisado por e-mail</small></div>
+      </div>
+    </div>
+
+    <!-- INTRO -->
+    <div class="sec">
+      <p style="margin:0;font-size:14px;line-height:1.7">
+        O fim de ano é tempo de descansar, estar com quem a gente ama e recarregar as energias. Para
+        organizar bem esse período para todo mundo, as férias de fim de ano de 2026 seguem um formato
+        simples, com <b>duas opções fixas de data</b>. Este guia mostra, em poucos minutos, como funciona
+        e o que você precisa fazer.
+      </p>
+    </div>
+
+    <!-- 1. AS DUAS OPÇÕES -->
+    <div class="sec">
+      <h2><span class="n">1</span>Duas opções de férias</h2>
+      <p class="desc">Neste fim de ano, o período é pré-definido: temos duas janelas fixas de 10 dias. Você escolhe uma delas para cada pessoa da equipe.</p>
+      <div class="tipos">
+        <div class="tipo destaque">
+          <b>Opção 1</b>
+          <span class="janela">15/12/2026 a 24/12/2026</span>
+          <span class="dias">10 dias corridos</span>
+        </div>
+        <div class="tipo destaque">
+          <b>Opção 2</b>
+          <span class="janela">28/12/2026 a 06/01/2027</span>
+          <span class="dias">10 dias corridos</span>
+        </div>
+      </div>
+      <p class="nota">Cada pessoa participa de <b>apenas uma das opções</b>. Não é possível usar as duas janelas de uma vez.</p>
+    </div>
+
+    <!-- 2. QUEM PODE PARTICIPAR -->
+    <div class="sec">
+      <h2><span class="n">2</span>Quem pode participar</h2>
+      <p class="desc">A pessoa aparece na sua lista de agendamento quando cumpre estas duas condições:</p>
+      <div class="tipos">
+        <div class="tipo">
+          <b>✅ Tem direito a férias até lá</b>
+          <span>Mesmo que o período aquisitivo ainda esteja em andamento hoje, ela entra na lista se ele terminar antes do início da opção escolhida.</span>
+        </div>
+        <div class="tipo">
+          <b>✅ Tem saldo de 10 dias ou mais</b>
+          <span>É o mínimo para completar qualquer uma das opções. Com saldo menor, a pessoa não aparece para agendamento.</span>
+        </div>
+      </div>
+      <p class="nota">Se alguém do seu time não aparecer na lista, é porque ainda não cumpre esses requisitos. Em caso de dúvida sobre uma pessoa específica, fale com o DP.</p>
+    </div>
+
+    <!-- 3. REGRA DOS 14 DIAS -->
+    <div class="sec">
+      <h2><span class="n">3</span>A regra dos 14 dias — o sistema cuida disso pra você</h2>
+
+      <div class="tranquilo">
+        <span class="ico">🙂</span>
+        <div>
+          <b>Você não precisa calcular nada.</b>
+          <span>O sistema confere o histórico de cada pessoa e ajusta as datas sozinho quando necessário. Antes de confirmar, o Portal sempre mostra as datas finais na tela.</span>
+        </div>
+      </div>
+
+      <p class="desc" style="margin-bottom:0">Por que esse cuidado existe: quando as férias são divididas, a lei pede que pelo menos um dos períodos tenha 14 dias corridos ou mais (art. 134, §1º, da CLT).</p>
+
+      <div class="explica aviso-cor">
+        ⚠️ Se nenhuma das frações de férias do período aquisitivo alcançar os 14 dias mínimos o sistema
+        automaticamente atualiza os 10 dias para 14 dias mínimos nesta solicitação, garantindo o
+        fracionamento exigido por lei, sem que você precise fazer conta.
+      </div>
+
+      <div class="exemplo">
+        <b class="titulo">Um exemplo pra ficar claro</b>
+        <div class="passo"><span class="tag">Saldo</span> A pessoa tinha direito a 30 dias, converteu 10 em abono e já tirou 5 dias antes. Sobram 15 dias de saldo.</div>
+        <div class="passo"><span class="tag">Escolhe</span> A Opção 1, que a princípio teria 10 dias.</div>
+        <div class="passo"><span class="tag">Checagem</span> Nem os 5 dias já tirados, nem os 10 da opção alcançam sozinhos o mínimo de 14 dias.</div>
+        <div class="passo final"><span class="tag">Resultado</span> O sistema usa os 15 dias de saldo na mesma solicitação e ajusta a data de início automaticamente, respeitando a regra de que as férias não podem começar em quinta, sexta, sábado ou domingo.</div>
+      </div>
+
+      <div class="explica">
+        💡 E se, com esse ajuste, a Opção 1 precisasse começar num dia não permitido? Ela simplesmente
+        não aparece para essa pessoa, e a Opção 2 fica disponível no lugar. Você nunca vê uma data inválida.
+      </div>
+    </div>
+
+    <!-- 4. COMO AGENDAR -->
+    <div class="sec">
+      <h2><span class="n">4</span>Como agendar, passo a passo</h2>
+      <div class="timeline">
+        <div class="etapa" data-n="1">
+          <b>Acesse o sistema e clique em “agendar”</b>
+          <span>Ao fazer login, o sistema já abre direto na tela de agendamento. Localize a pessoa na aba “Pendentes” e clique em <strong>agendar</strong>. O agendamento fica disponível de <span class="data-forte">09/09/2026</span> até <span class="data-forte">22/09/2026</span>; fora desse período, o botão não fica ativo.</span>
+          <span class="quem voce">Você (gestor/a)</span>
+        </div>
+        <div class="etapa" data-n="2">
+          <b>Escolha a pessoa, a opção e confira as datas</b>
+          <span>Selecione uma das opções disponíveis e confira as datas que o sistema apresenta antes de confirmar o envio.</span>
+          <span class="quem voce">Você (gestor/a)</span>
+        </div>
+        <div class="etapa" data-n="3">
+          <b>O DP analisa e dá a devolutiva até <span class="data-forte">08/10/2026</span></b>
+          <span>Depois do envio, o pedido fica visível na etapa “Aguardando o DP”, e você é avisado por e-mail quando houver retorno.</span>
+          <span class="quem dp">DP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. DEPOIS DE AGENDAR -->
+    <div class="sec">
+      <h2><span class="n">5</span>Depois de agendar, o que acontece</h2>
+      <div class="desfechos">
+        <div class="desfecho ok">
+          <b>✅ Férias confirmadas</b>
+          <p>Você e a pessoa recebem a comunicação com as datas aprovadas, a previsão de pagamento e a orientação sobre a assinatura dos documentos pela plataforma Autentique.</p>
+        </div>
+        <div class="desfecho">
+          <b>💬 Precisamos ajustar</b>
+          <p>O DP envia a devolutiva com as orientações necessárias. Se preferir conversar antes, é só escrever para <a href="mailto:ferias@cieds.org.br" style="color:var(--brand);font-weight:700">ferias@cieds.org.br</a>.</p>
+        </div>
+      </div>
+      <p class="nota">A ideia é conduzir tudo com clareza — a melhor organização possível para a pessoa, a equipe e as atividades da instituição.</p>
+    </div>
+
+    <!-- 6. FAQ -->
+    <div class="sec">
+      <h2><span class="n">6</span>Perguntas frequentes</h2>
+      <div class="faq">
+        <b>Posso escolher as duas opções para a mesma pessoa?</b>
+        <p>Não. Cada pessoa participa de somente uma das opções de fim de ano.</p>
+      </div>
+      <div class="faq">
+        <b>E se a pessoa não tiver os 10 dias completos?</b>
+        <p>Ela não aparece na lista de agendamento. Para participar, é preciso ter um saldo mínimo de 10 dias.</p>
+      </div>
+      <div class="faq">
+       <b>O prazo de resposta do DP é o mesmo das férias regulares?</b>
+        <p>Não. As férias de fim de ano têm calendário próprio: o agendamento fica aberto de <span style="font-weight:600">09/09/2026</span> a <span style="font-weight:600">22/09/2026</span>, e o DP dá as devolutivas até <span style="font-weight:600">08/10/2026</span>, mesmo que isso ultrapasse o prazo padrão das solicitações regulares.</p>
+      </div>
+      <div class="faq">
+        <b>Essas mesmas datas valem todos os anos?</b>
+        <p>Não. As opções são definidas pelo Departamento Pessoal conforme a organização de cada fim de ano. Este guia vale exclusivamente para o fim de ano de 2026.</p>
+      </div>
+    </div>
+
+    <!-- FECHAMENTO -->
+    <div class="sec" style="text-align:center">
+      <h2 style="justify-content:center">Vamos nos organizar juntos 💛</h2>
+      <p style="margin:0;font-size:14px;line-height:1.7;color:var(--muted)">
+        Agendar com antecedência deixa esse momento mais leve pra todo mundo.
+        Converse com sua equipe, veja as possibilidades e faça o agendamento dentro do prazo.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="rodape">
+    <div class="contato">
+      <b>Ficou com alguma dúvida?</b>
+      Fale com o Departamento Pessoal<br>
+      <a href="mailto:ferias@cieds.org.br">ferias@cieds.org.br</a>
+    </div>
+    Este guia tem caráter informativo geral. Para orientações específicas do seu caso, procure o DP.
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{--teal:#247662;--teal-dark:#18564A;--ink:#173029;--muted:#5b6f69;--line:#e3ebe8;--bg:#f4f7f6;--red:#B5123A}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px 18px;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:14px;line-height:1.45}
+  h2{font-size:15px;margin:0 0 8px}
+  p{margin:0 0 10px}
+  .muted{color:var(--muted);font-size:13px}
+  .card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 12px}
+  .grande{font-size:22px;font-weight:bold;color:var(--teal-dark)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 12px}
+  th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:bold}
+  label.campo{display:block;font-weight:bold;margin:6px 0 4px}
+  input[type=date]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+  .resumo{background:#eef6f3;border:1px solid #d3e8e0;border-radius:10px;padding:10px 12px;margin:12px 0}
+  .aviso{background:#fff3d9;border:1px solid #f1dfbf;color:#77510a;border-radius:10px;padding:10px 12px;margin:0 0 12px}
+  .acoes{display:flex;gap:10px;justify-content:flex-end}
+  button{font:inherit;font-weight:bold;border:0;border-radius:9px;padding:10px 16px;cursor:pointer}
+  .prim{background:var(--teal);color:#fff}
+  .prim:disabled{opacity:.5;cursor:default}
+  .sec{background:var(--bg);color:var(--ink)}
+  .barra{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0}
+  .barra div{height:100%;width:0;background:var(--teal);transition:width .3s}
+  ul.erros{margin:6px 0 0;padding:0;list-style:none;max-height:170px;overflow:auto;border-top:1px solid var(--line)}
+  ul.erros li{padding:6px 2px;border-bottom:1px solid var(--line);font-size:13px}
+  ul.erros li span{color:var(--red)}
+  .hidden{display:none}
+  input[type=text],select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+  select[size]{margin-top:6px;padding:4px;font-size:13px}
+  .linha2{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 0}
+  .linha2 select{width:auto;min-width:90px}
+  .erro{color:var(--red)}
+  /* [2026-10-23] horários da fila e remarcação de várias pessoas */
+  input[type=time],input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  input[type=number]{width:84px}
+  .hf-linha{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+  button.mini{padding:6px 10px;font-size:13px}
+  .lista-check{max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;margin:6px 0 4px}
+  .lista-check label{display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+  .lista-check label:last-child{border-bottom:0}
+  .lista-check input{margin-top:2px}
+  .rem-topo{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 0;font-size:13px}
+  .rem-topo label{display:flex;gap:6px;align-items:center;font-weight:bold;cursor:pointer}
+  .ok{color:var(--teal)}
+
+  /* [2026-10-23] Botões com o mesmo visual nas janelas de Admissão. Cores de sempre:
+     verde = ação principal, vermelho = cancelar admissão; os secundários ficam brancos com borda. */
+  button.prim,button.sec,button.perigo{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;
+    padding:9px 16px;border-radius:10px;font-weight:bold;line-height:1.2;transition:background .15s,border-color .15s,box-shadow .15s,transform .05s}
+  button.prim svg,button.sec svg,button.perigo svg{flex:none;width:16px;height:16px}
+  button.prim{background:var(--teal);color:#fff;border:1px solid var(--teal);box-shadow:0 2px 6px rgba(24,86,74,.22)}
+  button.prim:not(:disabled):hover{background:var(--teal-dark);border-color:var(--teal-dark)}
+  button.sec{background:#fff;color:var(--ink);border:1px solid #cad8d3;box-shadow:0 1px 2px rgba(23,48,41,.06)}
+  button.sec:not(:disabled):hover{background:#eef6f3;border-color:var(--teal);color:var(--teal-dark)}
+  button.perigo{background:var(--red);color:#fff;border:1px solid var(--red);box-shadow:0 2px 6px rgba(181,18,58,.22)}
+  button.perigo:not(:disabled):hover{background:#8f0e2e;border-color:#8f0e2e}
+  button.prim:disabled,button.sec:disabled,button.perigo:disabled{opacity:.45;cursor:default;box-shadow:none}
+  button.prim:not(:disabled):active,button.sec:not(:disabled):active,button.perigo:not(:disabled):active{transform:translateY(1px)}
+  button:focus-visible{outline:3px solid #9fd0c0;outline-offset:2px}
+  button.mini{min-height:32px;padding:5px 11px;font-size:13px}
+  .acoes{flex-wrap:wrap}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  button.tile{display:flex;align-items:flex-start;gap:10px;text-align:left;background:#fff;color:var(--ink);border:1px solid #cad8d3;
+    border-radius:10px;padding:10px 12px;font-weight:normal;cursor:pointer;box-shadow:0 1px 2px rgba(23,48,41,.06);transition:background .15s,border-color .15s}
+  button.tile svg{flex:none;width:20px;height:20px;color:var(--teal);margin-top:1px}
+  button.tile b{display:block;font-size:13.5px}
+  button.tile small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.35}
+  button.tile:hover{background:#eef6f3;border-color:var(--teal)}
+  @media(max-width:520px){.tiles{grid-template-columns:1fr}}
+
+  /* [2026-10-23] Visual novo das janelas de Admissão (mesmo jeito do Portal do DP). Cores de sempre:
+     verde = principal/certo, vermelho = cancelar/problema, amarelo = atenção. */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root{--teal-soft:#eaf4f0;--line:#e1e9e6;--bg:#f5f8f7;--borda:#cad8d3;--sh:0 1px 2px rgba(23,48,41,.05),0 4px 14px rgba(23,48,41,.05)}
+  body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;padding:0 20px 20px;background:#fff}
+  .topo{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;margin:0 -20px 16px;padding:12px 20px 10px;background:#fff;border-bottom:1px solid var(--line)}
+  .topo-ico{width:36px;height:36px;border-radius:10px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;flex:none}
+  .topo-ico svg{width:19px;height:19px}
+  .topo.perigo .topo-ico{background:#fbe9ee;color:var(--red)}
+  .passos{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:0}
+  .passos li{flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 7px;border-bottom:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .passos li i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:#fff;border:1.5px solid var(--borda);flex:none}
+  .passos li.on{color:var(--teal-dark);border-bottom-color:var(--teal)}
+  .passos li.on i{background:var(--teal);border-color:var(--teal);color:#fff}
+  .passos li.feito{color:var(--teal);border-bottom-color:#9fd0c0}
+  .passos li.feito i{background:#9fd0c0;border-color:#9fd0c0;color:#fff;font-size:0}
+  .passos li.feito i::after{content:'✓';font-size:12px}
+  h2{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted);font-size:12.5px}
+  b{font-weight:700}
+  /* resumo (verde) e aviso (amarelo) com ícone */
+  .resumo,.aviso{position:relative;border-radius:12px;padding:12px 14px 12px 40px;line-height:1.5}
+  .resumo{background:var(--teal-soft);border:1px solid #cfe5dc;color:var(--ink)}
+  .aviso{background:#fff6e0;border:1px solid #f1dfbf;color:#5e4108}
+  .resumo::before,.aviso::before{content:'';position:absolute;left:14px;top:13px;width:17px;height:17px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E") no-repeat center/contain}
+  .aviso::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2377510a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E")}
+  /* datas para escolher (formulário e lembrete) */
+  .datas{gap:8px}
+  .data{align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;box-shadow:var(--sh);transition:border-color .15s,background .15s,box-shadow .15s}
+  .data:hover{border-color:#9fd0c0;background:#fbfdfc}
+  .data.sel{border-color:var(--teal);background:var(--teal-soft);box-shadow:0 0 0 3px rgba(36,118,98,.12)}
+  .data input{margin:0;width:16px;height:16px;accent-color:var(--teal)}
+  .data b{font-size:15px}
+  .check{align-items:center}
+  input[type=checkbox],input[type=radio]{accent-color:var(--teal)}
+  /* campos */
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]),textarea{
+    font:inherit;font-size:13.5px;border:1px solid var(--borda);border-radius:10px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]){height:40px;padding:0 12px}
+  textarea{padding:9px 12px}
+  select[size]{border:1px solid var(--borda);border-radius:12px;padding:4px}
+  input:focus,select:focus,textarea:focus{outline:0;border-color:var(--teal);box-shadow:0 0 0 3px rgba(36,118,98,.15)}
+  label.campo,.campo label{font-size:12.5px;font-weight:700;color:var(--ink)}
+  /* cartões, números e tabelas */
+  .card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grande{font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--teal-dark);line-height:1.1}
+  table{border:1px solid var(--line);border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden}
+  th{background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px}
+  td{padding:8px 10px}
+  tr:last-child td{border-bottom:0}
+  /* listas de pessoas */
+  .lista,.lista-check{border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh)}
+  .pessoa,.lista-check label{transition:background .12s}
+  .pessoa.sel{box-shadow:inset 3px 0 0 var(--red)}
+  .tag{border-radius:99px}
+  /* progresso */
+  .barra{height:8px;background:#e6eeeb;margin:12px 0 8px}
+  .barra div{background:linear-gradient(90deg,var(--teal),#2f9a7e)}
+  #telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{content:'';flex:none;width:16px;height:16px;border:2.5px solid #cfe5dc;border-top-color:var(--teal);border-radius:50%;animation:gira .8s linear infinite}
+  #telaCarregando p{display:flex;align-items:center;gap:10px;padding:18px 0}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){#telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{animation:none}}
+  /* resultado: ícone verde quando deu certo, vermelho quando deu problema */
+  .fim-ok h2::before,.fim-aviso h2::before{content:'';flex:none;width:22px;height:22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E") no-repeat center/contain}
+  .fim-aviso h2::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  .fim-aviso .resumo{background:#fbe9ee;border-color:#f3c9d4}
+  .fim-aviso .resumo::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  ul.erros,ul.nomes{border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:#fff}
+  ul.nomes{padding:6px 12px 6px 30px}
+  ul.erros li:last-child{border-bottom:0}
+  /* botões ficam visíveis no rodapé da janela quando a tela é mais alta que ela */
+  .acoes{position:sticky;bottom:0;z-index:4;margin:4px -20px 0;padding:12px 20px 4px;background:linear-gradient(rgba(255,255,255,0),#fff 35%)}
+</style>
+</head>
+<body>
+<div class="topo"><span class="topo-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></span><ol class="passos" aria-label="Etapas"><li data-p="1"><i>1</i>Escolher</li><li data-p="2"><i>2</i>Confirmar</li><li data-p="3"><i>3</i>Enviar</li></ol></div>
+
+<div id="telaCarregando"><p class="muted">Atualizando a lista de quem já respondeu o formulário...</p></div>
+
+<div id="telaEscolha" class="hidden">
+  <div class="card">
+    <div class="grande" id="fila">0</div>
+    <div class="muted" id="filaTexto">pessoas com admissão elegível que já responderam o formulário e ainda não têm data de exame</div>
+  </div>
+  <div id="blocoDatas" class="hidden">
+    <p><b>Datas já agendadas</b></p>
+    <table><thead><tr><th>Data</th><th>Por horário</th><th>E-mails enviados</th><th>Sem envio</th><th>Com erro</th></tr></thead><tbody id="tabelaDatas"></tbody></table>
+  </div>
+  <label class="campo" for="data">Data do exame</label>
+  <input type="date" id="data">
+  <div id="blocoHorarios" class="hidden">
+    <label class="campo">Horários e quantas pessoas da fila em cada um</label>
+    <div id="horariosFila"></div>
+    <button type="button" class="sec mini" id="btnMaisHorario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Adicionar horário</button>
+    <p class="muted" style="margin:6px 0 0">A fila é distribuída na ordem dos horários. 12h e 14h já vêm com as vagas que sobram no dia (48 em cada); dá para mudar o horário e a quantidade, tirar ou acrescentar horários.</p>
+  </div>
+  <div class="resumo" id="resumo">Escolha a data do exame.</div>
+  <div class="acoes">
+    <button type="button" class="sec" onclick="google.script.host.close()">Cancelar</button>
+    <button type="button" class="prim" id="btnEnviar" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Agendar e enviar</button>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <b>Precisa marcar alguém num dia ou horário certo, ou remarcar quem faltou?</b>
+    <p class="muted" style="margin:4px 0 8px">Por exemplo, para separar colegas da mesma lotação em dias diferentes, para quem ainda não preencheu o formulário ou para quem não compareceu. Também serve para consultar se alguém já está agendado.</p>
+    <div class="tiles">
+      <button type="button" class="tile" id="btnAvulso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span><b>Agendar ou remarcar uma pessoa</b><small>Qualquer pessoa da BASE, no dia e horário que você escolher</small></span></button>
+      <button type="button" class="tile" id="btnRemVarios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span><b>Remarcar várias pessoas</b><small>Quem está marcado num dia vai para outro dia ou horário</small></span></button>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:14px">Quer ver como o e-mail chega? <button type="button" class="sec mini" id="btnExemplo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Enviar e-mail de exemplo</button>
+    <span id="exemploMsg"></span></p>
+</div>
+
+<div id="telaConfirmar" class="hidden">
+  <h2>Confirmar</h2>
+  <div class="aviso" id="textoConfirmar"></div>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="prim" id="btnConfirmar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Confirmar</button>
+  </div>
+</div>
+
+<div id="telaEnviando" class="hidden">
+  <h2 id="tituloEnviando">Agendando...</h2>
+  <div class="barra"><div id="barra"></div></div>
+  <p id="progresso" class="muted"></p>
+  <p class="muted">Não feche esta janela até terminar. Se ela fechar, abra de novo e escolha a mesma data: o envio continua de onde parou.</p>
+</div>
+
+<div id="telaFim" class="hidden">
+  <h2 id="tituloFim">Concluído</h2>
+  <div class="resumo" id="resumoFim"></div>
+  <div id="blocoErros" class="hidden">
+    <p><b>Não receberam</b> <span class="muted">(ficam em vermelho na aba. Corrija o e-mail e escolha a mesma data de novo: só quem deu erro recebe.)</span></p>
+    <ul class="erros" id="listaErros"></ul>
+  </div>
+  <p class="muted" style="margin-top:12px">Tudo fica registrado na aba "CONTROLE DE EXAME A PARTIR 09/10".</p>
+  <div class="acoes">
+    <button type="button" class="prim" onclick="google.script.host.close()">Fechar</button>
+  </div>
+</div>
+
+<div id="telaAvulso" class="hidden">
+  <h2>Agendar ou remarcar uma pessoa</h2>
+  <p class="muted">Escolha qualquer pessoa da aba BASE, a data e o horário (12h e 14h são os horários padrão, mas dá para digitar outro). O e-mail do exame sai na hora, pela sua conta, com cópia para dp@cieds.org.br. Quem já tem data e faltou pode ser remarcado: recebe um e-mail "REMARCADO" com a nova data.</p>
+  <input type="text" id="busca" placeholder="Busque pelo nome, e-mail ou lotação" autocomplete="off">
+  <select id="pessoa" size="8"></select>
+  <p class="muted" id="contaBusca" style="margin:4px 0 10px"></p>
+  <div id="infoPessoa" class="card hidden"></div>
+  <div class="linha2">
+    <div><label class="campo" for="dataAv">Data do exame</label><input type="date" id="dataAv"></div>
+    <div><label class="campo" for="horaAv">Horário</label><input type="time" id="horaAv" list="horasPadrao"><datalist id="horasPadrao"></datalist></div>
+  </div>
+  <div class="resumo" id="resumoAv">Escolha a pessoa na lista.</div>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnAvVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="prim" id="btnAvAgendar" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="rot">Agendar e enviar e-mail</span></button>
+  </div>
+</div>
+
+<div id="telaAvConfirmar" class="hidden">
+  <h2>Confirmar</h2>
+  <div class="aviso" id="textoAvConfirmar"></div>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnAvConfVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="prim" id="btnAvConfirmar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Confirmar</button>
+  </div>
+</div>
+
+<div id="telaAvEnviando" class="hidden">
+  <h2>Agendando e enviando o e-mail...</h2>
+  <p class="muted">Não feche esta janela até terminar.</p>
+</div>
+
+<div id="telaAvFim" class="hidden">
+  <h2 id="tituloAvFim">Concluído</h2>
+  <div class="resumo" id="resumoAvFim"></div>
+  <p class="muted" style="margin-top:12px">Tudo fica registrado na aba "CONTROLE DE EXAME A PARTIR 09/10".</p>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnAvInicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar ao início</button>
+    <button type="button" class="sec" id="btnAvOutra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Agendar outra pessoa</button>
+    <button type="button" class="prim" onclick="google.script.host.close()">Fechar</button>
+  </div>
+</div>
+
+<div id="telaRemVarios" class="hidden">
+  <h2>Remarcar várias pessoas</h2>
+  <p class="muted">Escolha o dia em que as pessoas estão marcadas, marque quem vai mudar e escolha o novo dia e o horário. Cada pessoa recebe um e-mail "REMARCADO" com a nova data, pela sua conta, com cópia para dp@cieds.org.br. A data antiga fica guardada na coluna Histórico.</p>
+  <div class="linha2">
+    <div style="flex:1;min-width:220px"><label class="campo" for="remOrigem">Estão marcadas para</label><select id="remOrigem"></select></div>
+    <div><label class="campo" for="remFiltroHora">Horário</label><select id="remFiltroHora"><option value="">Todos</option></select></div>
+  </div>
+  <input type="text" id="remBusca" placeholder="Busque pelo nome ou e-mail" autocomplete="off" style="margin-top:8px">
+  <div class="rem-topo"><label><input type="checkbox" id="remTodos"> Marcar todos da lista</label><span class="muted" id="remConta"></span></div>
+  <div id="remLista" class="lista-check"></div>
+  <div class="linha2">
+    <div><label class="campo" for="remData">Nova data</label><input type="date" id="remData"></div>
+    <div><label class="campo" for="remHora">Novo horário</label><input type="time" id="remHora" list="horasPadrao"></div>
+  </div>
+  <div class="resumo" id="remResumo">Escolha o dia em que as pessoas estão marcadas.</div>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnRemVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="prim" id="btnRemAvancar" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Remarcar e enviar e-mails</button>
+  </div>
+</div>
+
+<script>
+  var R = null, plano = null, total = 0, enviados = 0, erros = [], inicio = 0;
+  // [2026-10-23] modo: 'fila' (agendar a fila) ou 'remarcar' (várias pessoas); envioIso: data dos e-mails do lote
+  var modo = 'fila', envioIso = '', horariosEditados = false;
+  var DIAS = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  function $(id){ return document.getElementById(id); }
+  function tela(id){ ['telaCarregando','telaEscolha','telaConfirmar','telaEnviando','telaFim','telaAvulso','telaAvConfirmar','telaAvEnviando','telaAvFim','telaRemVarios'].forEach(function(t){ $(t).classList.toggle('hidden', t !== id); }); }
+  function textoHora(cel){
+    var h = (R && R.horarios || []).filter(function(y){ return y.celula === cel; })[0]; if (h) return h.texto;
+    var p = String(cel || '').split(':'); return p.length === 2 ? Number(p[0]) + 'h' + (p[1] === '00' ? '' : p[1]) : String(cel || '');
+  }
+  function dadosDaData(iso){ var d = null; (R && R.datas || []).forEach(function(x){ if (x.iso === iso) d = x; }); return d; }
+  function porHorarioTexto(ph){ return Object.keys(ph || {}).sort().map(function(k){ return (k ? textoHora(k) : 'sem horário') + ': ' + ph[k]; }).join(' · '); }
+  function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
+  function br(iso){ var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function diaSemana(iso){ var p = iso.split('-'); return DIAS[new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay()]; }
+  function falhou(e){
+    tela('telaFim'); $('tituloFim').textContent = 'Não foi possível continuar';
+    $('resumoFim').textContent = (e && e.message ? e.message : String(e)) + (enviados ? ' Já foram enviados ' + plural(enviados, 'e-mail', 'e-mails') + ' nesta rodada.' : '');
+  }
+
+  function carregar(){
+    tela('telaCarregando');
+    google.script.run.withSuccessHandler(function(r){
+      R = r;
+      $('fila').textContent = r.aguardando;
+      $('filaTexto').textContent = (r.aguardando === 1 ? 'pessoa' : 'pessoas') + ' com admissão elegível que já ' + (r.aguardando === 1 ? 'respondeu' : 'responderam') + ' o formulário e ainda não ' + (r.aguardando === 1 ? 'tem' : 'têm') + ' data de exame' + (r.novasAgora ? ' (' + r.novasAgora + ' entraram agora na lista)' : '') + (r.removidasAgora ? '. ' + plural(r.removidasAgora, 'pessoa saiu', 'pessoas saíram') + ' da lista (não se encaixa mais na regra)' : '');
+      var tb = $('tabelaDatas'); tb.innerHTML = '';
+      r.datas.forEach(function(d){
+        var tr = document.createElement('tr');
+        [d.br + ' (' + diaSemana(d.iso).split('-')[0] + ')', porHorarioTexto(d.porHorario), d.enviados, d.pendentes, d.erros || 0].forEach(function(v){ var td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+        tb.appendChild(tr);
+      });
+      $('blocoDatas').classList.toggle('hidden', !r.datas.length);
+      $('data').min = r.hoje;
+      var dl = $('horasPadrao'); dl.innerHTML = ''; // sugestões de horário (12h e 14h); dá para digitar qualquer outro
+      r.horarios.forEach(function(h){ var o = document.createElement('option'); o.value = h.celula; dl.appendChild(o); });
+      horariosEditados = false; modo = 'fila';
+      atualizarResumo(); tela('telaEscolha');
+    }).withFailureHandler(falhou).exame0910Resumo();
+  }
+
+  // [2026-10-06] Vagas do horário na data (exceções em vagasPorData, ex.: 07/10 com 50 + 50).
+  function vagasDe(iso, h, dados){ var d = dados && dados.vagasPorData && dados.vagasPorData[iso]; return d && d[h.celula] != null ? Number(d[h.celula]) : h.vagas; }
+  // [2026-10-23] Horários da fila escolhidos na tela: cada linha tem o horário e quantas pessoas agendar nele.
+  function linhaHorario(cel, qtd){
+    var div = document.createElement('div'); div.className = 'hf-linha';
+    div.innerHTML = '<input type="time" class="hf-hora" list="horasPadrao" aria-label="Horário">' +
+      '<input type="number" class="hf-qtd" min="0" max="500" step="1" aria-label="Quantas pessoas neste horário"><span class="muted">pessoas</span>' +
+      '<span class="muted hf-info"></span><button type="button" class="sec mini hf-tirar" aria-label="Tirar este horário">×</button>';
+    div.querySelector('.hf-hora').value = cel || '';
+    div.querySelector('.hf-qtd').value = qtd == null ? '' : qtd;
+    var mexeu = function(){ horariosEditados = true; atualizarResumo(); };
+    div.querySelector('.hf-hora').addEventListener('input', mexeu);
+    div.querySelector('.hf-hora').addEventListener('change', mexeu);
+    div.querySelector('.hf-qtd').addEventListener('input', mexeu);
+    div.querySelector('.hf-tirar').onclick = function(){ div.parentNode.removeChild(div); mexeu(); };
+    $('horariosFila').appendChild(div);
+    return div;
+  }
+  // Padrão do dia: 12h e 14h com as vagas que sobram (48 em cada, ou a exceção da data).
+  function horariosPadrao(iso){
+    $('horariosFila').innerHTML = '';
+    var d = dadosDaData(iso);
+    R.horarios.forEach(function(h){ linhaHorario(h.celula, Math.max(0, vagasDe(iso, h, R) - (d && d.porHorario[h.celula] || 0))); });
+  }
+  function lerHorarios(){
+    var lista = [], vistos = {}, problema = '';
+    Array.prototype.forEach.call(document.querySelectorAll('#horariosFila .hf-linha'), function(div){
+      var cel = div.querySelector('.hf-hora').value, q = String(div.querySelector('.hf-qtd').value).trim();
+      div.querySelector('.hf-info').textContent = '';
+      if (!cel && q === '') return; // linha vazia: ignora
+      if (!/^\d{2}:\d{2}$/.test(cel)) { problema = problema || 'Preencha o horário de todas as linhas (ou tire a linha com o ×).'; return; }
+      var n = Number(q);
+      if (q === '' || !(n >= 0 && n <= 500 && Math.floor(n) === n)) { problema = problema || 'A quantidade das ' + textoHora(cel) + ' tem que ser um número de 0 a 500.'; return; }
+      if (vistos[cel]) { problema = problema || 'O horário ' + textoHora(cel) + ' está repetido.'; return; }
+      vistos[cel] = true;
+      lista.push({ celula: cel, quantidade: n, texto: textoHora(cel), div: div });
+    });
+    if (!problema && !lista.length) problema = 'Escolha pelo menos um horário.';
+    return { lista: lista, problema: problema };
+  }
+  function calcularPlano(iso){
+    var d = dadosDaData(iso), lh = lerHorarios();
+    var resta = R.aguardando, agendar = 0, partes = [], acima = [];
+    lh.lista.forEach(function(x){
+      var n = Math.min(x.quantidade, resta); resta -= n; agendar += n; x.n = n;
+      if (n) partes.push(n + ' às ' + x.texto);
+      var ja = d && d.porHorario[x.celula] || 0;
+      x.div.querySelector('.hf-info').textContent = (ja ? '· já tem ' + ja + ' nesse horário ' : '') + (n < x.quantidade ? '· a fila só tem ' + n + ' para este horário' : '');
+      var padrao = R.horarios.filter(function(h){ return h.celula === x.celula; })[0];
+      if (padrao && n && ja + n > vagasDe(iso, padrao, R)) acima.push(x.texto + ' (' + (ja + n) + ' pessoas; o padrão é ' + vagasDe(iso, padrao, R) + ')');
+    });
+    var pendentes = d ? d.pendentes : 0;
+    return { iso: iso, agendar: agendar, partes: partes, jaNaData: d ? d.total : 0, pendentes: pendentes, enviar: agendar + pendentes,
+             ficam: R.aguardando - agendar, horarios: lh.lista, problema: lh.problema, acima: acima };
+  }
+
+  function atualizarResumo(){
+    var iso = $('data').value, ok = iso && iso >= R.hoje;
+    $('blocoHorarios').classList.toggle('hidden', !ok);
+    if (!iso){ $('resumo').textContent = 'Escolha a data do exame.'; $('btnEnviar').disabled = true; return; }
+    if (iso < R.hoje){ $('resumo').textContent = 'A data do exame não pode ser no passado.'; $('btnEnviar').disabled = true; return; }
+    if (!horariosEditados) horariosPadrao(iso);
+    plano = calcularPlano(iso);
+    var dia = diaSemana(iso), fimDeSemana = (dia === 'sábado' || dia === 'domingo');
+    var txt = 'Para ' + dia + ', ' + br(iso) + ': ';
+    if (plano.problema){ $('resumo').textContent = txt + plano.problema; $('btnEnviar').disabled = true; return; }
+    var partes = [];
+    if (plano.jaNaData) partes.push('já ' + (plano.jaNaData === 1 ? 'tem 1 pessoa marcada' : 'tem ' + plano.jaNaData + ' pessoas marcadas') + ' nesse dia');
+    if (plano.agendar) partes.push('vão ser agendadas ' + plural(plano.agendar, 'pessoa', 'pessoas') + ' da fila (' + plano.partes.join(', ') + ')');
+    else partes.push(R.aguardando ? 'ninguém da fila vai ser agendado (as quantidades estão em 0)' : 'não há ninguém na fila para agendar');
+    txt += partes.join('; ') + '.';
+    if (plano.agendar && plano.ficam > 0) txt += ' ' + plural(plano.ficam, 'pessoa continua', 'pessoas continuam') + ' na fila.';
+    if (plano.pendentes) txt += ' ' + plural(plano.pendentes, 'pessoa marcada', 'pessoas marcadas') + ' nesse dia ainda sem e-mail também ' + (plano.pendentes === 1 ? 'recebe' : 'recebem') + '.';
+    if (plano.enviar) txt += ' Vão sair ' + plural(plano.enviar, 'e-mail', 'e-mails') + ', com cópia para dp@cieds.org.br.';
+    var avisos = [];
+    if (plano.acima.length) avisos.push('passa do limite padrão em ' + plano.acima.join(' e ') + '.');
+    if (fimDeSemana) avisos.push('essa data cai num ' + dia + '.');
+    $('resumo').innerHTML = esc(txt) + (avisos.length ? '<br><b>Atenção:</b> ' + avisos.map(esc).join(' ') : '');
+    $('btnEnviar').disabled = !plano.enviar;
+  }
+  $('data').addEventListener('change', atualizarResumo);
+  $('data').addEventListener('input', atualizarResumo);
+  $('btnMaisHorario').onclick = function(){ horariosEditados = true; var div = linhaHorario('', ''); atualizarResumo(); div.querySelector('.hf-hora').focus(); };
+
+  $('btnEnviar').onclick = function(){
+    modo = 'fila';
+    $('textoConfirmar').textContent = 'Confirma o exame em ' + diaSemana(plano.iso) + ', ' + br(plano.iso) + '? ' +
+      (plano.agendar ? 'Vão ser agendadas ' + plural(plano.agendar, 'pessoa', 'pessoas') + ' (' + plano.partes.join(', ') + '), na ordem de preenchimento do formulário. ' : '') +
+      'Vão sair ' + plural(plano.enviar, 'e-mail', 'e-mails') + ' com o local, a data e o horário do exame, pela sua conta e com cópia para dp@cieds.org.br.';
+    tela('telaConfirmar');
+  };
+  $('btnVoltar').onclick = function(){ tela(modo === 'remarcar' ? 'telaRemVarios' : 'telaEscolha'); };
+
+  // E-mail de exemplo, com dados fictícios, só para o e-mail de teste (a aba não muda).
+  function proximaSegunda(){
+    var d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  $('btnExemplo').onclick = function(){
+    var iso = $('data').value || proximaSegunda();
+    $('btnExemplo').disabled = true; $('exemploMsg').textContent = ' Enviando...';
+    google.script.run.withSuccessHandler(function(r){
+      $('btnExemplo').disabled = false; $('exemploMsg').textContent = ' Enviado para ' + r.para + ' (assunto: ' + r.assunto + ').';
+    }).withFailureHandler(function(e){
+      $('btnExemplo').disabled = false; $('exemploMsg').textContent = ' Não foi possível enviar: ' + (e && e.message ? e.message : e);
+    }).exame0910EnviarExemplo(iso, plano && plano.horarios && plano.horarios[0] ? plano.horarios[0].celula : '12:00');
+  };
+
+  $('btnConfirmar').onclick = function(){
+    if (modo === 'remarcar'){ REM.feitos = 0; REM.nao = []; tela('telaEnviando'); $('tituloEnviando').textContent = 'Remarcando...'; $('barra').style.width = '0%'; $('progresso').textContent = ''; remarcarRodada(); return; }
+    tela('telaEnviando'); $('tituloEnviando').textContent = 'Agendando...'; $('progresso').textContent = '';
+    envioIso = plano.iso;
+    var escolhidos = plano.horarios.map(function(x){ return { celula: x.celula, quantidade: x.quantidade }; });
+    google.script.run.withSuccessHandler(function(a){
+      total = plano.pendentes + a.agendados; enviados = 0; erros = []; inicio = 0;
+      $('tituloEnviando').textContent = 'Enviando os e-mails...';
+      progresso(); lote();
+    }).withFailureHandler(falhou).exame0910Agendar(plano.iso, escolhidos);
+  };
+
+  function progresso(){
+    var feitos = enviados + erros.length;
+    $('barra').style.width = (total ? Math.min(100, Math.round(feitos * 100 / total)) : 100) + '%';
+    $('progresso').textContent = feitos + ' de ' + total + ' processados · ' + plural(enviados, 'enviado', 'enviados') + (erros.length ? ' · ' + erros.length + ' com erro' : '');
+  }
+
+  function lote(){
+    google.script.run.withSuccessHandler(function(r){
+      inicio = r.inicio; enviados += r.enviados; erros = erros.concat(r.erros || []);
+      total = Math.max(total, enviados + erros.length + r.restantes);
+      progresso();
+      if (r.parouPorCota){ fim('A cota diária de e-mails da sua conta acabou. Faltaram ' + plural(r.restantes, 'pessoa', 'pessoas') + '. Escolha a mesma data amanhã: o envio continua de onde parou.'); return; }
+      if (r.restantes > 0 && (r.enviados + (r.erros || []).length) > 0){ lote(); return; }
+      fim('');
+    }).withFailureHandler(falhou).exame0910EnviarLote(envioIso, inicio);
+  }
+
+  function fim(extra){
+    tela('telaFim');
+    $('tituloFim').textContent = extra ? 'Envio interrompido' : 'Concluído';
+    var antes = modo === 'remarcar'
+      ? plural(REM.feitos, 'pessoa remarcada', 'pessoas remarcadas') + ' para ' + diaSemana(REM.iso) + ', ' + br(REM.iso) + ' às ' + textoHora(REM.cel) + '. ' +
+        (REM.nao.length ? 'Não mexi em ' + REM.nao.join(', ') + ' (não estava mais no dia ' + br(REM.origem) + '). ' : '')
+      : '';
+    $('resumoFim').textContent = antes + plural(enviados, 'e-mail enviado', 'e-mails enviados') + ' para o exame de ' + br(envioIso) +
+      (erros.length ? ', ' + plural(erros.length, 'pessoa não recebeu', 'pessoas não receberam') + '.' : '.') + (extra ? ' ' + extra : '');
+    $('blocoErros').classList.toggle('hidden', !erros.length);
+    if (erros.length){
+      var ul = $('listaErros'); ul.innerHTML = '';
+      erros.forEach(function(e){ var li = document.createElement('li'); li.textContent = e.nome + ': '; var s = document.createElement('span'); s.textContent = e.motivo; li.appendChild(s); ul.appendChild(li); });
+    }
+  }
+
+  // ---------- [2026-10-05] Agendar uma pessoa específica ----------
+  var AV = null, avSel = null;
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function normTxt(s){ return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function isoDeBr(b){ var p = String(b).split('/'); return p[2] + '-' + p[1] + '-' + p[0]; }
+  // [2026-10-09] Qualquer horário (hh:mm). 12h e 14h mantêm o limite de vagas; os outros não têm limite.
+  function horarioEscolhido(){
+    var cel = $('horaAv').value; if (!/^\d{2}:\d{2}$/.test(cel)) return null;
+    var h = AV.horarios.filter(function(y){ return y.celula === cel; })[0]; if (h) return h;
+    var p = cel.split(':'); return { celula: cel, texto: Number(p[0]) + 'h' + (p[1] === '00' ? '' : p[1]), vagas: Infinity };
+  }
+  function falhouAv(e){
+    $('btnAvConfirmar').disabled = false;
+    tela('telaAvFim'); $('tituloAvFim').textContent = 'Não foi possível concluir';
+    $('resumoAvFim').textContent = e && e.message ? e.message : String(e);
+  }
+
+  function abrirAvulso(){
+    tela('telaCarregando');
+    google.script.run.withSuccessHandler(function(r){
+      AV = r; avSel = null;
+      AV.pessoas.sort(function(a, b){ return a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0; });
+      var dl = $('horasPadrao'); dl.innerHTML = ''; // sugestões; dá para digitar qualquer horário
+      r.horarios.forEach(function(h){ var o = document.createElement('option'); o.value = h.celula; dl.appendChild(o); });
+      $('dataAv').min = r.hoje;
+      $('busca').value = '';
+      filtrar(); mostrarPessoa(); atualizarAvulso();
+      tela('telaAvulso'); $('busca').focus();
+    }).withFailureHandler(falhouAv).exame0910Avulsos();
+  }
+
+  function rotuloPessoa(x){
+    return x.nome + (x.admissao ? ' · admissão ' + x.admissao : '') + (x.posto ? ' · ' + x.posto : '') + ' · ' +
+      (x.data ? 'exame ' + x.data.slice(0, 5) + ' às ' + x.horario : (x.preencheu ? 'sem data' : 'sem data, não preencheu o formulário'));
+  }
+  function filtrar(){
+    var q = normTxt($('busca').value).trim(), sel = $('pessoa'), n = 0;
+    sel.innerHTML = '';
+    AV.pessoas.forEach(function(x, i){
+      if (q && normTxt(x.nome + ' ' + x.nomeBase + ' ' + x.email + ' ' + x.posto).indexOf(q) < 0) return;
+      var o = document.createElement('option'); o.value = i; o.textContent = rotuloPessoa(x);
+      if (avSel === x) o.selected = true;
+      sel.appendChild(o); n++;
+    });
+    $('contaBusca').textContent = n + ' de ' + AV.pessoas.length + ' pessoas da aba BASE';
+  }
+  $('busca').addEventListener('input', filtrar);
+  $('pessoa').addEventListener('change', function(){
+    avSel = AV.pessoas[Number($('pessoa').value)] || null;
+    // [2026-10-09] Quem já tem exame: a data e o horário atuais vêm preenchidos, para dar para
+    // remarcar só o horário (ou só a data) sem digitar o resto de novo.
+    if (avSel && avSel.data){
+      $('dataAv').value = isoDeBr(avSel.data);
+      if (/^\d{2}:\d{2}$/.test(avSel.horarioCelula)) $('horaAv').value = avSel.horarioCelula;
+    }
+    mostrarPessoa(); atualizarAvulso();
+  });
+
+  function colegas(x){
+    var k = normTxt(x.posto).trim();
+    if (!k) return [];
+    return AV.pessoas.filter(function(y){ return y !== x && normTxt(y.posto).trim() === k; });
+  }
+  function mostrarPessoa(){
+    var box = $('infoPessoa');
+    if (!avSel){ box.classList.add('hidden'); return; }
+    var x = avSel, l = [];
+    l.push('<b>' + esc(x.nome) + '</b> · ' + (x.email ? esc(x.email) : '<span class="erro">sem e-mail</span>'));
+    if (x.posto) l.push('Lotação: ' + esc(x.posto));
+    l.push('Formulário: ' + (x.preencheu ? 'preenchido' + (x.preencheuEm ? ' em ' + esc(x.preencheuEm) : '') : '<b>ainda não preencheu</b> (dá para agendar o exame mesmo assim)'));
+    l.push('Exame: ' + (x.data ? '<b>agendado para ' + diaSemana(isoDeBr(x.data)) + ', ' + esc(x.data) + ' às ' + esc(x.horario) + '</b>' : 'ainda sem data'));
+    if (x.historico) l.push('Histórico: ' + esc(x.historico));
+    if (x.cancelado) l.push('<span class="erro">Atenção: esta pessoa está na aba Cancelados.</span>');
+    var cs = colegas(x);
+    if (cs.length) l.push('Mesma lotação: ' + cs.map(function(y){ return esc(y.nome) + ' (' + (y.data ? esc(y.data.slice(0, 5)) + ' às ' + esc(y.horario) : 'sem data') + ')'; }).join('; '));
+    box.innerHTML = l.join('<br>'); box.classList.remove('hidden');
+  }
+
+  function avisosAvulso(iso){
+    var d = br(iso), avisos = [];
+    var mesmoDia = colegas(avSel).filter(function(y){ return y.data === d; });
+    if (mesmoDia.length) avisos.push('Da mesma lotação, ' + mesmoDia.map(function(y){ return y.nome + ' (' + y.horario + ')'; }).join(', ') +
+      (mesmoDia.length === 1 ? ' já está agendado(a)' : ' já estão agendados') + ' nesse dia.');
+    var dia = diaSemana(iso); if (dia === 'sábado' || dia === 'domingo') avisos.push('Essa data cai num ' + dia + '.');
+    if (!avSel.preencheu) avisos.push('Esta pessoa ainda não preencheu o formulário de admissão.');
+    if (avSel.cancelado) avisos.push('Esta pessoa está na aba Cancelados.');
+    if (!avSel.email) avisos.push('Esta pessoa está sem e-mail na aba BASE.');
+    return avisos;
+  }
+  function atualizarAvulso(){
+    var b = $('btnAvAgendar'), iso = $('dataAv').value, h = horarioEscolhido();
+    var remarcar = !!(avSel && avSel.data);
+    b.querySelector('.rot').textContent = remarcar ? 'Remarcar e enviar e-mail' : 'Agendar e enviar e-mail';
+    b.disabled = true;
+    if (!avSel){ $('resumoAv').textContent = 'Escolha a pessoa na lista.'; return; }
+    var jaTem = remarcar ? avSel.nome + ' está agendado(a) para ' + avSel.data + ' às ' + avSel.horario + '. Para remarcar, mude a data, o horário ou os dois (para mudar só o horário, mantenha a data). ' : '';
+    if (!iso){ $('resumoAv').textContent = jaTem + 'Escolha a data do exame.'; return; }
+    if (iso < AV.hoje){ $('resumoAv').textContent = jaTem + 'A data do exame não pode ser no passado.'; return; }
+    if (!h){ $('resumoAv').textContent = jaTem + 'Escolha o horário.'; return; }
+    var d = br(iso), occ = (AV.ocupacao[d] || {})[h.celula] || 0;
+    if (remarcar && d === avSel.data && h.celula === avSel.horarioCelula){ $('resumoAv').textContent = jaTem + 'Essa já é a data e o horário do exame dessa pessoa: mude a data ou o horário.'; return; }
+    var lim = vagasDe(iso, h, AV);
+    if (occ >= lim){ $('resumoAv').textContent = jaTem + 'O horário das ' + h.texto + ' de ' + d + ' já está completo (' + lim + ' pessoas). Escolha outro horário ou outro dia.'; return; }
+    var txt = (remarcar ? 'Vai ser remarcado(a) de ' + avSel.data + ' às ' + avSel.horario + ' para ' : 'Vai ser agendado(a) para ') +
+      diaSemana(iso) + ', ' + d + ' às ' + h.texto + (isFinite(lim) ? ' (' + occ + ' de ' + lim + ' vagas desse horário já ocupadas)' : (occ ? ' (' + occ + ' já ' + (occ === 1 ? 'marcada' : 'marcadas') + ' nesse horário)' : '')) +
+      '. O e-mail ' + (remarcar ? 'com a nova data ' : '') + 'vai para ' + (avSel.email || '(sem e-mail)') + ', com cópia para dp@cieds.org.br.';
+    var avisos = avisosAvulso(iso);
+    $('resumoAv').innerHTML = esc(txt) + (avisos.length ? '<br><b>Atenção:</b> ' + avisos.map(esc).join(' ') : '');
+    b.disabled = false;
+  }
+  $('dataAv').addEventListener('change', atualizarAvulso);
+  $('dataAv').addEventListener('input', atualizarAvulso);
+  $('horaAv').addEventListener('change', atualizarAvulso);
+  $('horaAv').addEventListener('input', atualizarAvulso);
+
+  $('btnAvulso').onclick = abrirAvulso;
+  $('btnAvVoltar').onclick = carregar;
+  $('btnAvAgendar').onclick = function(){
+    var iso = $('dataAv').value, h = horarioEscolhido(), avisos = avisosAvulso(iso);
+    $('textoAvConfirmar').innerHTML = (avSel.data
+        ? 'Confirma a remarcação de <b>' + esc(avSel.nome) + '</b> de ' + esc(avSel.data) + ' às ' + esc(avSel.horario) + ' para <b>' + diaSemana(iso) + ', ' + br(iso) + ' às ' + esc(h.texto) +
+          '</b>? Sai agora um novo e-mail, avisando a nova data, pela sua conta, para ' + esc(avSel.email || '(sem e-mail)') + ', com cópia para dp@cieds.org.br.'
+        : 'Confirma o exame de <b>' + esc(avSel.nome) + '</b> em <b>' + diaSemana(iso) + ', ' + br(iso) + ' às ' + esc(h.texto) +
+          '</b>? O e-mail sai agora, pela sua conta, para ' + esc(avSel.email || '(sem e-mail)') + ', com cópia para dp@cieds.org.br.') +
+      (avisos.length ? '<br><br><b>Atenção:</b> ' + avisos.map(esc).join(' ') : '');
+    tela('telaAvConfirmar');
+  };
+  $('btnAvConfVoltar').onclick = function(){ tela('telaAvulso'); };
+  $('btnAvConfirmar').onclick = function(){
+    if ($('btnAvConfirmar').disabled) return;
+    $('btnAvConfirmar').disabled = true;
+    var iso = $('dataAv').value, cel = $('horaAv').value, remarcar = !!avSel.data;
+    tela('telaAvEnviando');
+    var run = google.script.run.withSuccessHandler(function(r){
+      $('btnAvConfirmar').disabled = false;
+      tela('telaAvFim');
+      var feito = remarcar ? 'Remarcado' : 'Agendado';
+      $('tituloAvFim').textContent = r.enviado ? feito + ' e e-mail enviado' : feito + ', mas o e-mail não saiu';
+      var t = r.nome + (remarcar ? ' foi remarcado(a) de ' + r.antes + ' para ' : ' foi agendado(a) para ') + r.dia + ', ' + r.data + ' às ' + r.horario + '. ';
+      if (r.enviado) t += 'O e-mail foi enviado para ' + r.email + ', com cópia para dp@cieds.org.br.';
+      else if (r.semCota) t += 'A cota diária de e-mails da sua conta acabou. Amanhã, escolha a data ' + r.data + ' na tela principal: o e-mail sai para quem ainda não recebeu.';
+      else t += 'Motivo: ' + r.erro + '. A linha ficou em vermelho na aba. Corrija o e-mail na aba e escolha a data ' + r.data + ' na tela principal: só quem não recebeu recebe.';
+      $('resumoAvFim').textContent = t;
+    }).withFailureHandler(falhouAv);
+    if (remarcar) run.exame0910Remarcar(avSel.id, avSel.nomeBase, iso, cel);
+    else run.exame0910AgendarAvulso(avSel.id, avSel.nomeBase, iso, cel);
+  };
+  $('btnAvOutra').onclick = abrirAvulso;
+  $('btnAvInicio').onclick = carregar;
+
+  // ---------- [2026-10-23] Remarcar várias pessoas ----------
+  var REM = { pessoas: [], sel: {}, origem: '', iso: '', cel: '', chaves: [], feitos: 0, nao: [] };
+  function abrirRemVarios(){
+    var s = $('remOrigem'); s.innerHTML = '<option value="">Escolha o dia</option>';
+    R.datas.forEach(function(d){
+      var o = document.createElement('option'); o.value = d.iso;
+      o.textContent = d.br + ' (' + diaSemana(d.iso).split('-')[0] + ') · ' + plural(d.total, 'pessoa', 'pessoas') + ' · ' + porHorarioTexto(d.porHorario);
+      s.appendChild(o);
+    });
+    REM.pessoas = []; REM.sel = {}; REM.origem = '';
+    $('remBusca').value = ''; $('remFiltroHora').innerHTML = '<option value="">Todos</option>';
+    $('remData').min = R.hoje; $('remData').value = ''; $('remHora').value = '';
+    desenharRem(); atualizarRem(); tela('telaRemVarios');
+  }
+  $('remOrigem').onchange = function(){
+    var iso = $('remOrigem').value;
+    REM.pessoas = []; REM.sel = {}; REM.origem = iso; $('remFiltroHora').innerHTML = '<option value="">Todos</option>';
+    desenharRem(); atualizarRem();
+    if (!iso) return;
+    $('remLista').innerHTML = '<p class="muted" style="padding:8px 10px;margin:0">Carregando...</p>';
+    google.script.run.withSuccessHandler(function(lista){
+      if ($('remOrigem').value !== iso) return; // trocou de dia enquanto carregava
+      REM.pessoas = lista || [];
+      var hs = {}; REM.pessoas.forEach(function(p){ hs[p.horarioCelula] = (hs[p.horarioCelula] || 0) + 1; });
+      Object.keys(hs).sort().forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = (k ? textoHora(k) : 'sem horário') + ' (' + hs[k] + ')'; $('remFiltroHora').appendChild(o); });
+      desenharRem(); atualizarRem();
+    }).withFailureHandler(function(e){
+      $('remLista').innerHTML = '<p class="erro" style="padding:8px 10px;margin:0">' + esc(e && e.message ? e.message : e) + '</p>';
+    }).exame0910PessoasDaData(iso);
+  };
+  function remVisiveis(){
+    var q = normTxt($('remBusca').value).trim(), h = $('remFiltroHora').value;
+    return REM.pessoas.filter(function(p){
+      if (h && p.horarioCelula !== h) return false;
+      return !q || normTxt(p.nome + ' ' + p.email).indexOf(q) > -1;
+    });
+  }
+  function desenharRem(){
+    var box = $('remLista'), vis = remVisiveis();
+    box.innerHTML = '';
+    if (!REM.origem){ box.innerHTML = '<p class="muted" style="padding:8px 10px;margin:0">Escolha o dia acima para ver quem está marcado.</p>'; }
+    else if (!vis.length && REM.pessoas.length){ box.innerHTML = '<p class="muted" style="padding:8px 10px;margin:0">Ninguém com esse filtro.</p>'; }
+    vis.forEach(function(p){
+      var l = document.createElement('label');
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!REM.sel[p.chave];
+      cb.onchange = function(){ REM.sel[p.chave] = cb.checked; atualizarRem(); };
+      var s = document.createElement('span');
+      s.innerHTML = '<b>' + esc(p.nome || '(sem nome)') + '</b> · ' + esc(p.horario || 'sem horário') + ' · ' +
+        (p.erro ? '<span class="erro">e-mail com erro</span>' : p.enviado ? '<span class="ok">e-mail enviado</span>' : 'e-mail ainda não enviado') +
+        (p.email ? '' : ' · <span class="erro">sem e-mail</span>');
+      l.appendChild(cb); l.appendChild(s); box.appendChild(l);
+    });
+    var marcados = vis.filter(function(p){ return REM.sel[p.chave]; }).length;
+    $('remTodos').checked = vis.length > 0 && marcados === vis.length;
+    $('remTodos').disabled = !vis.length;
+  }
+  $('remBusca').addEventListener('input', function(){ desenharRem(); atualizarRem(); });
+  $('remFiltroHora').onchange = function(){ desenharRem(); atualizarRem(); };
+  $('remTodos').onchange = function(){ var v = $('remTodos').checked; remVisiveis().forEach(function(p){ REM.sel[p.chave] = v; }); desenharRem(); atualizarRem(); };
+  function atualizarRem(){
+    var b = $('btnRemAvancar'); b.disabled = true;
+    var sel = REM.pessoas.filter(function(p){ return REM.sel[p.chave]; });
+    $('remConta').textContent = REM.pessoas.length ? plural(sel.length, 'marcada', 'marcadas') + ' de ' + REM.pessoas.length : '';
+    if (!REM.origem){ $('remResumo').textContent = 'Escolha o dia em que as pessoas estão marcadas.'; return; }
+    if (!sel.length){ $('remResumo').textContent = 'Marque quem vai ser remarcado.'; return; }
+    var iso = $('remData').value, cel = $('remHora').value;
+    if (!iso){ $('remResumo').textContent = plural(sel.length, 'pessoa marcada', 'pessoas marcadas') + '. Escolha a nova data.'; return; }
+    if (iso < R.hoje){ $('remResumo').textContent = 'A nova data não pode ser no passado.'; return; }
+    if (!/^\d{2}:\d{2}$/.test(cel)){ $('remResumo').textContent = 'Escolha o novo horário.'; return; }
+    var mudam = sel.filter(function(p){ return !(REM.origem === iso && p.horarioCelula === cel); });
+    if (!mudam.length){ $('remResumo').textContent = 'Essas pessoas já estão nesse dia e horário: mude a data ou o horário.'; return; }
+    var d = dadosDaData(iso), ja = d && d.porHorario[cel] || 0;
+    var txt = 'Vão ser remarcadas ' + plural(mudam.length, 'pessoa', 'pessoas') + ' de ' + br(REM.origem) + ' para ' + diaSemana(iso) + ', ' + br(iso) + ' às ' + textoHora(cel) +
+      '. Sai um e-mail "REMARCADO" para cada uma, com cópia para dp@cieds.org.br.';
+    if (mudam.length < sel.length) txt += ' ' + plural(sel.length - mudam.length, 'pessoa já está', 'pessoas já estão') + ' nesse dia e horário e fica' + (sel.length - mudam.length === 1 ? '' : 'm') + ' como está.';
+    var avisos = [];
+    var padrao = R.horarios.filter(function(h){ return h.celula === cel; })[0];
+    if (padrao && ja + mudam.length > vagasDe(iso, padrao, R)) avisos.push('às ' + padrao.texto + ' de ' + br(iso) + ' vão ficar ' + (ja + mudam.length) + ' pessoas; o padrão é ' + vagasDe(iso, padrao, R) + '.');
+    var dia = diaSemana(iso); if (dia === 'sábado' || dia === 'domingo') avisos.push('essa data cai num ' + dia + '.');
+    var semEmail = mudam.filter(function(p){ return !p.email; }).length;
+    if (semEmail) avisos.push(plural(semEmail, 'pessoa está', 'pessoas estão') + ' sem e-mail e não ' + (semEmail === 1 ? 'vai receber' : 'vão receber') + ' o aviso.');
+    $('remResumo').innerHTML = esc(txt) + (avisos.length ? '<br><b>Atenção:</b> ' + avisos.map(esc).join(' ') : '');
+    REM.mudam = mudam; REM.iso = iso; REM.cel = cel;
+    b.disabled = false;
+  }
+  $('remData').addEventListener('change', atualizarRem);
+  $('remData').addEventListener('input', atualizarRem);
+  $('remHora').addEventListener('change', atualizarRem);
+  $('remHora').addEventListener('input', atualizarRem);
+  $('btnRemVarios').onclick = abrirRemVarios;
+  $('btnRemVoltar').onclick = function(){ modo = 'fila'; tela('telaEscolha'); };
+  $('btnRemAvancar').onclick = function(){
+    modo = 'remarcar';
+    REM.chaves = REM.mudam.map(function(p){ return p.chave; });
+    $('textoConfirmar').innerHTML = 'Confirma a remarcação de <b>' + plural(REM.chaves.length, 'pessoa', 'pessoas') + '</b> de ' + br(REM.origem) +
+      ' para <b>' + diaSemana(REM.iso) + ', ' + br(REM.iso) + ' às ' + esc(textoHora(REM.cel)) + '</b>? Sai agora um e-mail "REMARCADO" para cada uma, pela sua conta, com cópia para dp@cieds.org.br.' +
+      '<br><br>' + REM.mudam.slice(0, 12).map(function(p){ return esc(p.nome); }).join(', ') + (REM.mudam.length > 12 ? ' e mais ' + (REM.mudam.length - 12) : '') + '.';
+    tela('telaConfirmar');
+  };
+  // Em rodadas: o servidor remarca até o tempo dele e devolve quantas faltam; depois saem os e-mails.
+  function remarcarRodada(){
+    google.script.run.withSuccessHandler(function(r){
+      REM.feitos = r.remarcados + r.jaFeitos; REM.nao = r.naoEncontrados || [];
+      $('barra').style.width = Math.round(REM.feitos * 100 / Math.max(1, REM.chaves.length)) + '%';
+      $('progresso').textContent = REM.feitos + ' de ' + REM.chaves.length + ' remarcadas';
+      if (r.restantes > 0){
+        if (r.remarcados > 0){ remarcarRodada(); return; }
+        falhou(new Error('A remarcação parou no meio (' + r.restantes + ' faltando). Abra de novo e repita: quem já foi remarcado não muda.')); return;
+      }
+      envioIso = REM.iso; total = REM.feitos; enviados = 0; erros = []; inicio = 0;
+      $('tituloEnviando').textContent = 'Enviando os e-mails...';
+      progresso(); lote();
+    }).withFailureHandler(falhou).exame0910RemarcarVarios(REM.chaves, REM.origem, REM.iso, REM.cel);
+  }
+
+  carregar();
+</script>
+<script>
+  // [2026-10-23] Visual novo: marca a etapa do topo e o ícone do resultado. Só observa as telas; não muda nada no envio.
+  (function(){
+    var PASSO = {"telaCarregando":1,"telaEscolha":1,"telaAvulso":1,"telaRemVarios":1,"telaConfirmar":2,"telaAvConfirmar":2,"telaEnviando":3,"telaAvEnviando":3,"telaFim":4,"telaAvFim":4}, FINS = [["telaFim","tituloFim"],["telaAvFim","tituloAvFim"]];
+    function el(id){ return document.getElementById(id); }
+    function marcar(){
+      var vis = Object.keys(PASSO).filter(function(id){ return el(id) && !el(id).classList.contains('hidden'); })[0];
+      var p = vis ? PASSO[vis] : 0;
+      Array.prototype.forEach.call(document.querySelectorAll('.passos li'), function(li){
+        var n = Number(li.getAttribute('data-p'));
+        li.classList.toggle('on', n === p); li.classList.toggle('feito', n < p);
+        if (n === p) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+      });
+    }
+    function resultado(){
+      FINS.forEach(function(f){
+        var box = el(f[0]), t = el(f[1]); if (!box || !t) return;
+        var ruim = /n[ãa]o foi poss[íi]vel|interrompid|nada registrado|n[ãa]o saiu|n[ãa]o conclu/i.test(t.textContent);
+        box.classList.toggle('fim-aviso', ruim); box.classList.toggle('fim-ok', !ruim);
+      });
+    }
+    var obs = new MutationObserver(function(){ marcar(); resultado(); });
+    Object.keys(PASSO).forEach(function(id){ if (el(id)) obs.observe(el(id), { attributes: true, attributeFilter: ['class'] }); });
+    FINS.forEach(function(f){ if (el(f[1])) obs.observe(el(f[1]), { childList: true, characterData: true, subtree: true }); });
+    marcar(); resultado();
+  })();
+</script>
+</body>
+</html>

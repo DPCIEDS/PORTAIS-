@@ -1,0 +1,2153 @@
+<script>
+let TOKEN = '';
+let D = null;
+let ATUAL = null;
+let FIM_DE_ANO_CACHE = null;
+let FIM_DE_ANO_ATUAL = null;
+let FIM_DE_ANO_SOLICITADOS_CACHE = null;
+let FIM_DE_ANO_ABA = 'pendentes';
+
+// CAMPANHA de fim de ano: enquanto true E o prazo do gestor estiver aberto, o portal fica
+// TRAVADO só no fim de ano — todos os outros módulos aparecem como "em breve" (não são
+// excluídos, voltam sozinhos quando a campanha fechar). Para encerrar antes, vire false.
+const CAMPANHA_SO_FIM_DE_ANO = false;  // fim de ano roda no portal espelho; aqui o portal é normal
+let LOCKDOWN_FIM_DE_ANO = false;
+let ABONO_AUTO = 0;   // dias de abono que entram automático ao agendar (0 = nenhum)
+let SECAO = 'painel';
+let FILTRO = 'equipe';
+
+// Ícones em traço por módulo (substituem os emojis que vêm de PORTAL.MODULOS[].icone).
+// Mapeados pelo `id` do módulo, que já é estável — nada muda do lado da API.
+const _ICONES_MODULO_ = {
+  painel: { cor: 'var(--ciano)', svg: '<path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"></path>' },
+  ferias: { cor: 'var(--ok)', svg: '<path d="M22 12a10.06 10.06 0 0 0-20 0Z"></path><path d="M12 12v8a2 2 0 0 0 4 0"></path><path d="M12 2v1"></path>' },
+  afastamentos: { cor: 'var(--accent)', svg: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>' },
+  rescisao: { cor: 'var(--danger)', svg: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path>' },
+  movimentacao: { cor: 'var(--roxo)', svg: '<path d="m8 3-4 4 4 4"></path><path d="M4 7h16"></path><path d="m16 21 4-4-4-4"></path><path d="M20 17H4"></path>' },
+  admissao: { cor: 'var(--laranja)', svg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path>' },
+  fimdeano: { cor: 'var(--ok)', svg: '<path d="M12 2 6.5 10h3l-4.5 6h4l-3 5h12l-3-5h4l-4.5-6h3Z"></path><path d="M12 22v-3"></path>' }
+};
+
+function _iconeModulo_(id, tamanho){
+  const x = _ICONES_MODULO_[id];
+  const t = tamanho || 15;
+  if(!x) return '';
+  return '<svg width="' + t + '" height="' + t + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" style="color:' + x.cor + '">' + x.svg + '</svg>';
+}
+let VISAO = 'GESTOR';
+let CTX_FERIAS = null;
+let CTX_AFAST = null;   // contexto de afastamentos, carregado ao abrir a aba
+let CTX_RESC = null;    // contexto de rescisões, carregado ao abrir a aba
+let CTX_MOV = null;     // contexto de movimentações, carregado ao abrir a aba
+let DEPTO = '';        // departamento selecionado (equipes grandes)
+
+const K_TOKEN = 'portal_gestor_token';
+const K_EMAIL = 'portal_gestor_email';
+
+/* ---------- ponte com o servidor ---------- */
+function chamar(fn){
+  const args = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function(ok, falha){
+    google.script.run
+      .withSuccessHandler(function(r){ ok(r); })
+      .withFailureHandler(function(e){ falha(new Error(e && e.message ? e.message : String(e))); })
+      [fn].apply(null, args);
+  });
+}
+
+/* ---------- utilidades ---------- */
+function $(id){ return document.getElementById(id); }
+function ver(id, sim){ const e = $(id); if(e) e.style.display = sim ? '' : 'none'; }
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function iniciais(nome){
+  const p = String(nome || '').trim().split(/\s+/);
+  if(!p[0]) return '?';
+  return ((p[0][0] || '') + (p.length > 1 ? (p[p.length-1][0] || '') : '')).toUpperCase();
+}
+
+function primeiroNome(nome){
+  const p = String(nome || '').trim().split(/\s+/)[0] || '';
+  return p.charAt(0) + p.slice(1).toLowerCase();
+}
+
+function brDe(iso){
+  if(!iso) return '—';
+  const p = String(iso).split('-');
+  return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+}
+
+function diaSemana(iso){
+  const d = new Date(iso + 'T12:00:00');
+  return ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][d.getDay()];
+}
+
+function maisDias(iso, n){
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+/* ================= AFASTAMENTOS ================= */
+function renderAfast(){
+  const c = CTX_AFAST;
+  if(!c) return;
+
+  // banner do guia de afastamento
+  if(c.guiaUrl){
+    const g = $('guiaAfast');
+    if(g){ g.href = c.guiaUrl; g.style.display = 'flex'; }
+  }
+
+  const ativos = c.ocorrencias.filter(o => o.status !== 'ENCERRADO');
+
+  if(!ativos.length){
+    $('cardsAfast').innerHTML = '<div class="vazio">Ninguém da sua equipe está afastado no momento. ' +
+      'Para registrar um atestado, use o botão acima.</div>';
+    return;
+  }
+
+  $('cardsAfast').innerHTML = ativos.map(o => {
+    const inss = o.encaminhaINSS
+      ? '<span class="etiqueta" style="background:var(--brand-soft);color:var(--brand)">INSS</span>'
+      : '<span class="etiqueta" style="background:var(--ok-soft);color:var(--ok)">Empresa</span>';
+
+    const doc = o.atestadoLink
+      ? '<a href="' + esc(o.atestadoLink) + '" target="_blank" rel="noopener" class="link-doc">📎 Ver atestado</a>'
+      : '';
+
+    return '<div class="cartao">' +
+      '<div class="cartao-topo">' +
+        '<div class="ini">' + esc(iniciais(o.nome)) + '</div>' +
+        '<div class="cartao-info"><b>' + esc(o.nome) + '</b>' +
+        '<span>' + esc(o.tipo) + '</span></div>' +
+        inss +
+      '</div>' +
+      '<div class="cartao-linha"><span>Início</span><b>' + brDe(o.inicio) + '</b></div>' +
+      '<div class="cartao-linha"><span>Dias</span><b>' + o.dias + '</b></div>' +
+      '<div class="cartao-linha"><span>Previsão de retorno</span><b>' + brDe(o.fim) + '</b></div>' +
+      doc +
+    '</div>';
+  }).join('');
+}
+
+function abrirLancarAfast(){
+  if(!CTX_AFAST) return;
+
+  // colaboradores
+  $('afColab').innerHTML = '<option value="">Escolha um colaborador…</option>' +
+    CTX_AFAST.equipe.map(c => '<option value="' + esc(c.idColaborador) + '">' +
+      esc(c.nome) + (c.matricula ? ' (' + esc(c.matricula) + ')' : '') + '</option>').join('');
+
+  // tipos
+  $('afTipo').innerHTML = CTX_AFAST.tipos.map(t =>
+    '<option value="' + esc(t.cod) + '">' + esc(t.nome) + '</option>').join('');
+
+  $('afInicio').value = '';
+  $('afDias').value = '';
+  $('afCid').value = '';
+  $('afArquivo').value = '';
+  $('afAcidente').checked = false;
+  toggleAcidente();
+  ver('afInfo15', false);
+  limpaAviso('afAviso');
+
+  abrir('ovAfast');
+}
+
+function toggleAcidente(){
+  ver('boxAcidente', $('afAcidente').checked);
+}
+
+// mostra o aviso dos 15 dias conforme o gestor digita
+document.addEventListener('input', function(e){
+  if(e.target && e.target.id === 'afDias'){
+    ver('afInfo15', Number(e.target.value || 0) > 15);
+  }
+});
+
+function lerArquivo(input){
+  return new Promise(function(ok, falha){
+    const f = input.files && input.files[0];
+    if(!f){ ok(null); return; }
+    const r = new FileReader();
+    r.onload = function(){
+      const base64 = String(r.result).split(',')[1];
+      ok({ base64: base64, nome: f.name, tipo: f.type || 'application/pdf' });
+    };
+    r.onerror = function(){ falha(new Error('Não consegui ler o arquivo.')); };
+    r.readAsDataURL(f);
+  });
+}
+
+async function enviarAfast(){
+  limpaAviso('afAviso');
+
+  const idColab = $('afColab').value;
+  const tipo = $('afTipo').value;
+  const inicio = $('afInicio').value;
+  const dias = parseInt($('afDias').value, 10) || 0;
+  const cid = $('afCid').value.trim();
+  const acidente = $('afAcidente').checked;
+
+  if(!idColab) return aviso('afAviso', 'Escolha o colaborador.');
+  if(!inicio) return aviso('afAviso', 'Informe a data de início.');
+  if(dias < 1) return aviso('afAviso', 'Informe a quantidade de dias.');
+
+  const arq = $('afArquivo');
+  if(!arq.files || !arq.files[0]) return aviso('afAviso', 'Anexe o atestado.');
+
+  // se é acidente, exige o mínimo para gerar o RAT
+  let rat = null;
+  if(acidente){
+    const dataAc = $('afAcData').value;
+    const relato = $('afAcRelato').value.trim();
+    if(!dataAc) return aviso('afAviso', 'Informe a data do acidente.');
+    if(!relato) return aviso('afAviso', 'Descreva como o acidente aconteceu (relato).');
+
+    rat = {
+      tipo: $('afAcTipo').value,
+      dataAcidente: brDe(dataAc),
+      horaAcidente: $('afAcHora').value,
+      local: $('afAcLocal').value.trim(),
+      municipio: $('afAcMunicipio').value.trim(),
+      parteLesionada: $('afAcParte').value.trim(),
+      agenteCausador: $('afAcAgente').value.trim(),
+      situacaoGeradora: $('afAcAgente').value.trim(),
+      relato: relato,
+      cid: cid
+    };
+  }
+
+  const b = $('afBtn');
+  ocupado(b, acidente ? 'Registrando e acionando segurança…' : 'Registrando…');
+
+  try{
+    const doc = await lerArquivo(arq);
+
+    const r = await chamar('srvAfastLancar', TOKEN, {
+      idColaborador: idColab,
+      tipoCod: tipo,
+      dataInicio: inicio,
+      dias: dias,
+      cid: cid,
+      atestadoBase64: doc.base64,
+      atestadoNome: doc.nome,
+      atestadoTipo: doc.tipo,
+      acidenteTrabalho: acidente,
+      rat: rat
+    });
+
+    fechar('ovAfast');
+    toast(r.mensagem || 'Afastamento registrado.', 'bom');
+    CTX_AFAST = null;
+    await irPara('afastamentos');
+  }catch(e){
+    aviso('afAviso', e.message);
+  }finally{ livre(b); }
+}
+
+/* ================= RESCISÃO ================= */
+/** Classifica o caso em uma das 3 colunas que o gestor vê: andamento | pendente | concluida. */
+function classificarResc(k){
+  if(k.status === 'CANCELADA') return 'concluida';
+  if(['AGUARDANDO_CONCILIACAO','VALORES_CONFIRMADOS','ENVIADO_FINANCEIRO','AGUARDANDO_ASSINATURA','ARQUIVADO'].indexOf(k.status) > -1){
+    return 'concluida';
+  }
+  if(k.status === 'DESLIGADO'){
+    return (k.modo === 'APLICAR') ? 'pendente' : 'concluida';
+  }
+  return 'andamento'; // SOLICITADA, AGENDADA, NAO_COMPARECEU, COMPARECEU, EXAME_MARCADO
+}
+
+/** Texto humano do status atual + a próxima etapa esperada (nada de código técnico na tela). */
+function textoEtapaResc(k){
+  const mapa = {
+    SOLICITADA: ['Solicitação enviada ao DP', 'Aguardando o DP entrar em contato'],
+    AGENDADA: ['Comparecimento agendado', 'Aguardando o dia do comparecimento'],
+    NAO_COMPARECEU: ['Reagendando o comparecimento', 'O DP vai marcar uma nova data'],
+    COMPARECEU: ['Compareceu ao DP', 'Aguardando marcação do exame demissional'],
+    EXAME_MARCADO: ['Exame demissional marcado', 'Aguardando a data do desligamento'],
+    CANCELADA: ['Cancelada', '']
+  };
+  if(mapa[k.status]) return mapa[k.status];
+
+  if(k.status === 'DESLIGADO' && k.modo === 'APLICAR'){
+    return ['Pronto para você aplicar', 'Comunique o desligamento ao colaborador'];
+  }
+  // DESLIGADO (DP_CONTATA) e todas as etapas internas de conciliação/financeiro/Autentique
+  return ['Desligamento concluído', 'O DP está finalizando a documentação'];
+}
+
+function pendenciaResc(k){
+  if(k.status === 'DESLIGADO' && k.modo === 'APLICAR'){
+    return 'Você precisa aplicar o desligamento e avisar ' + esc(String(k.nome).split(' ')[0]) + '.';
+  }
+  return '';
+}
+
+function renderResc(){
+  const c = CTX_RESC;
+  if(!c) return;
+
+  // banner do guia da rescisão
+  if(c.guiaUrl){
+    const g = $('guiaResc');
+    if(g){ g.href = c.guiaUrl; g.style.display = 'flex'; }
+  }
+
+  const casos = c.casos.map(k => Object.assign({}, k, { _bucket: classificarResc(k) }));
+
+  const nAndamento = casos.filter(k => k._bucket === 'andamento').length;
+  const nPendente = casos.filter(k => k._bucket === 'pendente').length;
+  const nConcluidas = casos.filter(k => k._bucket === 'concluida').length;
+
+  $('kpiRescAndamento').textContent = nAndamento;
+  $('kpiRescPendente').textContent = nPendente;
+  $('kpiRescConcluidas').textContent = nConcluidas;
+  $('kpiRescPendenteBox').classList.toggle('destaque', nPendente > 0);
+
+  const visiveis = casos; // todo caso já cai em algum dos 3 baldes (inclusive canceladas, em "concluídas")
+
+  if(!visiveis.length){
+    $('cardsResc').innerHTML =
+      '<div class="vazio-acolhedor">' +
+        '<div class="icone">📄</div>' +
+        '<h3>Nenhum desligamento em andamento</h3>' +
+        '<p>Quando uma solicitação for aberta, você poderá acompanhar aqui todas as etapas e atualizações do processo.</p>' +
+      '</div>';
+    return;
+  }
+
+  // ordena: pendente primeiro, depois andamento, depois concluídas
+  const ordem = { pendente: 0, andamento: 1, concluida: 2 };
+  visiveis.sort((a, b) => ordem[a._bucket] - ordem[b._bucket]);
+
+  $('cardsResc').innerHTML = visiveis.map(k => {
+    const [statusTexto, proximaEtapa] = textoEtapaResc(k);
+    const badge = k._bucket === 'pendente' ? '<span class="proc-badge pendente">Aguardando você</span>'
+      : k._bucket === 'concluida' ? '<span class="proc-badge concluida">Concluída</span>'
+      : '<span class="proc-badge andamento">Em andamento</span>';
+
+    const dataPrevista = k.agendamento || k.demissao || '';
+    const pendencia = pendenciaResc(k);
+
+    return '<div class="proc-card' + (k._bucket === 'pendente' ? ' pendente' : '') + '">' +
+      '<div class="proc-topo">' +
+        '<div><div class="proc-nome">' + esc(k.nome) + '</div><div class="proc-tipo">' + esc(k.tipo) + '</div></div>' +
+        badge +
+      '</div>' +
+      (dataPrevista ? '<div class="proc-linha">Data prevista: <b>' + brDe(dataPrevista) + '</b></div>' : '') +
+      '<div class="proc-linha">Status: <b>' + esc(statusTexto) + '</b></div>' +
+      (proximaEtapa ? '<div class="proc-linha">Próxima etapa: <b>' + esc(proximaEtapa) + '</b></div>' : '') +
+      (pendencia ? '<div class="proc-pendencia">⚠️ ' + pendencia + '</div>' : '') +
+      '<div class="proc-rodape">' +
+        '<span class="proc-atualizado">' + (k.atualizadoEm ? 'Atualizado em ' + esc(k.atualizadoEm) : '') + '</span>' +
+        '<button class="btn" style="width:auto;padding:8px 14px;font-size:12.5px" onclick="abrirDetalheResc(\'' + esc(k.id) + '\')">Ver processo</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function achaCasoRescPortal(id){
+  return (CTX_RESC && CTX_RESC.casos || []).find(k => k.id === id) || null;
+}
+
+function abrirDetalheResc(id){
+  const k = achaCasoRescPortal(id);
+  if(!k) return;
+
+  $('rdNome').textContent = k.nome;
+  $('rdTipo').textContent = k.tipo;
+
+  const [statusTexto, proximaEtapa] = textoEtapaResc(k);
+  const pendencia = pendenciaResc(k);
+  const dataPrevista = k.agendamento || k.demissao || '';
+
+  const carta = k.cartaLink
+    ? '<p style="font-size:13.5px"><a href="' + esc(k.cartaLink) + '" target="_blank" rel="noopener" class="link-doc">📎 Ver carta anexada</a></p>' : '';
+
+  const cancelar = (k.status === 'SOLICITADA')
+    ? '<button class="btn" style="margin-top:14px;background:#fdeceb;color:#b3261e" ' +
+      'onclick="fechar(\'ovRescDetalhe\');cancelarResc(\'' + esc(k.id) + '\')">Cancelar solicitação</button>' : '';
+
+  $('rdCorpo').innerHTML =
+    (dataPrevista ? '<div class="cartao-linha"><span>Data prevista</span><b>' + brDe(dataPrevista) + '</b></div>' : '') +
+    '<div class="cartao-linha"><span>Status atual</span><b>' + esc(statusTexto) + '</b></div>' +
+    (proximaEtapa ? '<div class="cartao-linha"><span>Próxima etapa</span><b>' + esc(proximaEtapa) + '</b></div>' : '') +
+    (k.avisoModalidade ? '<div class="cartao-linha"><span>Aviso prévio</span><b>' + esc(capaResc(k.avisoModalidade)) + '</b></div>' : '') +
+    (k.atualizadoEm ? '<div class="cartao-linha"><span>Última atualização</span><b>' + esc(k.atualizadoEm) + '</b></div>' : '') +
+    (pendencia ? '<div class="proc-pendencia" style="margin-top:12px">⚠️ ' + pendencia + '</div>' : '') +
+    carta + cancelar;
+
+  abrir('ovRescDetalhe');
+}
+
+function capaResc(s){ s = String(s || ''); return s ? s.charAt(0) + s.slice(1).toLowerCase() : s; }
+
+let MODELOS_CARTA_RESC = null; // cache — só busca uma vez por sessão
+
+function abrirSolicitarResc(){
+  if(!CTX_RESC) return;
+
+  $('rescColab').innerHTML = '<option value="">Escolha um colaborador…</option>' +
+    CTX_RESC.equipe.map(c => '<option value="' + esc(c.idColaborador) + '">' +
+      esc(c.nome) + (c.matricula ? ' (' + esc(c.matricula) + ')' : '') + '</option>').join('');
+
+  $('rescTipo').innerHTML = CTX_RESC.tipos.map(t =>
+    '<option value="' + esc(t.cod) + '">' + esc(t.nome) + '</option>').join('');
+
+  $('rescModo').value = 'DP_CONTATA';
+  $('rescAvisoModalidade').value = 'TRABALHADO';
+  $('rescObs').value = '';
+  $('rescCartaArquivo').value = '';
+  limpaAviso('rescAviso');
+
+  onTipoRescChange();
+  abrir('ovResc');
+}
+
+function onTipoRescChange(){
+  const cod = $('rescTipo').value;
+  const t = (CTX_RESC && CTX_RESC.tipos || []).find(x => x.cod === cod) || {};
+  ver('boxAvisoResc', !!t.pedeAviso);
+  ver('boxCartaResc', !!t.pedeCarta);
+  if(t.pedeCarta) renderModelosCartaResc();
+}
+
+async function renderModelosCartaResc(){
+  const el = $('rescModelosCartaLista');
+  el.innerHTML = '<span style="font-size:12.5px;color:var(--muted)">Carregando modelos…</span>';
+  try{
+    if(!MODELOS_CARTA_RESC){
+      MODELOS_CARTA_RESC = await chamar('srvRescModelosCarta', TOKEN);
+    }
+    const disponiveis = MODELOS_CARTA_RESC.modelos.filter(m => m.disponivel);
+    el.innerHTML = disponiveis.length
+      ? disponiveis.map(m =>
+          '<a href="' + esc(m.link) + '" target="_blank" rel="noopener" class="link-doc" style="display:block;margin-bottom:6px">📄 ' + esc(m.nome) + '</a>'
+        ).join('')
+      : '<span style="font-size:12.5px;color:var(--muted)">Nenhum modelo configurado ainda — fale com o DP.</span>';
+  }catch(e){
+    el.innerHTML = '<span style="font-size:12.5px;color:var(--muted)">Não consegui carregar os modelos agora.</span>';
+  }
+}
+
+async function enviarSolicitacaoResc(){
+  limpaAviso('rescAviso');
+
+  const idColab = $('rescColab').value;
+  const tipo = $('rescTipo').value;
+  const modo = $('rescModo').value;
+
+  if(!idColab) return aviso('rescAviso', 'Escolha o colaborador.');
+  if(!tipo) return aviso('rescAviso', 'Escolha o tipo de rescisão.');
+
+  const t = (CTX_RESC.tipos || []).find(x => x.cod === tipo) || {};
+
+  const dados = {
+    idColaborador: idColab,
+    tipoCod: tipo,
+    modo: modo,
+    avisoModalidade: t.pedeAviso ? $('rescAvisoModalidade').value : '',
+    observacao: $('rescObs').value.trim()
+  };
+
+  const arq = $('rescCartaArquivo');
+  const b = $('rescBtn');
+  ocupado(b, 'Registrando…');
+  try{
+    if(t.pedeCarta && arq.files && arq.files[0]){
+      const doc = await lerArquivo(arq);
+      dados.cartaBase64 = doc.base64;
+      dados.cartaNome = doc.nome;
+      dados.cartaTipo = doc.tipo;
+    }
+
+    const r = await chamar('srvRescSolicitar', TOKEN, dados);
+    fechar('ovResc');
+    toast(r.mensagem || 'Solicitação registrada.', 'bom');
+    CTX_RESC = null;
+    await irPara('rescisao');
+  }catch(e){
+    aviso('rescAviso', e.message);
+  }finally{ livre(b); }
+}
+
+async function cancelarResc(id){
+  if(!confirm('Cancelar esta solicitação de rescisão?')) return;
+  try{
+    const r = await chamar('srvRescCancelar', TOKEN, id, '');
+    toast(r.mensagem || 'Solicitação cancelada.', 'bom');
+    CTX_RESC = null;
+    await irPara('rescisao');
+  }catch(e){
+    toast(e.message, 'ruim');
+  }
+}
+
+function toast(msg, tipo){
+  const t = $('toast');
+  if(!t){
+    console.log('[TOAST]', msg);
+    return;
+  }
+  t.textContent = msg;
+  t.className = 'toast mostra ' + (tipo || '');
+  clearTimeout(window._t);
+  window._t = setTimeout(() => t.classList.remove('mostra'), 5200);
+}
+
+function aviso(id, msg, tipo){
+  const e = $(id);
+  e.textContent = msg;
+  e.className = 'aviso mostra ' + (tipo || '');
+}
+function limpaAviso(id){ const e = $(id); if(e){ e.textContent = ''; e.className = 'aviso'; } }
+
+function abrir(id){ $(id).classList.add('aberto'); }
+function fechar(id){ $(id).classList.remove('aberto'); }
+
+/* ---------- tema (claro/escuro) — mesmo recurso do Portal do DP ---------- */
+const K_TEMA = 'portal_gestor_tema';
+
+function aplicarTema(tema){
+  if(tema === 'claro') document.documentElement.removeAttribute('data-tema');
+  else document.documentElement.setAttribute('data-tema', tema);
+  try{ localStorage.setItem(K_TEMA, tema); }catch(e){}
+}
+
+function ultimoTemaEscuro(){
+  const t = localStorage.getItem(K_TEMA);
+  return (t && t.indexOf('escuro') === 0) ? t : 'escuro-cinza';
+}
+
+function alternarTemaRapido(){
+  const atual = document.documentElement.getAttribute('data-tema');
+  aplicarTema(atual ? 'claro' : ultimoTemaEscuro());
+}
+
+function abrirConfig(){
+  const atual = document.documentElement.getAttribute('data-tema') || 'claro';
+  const r = document.querySelector('input[name="tema"][value="' + atual + '"]');
+  if(r) r.checked = true;
+  abrir('ovConfig');
+}
+
+function ocupado(b, txt){ b.disabled = true; b._antes = b.innerHTML; b.innerHTML = '<span class="girando"></span>' + txt; }
+function livre(b){ b.disabled = false; if(b._antes) b.innerHTML = b._antes; }
+
+/* ---------- menu ---------- */
+function alternarMenu(){
+  $('lateral').classList.toggle('aberto');
+  $('fundoMenu').classList.toggle('aberto');
+}
+function fecharMenu(){
+  $('lateral').classList.remove('aberto');
+  $('fundoMenu').classList.remove('aberto');
+}
+
+/* ---------- início ---------- */
+window.addEventListener('DOMContentLoaded', function(){
+  const e = localStorage.getItem(K_EMAIL) || '';
+  if(e){ $('inEmail').value = e; $('cadEmail').value = e; }
+
+  ['inEmail','inSenha'].forEach(id => {
+    $(id).addEventListener('keydown', ev => { if(ev.key === 'Enter') entrar(); });
+  });
+
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', ev => { if(ev.target === o) o.classList.remove('aberto'); });
+  });
+
+  const t = localStorage.getItem(K_TOKEN);
+  if(t){ TOKEN = t; carregar(''); }
+});
+
+/* ---------- login ---------- */
+function alternarSenhaVisivel(){
+  const input = $('inSenha');
+  const visivel = input.type === 'text';
+  input.type = visivel ? 'password' : 'text';
+  $('btnOlhoSenha').setAttribute('aria-label', visivel ? 'Mostrar senha' : 'Ocultar senha');
+}
+
+function abrirCadastro(){
+  limpaAviso('loginAviso');
+  const e = $('inEmail').value.trim();
+  if(e) $('cadEmail').value = e;
+  ver('boxLogin', false);
+  ver('boxCadastro', true);
+}
+
+function voltarLogin(){
+  limpaAviso('loginAviso');
+  ver('boxCadastro', false);
+  ver('boxLogin', true);
+}
+
+async function pedirCodigo(){
+  limpaAviso('loginAviso');
+  const email = $('cadEmail').value.trim().toLowerCase();
+  if(!email) return aviso('loginAviso', 'Digite o seu e-mail institucional.');
+
+  const b = $('btnCodigo');
+  ocupado(b, 'Enviando…');
+
+  try{
+    const r = await chamar('srvSolicitarCodigo', email);
+    localStorage.setItem(K_EMAIL, email);
+    aviso('loginAviso', r.mensagem || 'Código enviado! Confira a sua caixa de entrada.', 'info');
+    $('cadCodigo').focus();
+  }catch(e){
+    aviso('loginAviso', e.message);
+  }finally{ livre(b); }
+}
+
+async function salvarSenha(){
+  limpaAviso('loginAviso');
+  const email = $('cadEmail').value.trim().toLowerCase();
+  const codigo = $('cadCodigo').value.trim();
+  const s1 = $('cadSenha').value;
+  const s2 = $('cadSenha2').value;
+
+  if(!email) return aviso('loginAviso', 'Digite o seu e-mail.');
+  if(!codigo) return aviso('loginAviso', 'Digite o código que chegou no seu e-mail.');
+  if(s1 !== s2) return aviso('loginAviso', 'As duas senhas não são iguais. Confira e tente de novo.');
+
+  const b = $('btnSalvarSenha');
+  ocupado(b, 'Salvando…');
+
+  try{
+    await chamar('srvDefinirSenha', email, codigo, s1);
+    $('inEmail').value = email;
+    $('inSenha').value = '';
+    voltarLogin();
+    aviso('loginAviso', 'Pronto! Sua senha foi criada. Agora é só entrar.', 'bom');
+    $('inSenha').focus();
+  }catch(e){
+    aviso('loginAviso', e.message);
+  }finally{ livre(b); }
+}
+
+async function entrar(){
+  limpaAviso('loginAviso');
+  const email = $('inEmail').value.trim().toLowerCase();
+  const senha = $('inSenha').value;
+
+  if(!email) return aviso('loginAviso', 'Digite o seu e-mail.');
+  if(!senha) return aviso('loginAviso', 'Digite a sua senha.');
+
+  const b = $('btnEntrar');
+  ocupado(b, 'Entrando…');
+
+  try{
+    const r = await chamar('srvLogin', email, senha);
+
+    TOKEN = r.token;
+    localStorage.setItem(K_TOKEN, TOKEN);
+    localStorage.setItem(K_EMAIL, email);
+    $('inSenha').value = '';
+    ATUAL = null;
+    FIM_DE_ANO_CACHE = null;
+    FIM_DE_ANO_ATUAL = null;
+    FIM_DE_ANO_SOLICITADOS_CACHE = null;
+    FIM_DE_ANO_ABA = 'pendentes';
+    CTX_FERIAS = null;
+    CTX_AFAST = null;
+    CTX_RESC = null;
+    CTX_MOV = null;
+    DEPTO = '';
+    SECAO = 'painel';
+    FILTRO = 'equipe';
+
+    if(r.dados){
+      // o painel já veio junto com o login — nada de nova ida ao servidor
+      D = r.dados;
+      ver('telaLogin', false);
+      montar();
+    } else {
+      await carregar('');
+    }
+  }catch(e){
+    aviso('loginAviso', e.message);
+  }finally{ livre(b); }
+}
+
+async function sair(){
+  fecharMenu();
+  try{ await chamar('srvLogout', TOKEN); }catch(e){}
+  localStorage.removeItem(K_TOKEN);
+  TOKEN = ''; D = null; ATUAL = null; VISAO = 'GESTOR'; FILTRO = 'equipe';
+  FIM_DE_ANO_CACHE = null; FIM_DE_ANO_ATUAL = null;
+  FIM_DE_ANO_SOLICITADOS_CACHE = null; FIM_DE_ANO_ABA = 'pendentes';
+  CTX_FERIAS = null; CTX_AFAST = null; CTX_RESC = null; CTX_MOV = null;
+  DEPTO = ''; SECAO = 'painel';
+  ver('app', false);
+  ver('telaSemEquipe', false);
+  ver('btnMenu', false);
+  $('usuario').innerHTML = '';
+  ver('telaLogin', true);
+}
+
+/* ---------- carga ---------- */
+async function carregar(modulo){
+  ver('telaLogin', false);
+  ver('telaSemEquipe', false);
+  ver('app', false);
+  ver('telaLoading', true);
+
+  try{
+    D = await chamar('srvCarregar', TOKEN, modulo || '', VISAO);
+    if(D.contexto && D.moduloCarregado === 'FERIAS') CTX_FERIAS = D.contexto;
+    montar();
+  }catch(e){
+    localStorage.removeItem(K_TOKEN);
+    TOKEN = '';
+    ver('telaLoading', false);
+    ver('telaLogin', true);
+    aviso('loginAviso', e.message || 'Sua sessão expirou. Entre novamente.');
+  }
+}
+
+async function abrirVisaoGeral(){
+  // "Visão geral" é o painel do próprio gestor; não é a visão global do DP.
+  VISAO = 'GESTOR';
+  await irPara('painel');
+}
+
+async function abrirMinhaEquipe(){
+  // Mesmo para DP/ADMIN, o Portal do Gestor trabalha sempre como GESTOR.
+  VISAO = 'GESTOR';
+  // "Minha equipe" abre o retrato completo das férias da equipe, sem reaproveitar um
+  // departamento ou um filtro de status da visita anterior. O cache de Fim de Ano é
+  // preservado: ele já é calculado exclusivamente para a equipe do gestor.
+  DEPTO = '';
+  CTX_FERIAS = null;
+  FILTRO = 'equipe';
+  await irPara('ferias');
+}
+
+function atualizarNavegacaoTopo(){
+  const equipeAtiva = SECAO === 'ferias';
+  const geralAtiva = SECAO === 'painel';
+  const btnEquipe = $('btnVisaoEquipe');
+  const btnGeral = $('btnVisaoGeral');
+
+  if(btnEquipe){
+    btnEquipe.classList.toggle('on', equipeAtiva);
+    btnEquipe.setAttribute('aria-pressed', equipeAtiva ? 'true' : 'false');
+  }
+  if(btnGeral){
+    btnGeral.classList.toggle('on', geralAtiva);
+    btnGeral.setAttribute('aria-pressed', geralAtiva ? 'true' : 'false');
+  }
+}
+
+function montar(){
+  ver('telaLoading', false);
+
+  const u = D.usuario;
+  const rf = D.resumos && D.resumos.FERIAS;
+
+  if(D.marca && D.marca.logo) $('logo').src = D.marca.logo;
+
+  $('usuario').innerHTML = '<div class="n">' + esc(primeiroNome(u.nome)) + '</div><div class="e">' + esc(u.email) + '</div>';
+  $('lateralNome').textContent = u.nome;
+  $('lateralEmail').textContent = u.email;
+  $('prazoDias').textContent = D.prazoDP;
+  ver('btnMenu', true);
+
+  // Atalhos do topo. Eles são navegação, não seletores de escopo global.
+  const podeAlternarVisao = (u.perfil === 'ADMIN' || u.perfil === 'DP');
+  ver('seletorVisao', podeAlternarVisao);
+  if(podeAlternarVisao) atualizarNavegacaoTopo();
+
+  renderMenu();
+
+  // "contadores.pessoas" só conta quem tem período de férias em aberto — alguém pode ter uma
+  // equipe real (por GESTOR_EMAIL) e ainda assim aparecer com 0 aqui, se ninguém da equipe
+  // tiver período carregado no momento. "tamanhoEquipePropria" é a contagem real da equipe,
+  // então usamos os dois: só cai em "sem equipe" se nenhum dos dois achar ninguém.
+  const temEquipe = rf && (
+    (rf.contadores && rf.contadores.pessoas > 0) ||
+    (rf.tamanhoEquipePropria && rf.tamanhoEquipePropria > 0)
+  );
+
+  if(!temEquipe){
+    ver('telaSemEquipe', true);
+    return;
+  }
+
+  // Não revela o app ainda: mantém o loading enquanto o entrarNoPortal decide a tela de
+  // entrada, pra não piscar o painel antes de saltar pro fim de ano.
+  ver('app', false);
+  ver('telaLoading', true);
+  entrarNoPortal();
+}
+
+/* Entrada do portal. Na campanha (prazo do gestor aberto) trava tudo em "em breve" e abre só no
+   fim de ano. Fora da campanha, abre no fim de ano se houver elegíveis, senão no painel. Tudo com
+   o app escondido até a tela certa estar pronta, pra não piscar o painel no meio. */
+async function entrarNoPortal(){
+  // Portal principal: abre no painel, com todos os módulos habilitados. O fim de ano tem portal
+  // próprio (espelho); mexer aqui não afeta os agendamentos de lá.
+  try{
+    await irPara('painel');
+  }catch(e){ /* se falhar, ainda revela o app pra não ficar tela branca */ }
+  ver('telaLoading', false);
+  ver('app', true);
+}
+
+/* Monta o menu lateral. No modo campanha (lockdown): um único item ativo "Férias de fim de ano"
+   e todos os outros módulos como "em breve" (travados, não excluídos). Fora dele, menu normal. */
+function renderMenu(){
+  let html;
+  if(LOCKDOWN_FIM_DE_ANO){
+    html = '<button class="item" onclick="irParaFimDeAno()" data-sec="fimdeano">' +
+             '<span class="ic">' + _iconeModulo_('fimdeano') + '</span>Férias de fim de ano</button>' +
+           D.modulos.filter(m => m.id !== 'painel' && m.id !== 'ferias').map(m =>
+             '<button class="item travado" onclick="verEmBreve(\'' + m.id + '\')" data-sec="' + m.id + '">' +
+               '<span class="ic">' + _iconeModulo_(m.id) + '</span>' + esc(m.nome) +
+               '<span class="breve">em breve</span>' +
+             '</button>').join('');
+  } else {
+    html = D.modulos.map(m =>
+      '<button class="item ' + (m.liberado ? '' : 'travado') + '" ' +
+      (m.liberado ? 'onclick="irPara(\'' + m.id + '\')"' : 'onclick="verEmBreve(\'' + m.id + '\')"') +
+      ' data-sec="' + m.id + '">' +
+        '<span class="ic">' + _iconeModulo_(m.id) + '</span>' + esc(m.nome) +
+        (m.ativo ? '' : '<span class="breve">em breve</span>') +
+      '</button>'
+    ).join('');
+  }
+  $('menuItens').innerHTML = html;
+}
+
+/* Vai pro fim de ano e marca o item do menu como ativo. */
+function irParaFimDeAno(){
+  FILTRO = 'fimdeano';
+  irPara('ferias');
+  _marcarFimDeAnoAtivo_();
+}
+
+function _marcarFimDeAnoAtivo_(){
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('ativo'));
+  const it = document.querySelector('.item[data-sec="fimdeano"]');
+  if(it) it.classList.add('ativo');
+}
+
+async function irPara(sec){
+  SECAO = sec;
+  fecharMenu();
+  atualizarNavegacaoTopo();
+
+  document.querySelectorAll('.item').forEach(i => i.classList.toggle('ativo', i.dataset.sec === sec));
+
+  ver('secPainel', sec === 'painel');
+  ver('secFerias', sec === 'ferias');
+  ver('secAfast', sec === 'afastamentos');
+  ver('secRescisao', sec === 'rescisao');
+  ver('secMovimentacao', sec === 'movimentacao');
+  ver('secEmBreve', false);
+
+  if(sec === 'painel'){ renderPainel(); return; }
+
+  if(sec === 'ferias'){
+    // O contexto pesado de férias só é buscado quando o gestor abre a aba — e só uma vez.
+    if(!CTX_FERIAS){
+      $('cards').innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>';
+      try{
+        const r = await chamar('srvCarregar', TOKEN, 'FERIAS', VISAO, DEPTO);
+        CTX_FERIAS = r.contexto;
+        D.resumos = r.resumos;
+      }catch(e){
+        toast(e.message, 'ruim');
+        return;
+      }
+    }
+    renderFerias();
+  }
+
+  if(sec === 'afastamentos'){
+    if(!CTX_AFAST){
+      $('cardsAfast').innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div>';
+      try{
+        CTX_AFAST = await chamar('srvAfastContexto', TOKEN);
+      }catch(e){
+        toast(e.message, 'ruim');
+        return;
+      }
+    }
+    renderAfast();
+  }
+
+  if(sec === 'rescisao'){
+    if(!CTX_RESC){
+      $('cardsResc').innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div>';
+      try{
+        CTX_RESC = await chamar('srvRescContexto', TOKEN);
+      }catch(e){
+        toast(e.message, 'ruim');
+        return;
+      }
+    }
+    renderResc();
+  }
+
+  if(sec === 'movimentacao'){
+    if(!CTX_MOV){
+      $('cardsMov').innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div>';
+      try{
+        CTX_MOV = await chamar('srvMovContexto', TOKEN);
+      }catch(e){
+        toast(e.message, 'ruim');
+        return;
+      }
+    }
+    renderMov();
+  }
+}
+
+function verEmBreve(id){
+  const m = D.modulos.find(x => x.id === id);
+  fecharMenu();
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('ativo'));
+  ver('secPainel', false);
+  ver('secFerias', false);
+  ver('secAfast', false);
+  ver('secRescisao', false);
+  ver('secMovimentacao', false);
+  ver('secEmBreve', true);
+  $('breveIcone').innerHTML = m ? _iconeModulo_(m.id, 40) :
+    '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>';
+  $('breveNome').textContent = m ? m.nome : 'Em breve';
+}
+
+/* ================= PAINEL (genérico) ================= */
+function renderPainel(){
+  const f = (D.resumos && D.resumos.FERIAS) || null;
+  const cont = (f && f.contadores) || { pessoas:0, comSaldo:0, prazoApertado:0, aguardandoDP:0, confirmadas:0 };
+  const pessoasTime = f && f.visao === 'GESTOR' && f.tamanhoEquipePropria != null
+    ? Number(f.tamanhoEquipePropria || 0)
+    : Number(cont.pessoas || 0);
+
+  const criticos = (f && f.precisaDeVoce) || [];
+  const pendentes = (f && f.emAndamento) || [];
+
+  const hora = new Date().getHours();
+  const cumprimento = hora < 12 ? 'Bom dia' : (hora < 18 ? 'Boa tarde' : 'Boa noite');
+
+  $('ola').textContent = cumprimento + ', ' + primeiroNome(D.usuario.nome) + '!';
+  $('subOla').textContent = 'Este é o seu espaço com o Departamento Pessoal. ' +
+    'Aqui você acompanha o que está em aberto e resolve o que precisa do seu time.';
+
+  ver('visao', false);
+
+  // ---- o que precisa de você: junta as pendências de TODOS os módulos ----
+  const pend = [];
+
+  Object.keys(D.resumos || {}).forEach(id => {
+    const r = D.resumos[id];
+    if(!r || !r.precisaDeVoce) return;
+
+    r.precisaDeVoce.forEach(x => pend.push({
+      modulo: r.nome, icone: r.icone, nome: x.nome,
+      detalhe: x.detalhe,
+      chip: '<span class="chip critico">' + (x.diasRestantes != null ? x.diasRestantes + ' dias' : 'atenção') + '</span>',
+      acao: (id === 'FERIAS'
+        ? '<button class="acao" onclick="irParaAgendar(\'' + x.idPeriodo + '\')">agendar</button>'
+        : '')
+    }));
+  });
+
+  if(!pend.length){
+    $('listaPendencias').innerHTML =
+      '<div class="vazio" style="padding:28px;border:0;background:transparent">' +
+      '🎉 Nada pendente por aqui. Seu time está em dia!</div>';
+  } else {
+    $('listaPendencias').innerHTML = pend.map(p =>
+      '<div class="linha">' +
+        '<div class="bola">' + esc(iniciais(p.nome)) + '</div>' +
+        '<div class="txt"><b>' + esc(p.nome) + '</b>' +
+        '<span>' + p.icone + ' ' + p.modulo + ' · ' + esc(p.detalhe) + '</span></div>' +
+        '<div class="dir">' + p.chip + '</div>' + p.acao +
+      '</div>').join('');
+  }
+
+  // ---- em andamento (todos os módulos) ----
+  const andamento = [];
+
+  Object.keys(D.resumos || {}).forEach(id => {
+    const r = D.resumos[id];
+    if(!r || !r.emAndamento) return;
+    r.emAndamento.forEach(x => andamento.push({ r: r, x: x }));
+  });
+
+  ver('blocoAndamento', andamento.length > 0);
+
+  if(andamento.length){
+    $('listaAndamento').innerHTML = andamento.map(a =>
+      '<div class="linha">' +
+        '<div class="bola">' + esc(iniciais(a.x.nome)) + '</div>' +
+        '<div class="txt"><b>' + esc(a.x.nome) + '</b>' +
+        '<span>' + a.r.icone + ' ' + esc(a.r.nome) + ' · ' +
+        (a.x.inicio ? brDe(a.x.inicio) + ' a ' + brDe(a.x.fim) : 'Venda de dias') +
+        ' · ' + a.x.dias + ' dias' + (a.x.abono ? ' + ' + a.x.abono + ' vendidos' : '') + '</span></div>' +
+        '<div class="dir"><span class="chip espera">com o DP</span></div>' +
+        '<button class="acao" onclick="cancelar(\'' + a.x.id + '\')">cancelar</button>' +
+      '</div>').join('');
+  }
+
+  // ---- seu time ----
+  $('resumoTime').innerHTML =
+    '<div class="t"><b>' + pessoasTime + '</b><span>Pessoas</span></div>' +
+    '<div class="t"><b>' + cont.confirmadas + '</b><span>Com férias marcadas</span></div>' +
+    '<div class="t"><b>' + cont.aguardandoDP + '</b><span>Aguardando o DP</span></div>' +
+    '<div class="t"><b>' + cont.prazoApertado + '</b><span>Com prazo apertado</span></div>';
+
+  // ---- atalhos ----
+  $('atalhos').innerHTML = D.modulos.filter(m => m.id !== 'painel').map(m => {
+    const r = D.resumos && D.resumos[m.id.toUpperCase()];
+    const qtd = r && r.precisaDeVoce ? r.precisaDeVoce.length : 0;
+    const n = qtd ? '<span class="badge">' + qtd + '</span>' : '';
+    return '<div class="atalho ' + (m.liberado ? '' : 'travado') + '" ' +
+      (m.liberado ? 'onclick="irPara(\'' + m.id + '\')"' : '') + '>' +
+      '<span class="ic">' + m.icone + '</span>' +
+      '<span class="nm">' + esc(m.nome) + '</span>' +
+      (m.ativo ? n : '<span class="tag">em breve</span>') +
+      '</div>';
+  }).join('');
+}
+
+/* ================= FÉRIAS ================= */
+let DEPTOS_CACHE = [];
+let TOTAL_EQUIPE_CACHE = 0;
+
+function abrirListaDepto(){
+  renderListaDepto();
+  ver('fdLista', true);
+}
+
+function renderListaDepto(){
+  const q = ($('fdBusca').value || '').toLowerCase().trim();
+
+  const lista = DEPTOS_CACHE.filter(d => !q || d.nome.toLowerCase().includes(q));
+
+  let html = '';
+
+  if(!q){
+    html += '<div class="fd-item fd-todos" onclick="escolherDepto(\'\')">' +
+      '<span class="fd-nome">Todos os departamentos</span>' +
+      '<span class="fd-num"><span class="fd-total">' + TOTAL_EQUIPE_CACHE + ' pessoas</span></span>' +
+    '</div>';
+  }
+
+  if(!lista.length){
+    html += '<div class="fd-vazio">Nenhum departamento encontrado.</div>';
+  } else {
+    html += lista.map(d => {
+      const alerta = d.criticos
+        ? '<span class="fd-alerta" title="' + d.criticos + ' pessoa(s) com férias próximas do prazo." ' +
+          'onclick="event.stopPropagation();toast(\'' + d.criticos + ' pessoa(s) com férias próximas do prazo.\')">⚠ ' + d.criticos + '</span>'
+        : '';
+      return '<div class="fd-item" onclick="escolherDepto(\'' + esc(d.nome).replace(/'/g,"\\'") + '\')">' +
+        '<span class="fd-nome">' + esc(d.nome) + '</span>' +
+        '<span class="fd-num"><span class="fd-total">' + d.total + '</span>' + alerta + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  $('fdLista').innerHTML = html;
+}
+
+function escolherDepto(nome){
+  ver('fdLista', false);
+  trocarDepto(nome);
+}
+
+function limparFiltroDepto(){
+  $('fdBusca').value = '';
+  ver('fdLista', false);
+  trocarDepto(''); // busca de novo: o backend devolve a lista de departamentos pra escolher
+}
+
+document.addEventListener('click', function(ev){
+  const caixa = document.getElementById('filtroDepto');
+  if(caixa && !caixa.contains(ev.target)) ver('fdLista', false);
+});
+
+async function trocarDepto(dep){
+  DEPTO = dep;
+  CTX_FERIAS = null;
+  $('cards').innerHTML = '<div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>';
+  try{
+    const r = await chamar('srvCarregar', TOKEN, 'FERIAS', VISAO, DEPTO);
+    CTX_FERIAS = r.contexto;
+  }catch(e){ toast(e.message, 'ruim'); return; }
+  renderFerias();
+}
+
+async function irParaAgendar(idPeriodo){
+  await irPara('ferias');
+  abrirAgendar(idPeriodo);
+}
+
+async function renderFerias(){
+  const f = CTX_FERIAS;
+  if(!f) return;
+  const c = Array.isArray(f.colaboradores) ? f.colaboradores : [];
+
+  // guia
+  if(f.guiaUrl){
+    const g = $('guia');
+    g.href = f.guiaUrl;
+    g.style.display = 'flex';
+  }
+
+  // filtro de departamento (só para equipes grandes)
+  if(f.equipeGrande && f.departamentos){
+    ver('filtroDepto', true);
+    DEPTOS_CACHE = f.departamentos;
+    TOTAL_EQUIPE_CACHE = f.totalNaEquipe;
+
+    const temFiltro = !!f.departamentoAtivo;
+    ver('fdFechado', temFiltro);
+    ver('fdAberto', !temFiltro);
+    if(temFiltro){
+      $('fdNomeAtual').textContent = f.departamentoAtivo;
+    } else {
+      $('fdBusca').value = '';
+      ver('fdLista', false);
+    }
+
+    // sem departamento escolhido: mostra convite, não a lista
+    if(!f.pessoasCarregadas){
+      ver('consolidadoFerias', false);
+      ver('painelStatus', false);
+      ver('blocoFimDeAno', false);
+      ver('buscador', false);
+      $('cards').innerHTML = '<div class="vazio">👆 Você tem <b>' + f.totalNaEquipe +
+        ' pessoas</b> na equipe, em ' + f.departamentos.length +
+        ' departamentos.<br>Escolha um departamento acima para ver e agendar as férias.</div>';
+      return;
+    }
+  } else {
+    ver('filtroDepto', false);
+  }
+
+  ver('painelStatus', true);
+  ver('buscador', true);
+  ver('cards', true);
+
+  // Os cartões sem período fazem parte do retrato da equipe, mas não são elegíveis para
+  // agendamento e, por isso, não entram no contador de disponíveis.
+  const totalEquipe = representantesDaEquipe(c).length;
+  const livre = c.filter(x => !x.semPeriodo && !x.naoElegivelFerias && !x.aprendiz &&
+    Number(x.saldo || 0) > 0 && !temStatus(x, 'PENDENTE')).length;
+  const pend = c.filter(x => !x.semPeriodo && !x.naoElegivelFerias && !x.aprendiz && temStatus(x, 'PENDENTE')).length;
+  const agend = c.filter(x => !x.semPeriodo && !x.naoElegivelFerias && !x.aprendiz && temStatus(x, 'DEFERIDA')).length;
+
+  // Férias de fim de ano NÃO pertencem mais a este portal.
+  // O módulo foi movido para um portal separado; portanto este Portal Gestor
+  // não exibe card, não cria placeholder e não consulta elegibilidade em segundo plano.
+  $('painelStatus').innerHTML =
+    cartao('equipe', 'Toda a equipe', totalEquipe, 'Pessoas vinculadas') +
+    cartao('livre', 'Disponíveis', livre, 'Podem ser agendadas') +
+    cartao('pendente', 'Aguardando o DP', pend, 'Já enviadas') +
+    cartao('agendado', 'Confirmadas', agend, 'Já estão marcadas');
+
+  // Segurança visual: garante que o bloco legado permaneça oculto neste portal.
+  ver('blocoFimDeAno', false);
+
+  renderCards();
+}
+
+/* ---- férias de fim de ano ---- */
+async function renderFimDeAno(){
+  const mostrar = (FILTRO === 'fimdeano');
+
+  ver('blocoFimDeAno', mostrar);
+  ver('buscador', FILTRO !== 'fimdeano');
+  ver('cards', FILTRO !== 'fimdeano');
+
+  // Na campanha (lockdown), a tela fica SÓ com o fim de ano: esconde cabeçalho, guia e cartões
+  // (a navegação é pelo menu). Fora da campanha, os cartões de status seguem servindo de abas.
+  const _saud = document.querySelector('#secFerias .saudacao');
+  if(LOCKDOWN_FIM_DE_ANO){
+    if(_saud) _saud.style.display = mostrar ? 'none' : '';
+    if(mostrar){ ver('guia', false); ver('painelStatus', false); }
+  } else if(_saud){
+    _saud.style.display = '';
+  }
+
+  if(!mostrar) return;
+
+  if(!FIM_DE_ANO_CACHE){
+    $('listaFimDeAno').innerHTML = '<div class="vazio">Carregando…</div>';
+    try{
+      FIM_DE_ANO_CACHE = await chamar('srvElegiveisFimDeAno', TOKEN);
+    }catch(e){
+      $('listaFimDeAno').innerHTML = '<div class="vazio">' + esc(e.message) + '</div>';
+      return;
+    }
+  }
+
+  if(FIM_DE_ANO_CACHE.aindaNaoAbriu){
+    $('listaFimDeAno').innerHTML =
+      '<div class="vazio">O agendamento das férias de fim de ano ainda não abriu.<br>Volte a partir de ' + esc(FIM_DE_ANO_CACHE.inicioGestor || '') + '.</div>';
+    return;
+  }
+
+  if(FIM_DE_ANO_CACHE.dentroDoPrazo === false){
+    $('listaFimDeAno').innerHTML =
+      '<div class="vazio">A campanha de agendamento de férias de fim de ano está encerrada.<br>Fale com o Departamento Pessoal em caso de dúvida.</div>';
+    return;
+  }
+
+  const lista = FIM_DE_ANO_CACHE.colaboradores || [];
+
+  if(!lista.length){
+    $('listaFimDeAno').innerHTML =
+      '<div class="vazio">Ninguém na equipe com saldo disponível pras férias de fim de ano.</div>';
+    return;
+  }
+
+  $('listaFimDeAno').innerHTML = lista.map(a =>
+    '<div class="linha">' +
+      '<div class="bola">' + esc(iniciais(a.nome)) + '</div>' +
+      '<div class="txt"><b>' + esc(a.nome) + '</b><span>Saldo: ' + a.saldo + ' dia(s)</span></div>' +
+      '<button class="acao" onclick="abrirFimDeAno(\'' + a.idPeriodo + '\')">agendar</button>' +
+    '</div>'
+  ).join('');
+}
+
+/* ---- aba "Solicitados" — quem já enviou e está aguardando o DP ---- */
+async function fdaMostrarAba(aba){
+  FIM_DE_ANO_ABA = aba;
+  $('fdaAbaPendentes').classList.toggle('ativa', aba === 'pendentes');
+  $('fdaAbaSolicitados').classList.toggle('ativa', aba === 'solicitados');
+  ver('listaFimDeAno', aba === 'pendentes');
+  ver('listaFimDeAnoSolicitados', aba === 'solicitados');
+
+  if(aba === 'solicitados' && !FIM_DE_ANO_SOLICITADOS_CACHE){
+    $('listaFimDeAnoSolicitados').innerHTML = '<div class="vazio">Carregando…</div>';
+    try{
+      FIM_DE_ANO_SOLICITADOS_CACHE = await chamar('srvAgendadosFimDeAno', TOKEN);
+    }catch(e){
+      $('listaFimDeAnoSolicitados').innerHTML = '<div class="vazio">Não foi possível carregar agora.</div>';
+      return;
+    }
+    renderFimDeAnoSolicitados();
+  }
+}
+
+function renderFimDeAnoSolicitados(){
+  const lista = (FIM_DE_ANO_SOLICITADOS_CACHE && FIM_DE_ANO_SOLICITADOS_CACHE.colaboradores) || [];
+  if(!lista.length){
+    $('listaFimDeAnoSolicitados').innerHTML = '<div class="vazio">Ninguém da sua equipe tem férias de fim de ano solicitadas ainda.</div>';
+    return;
+  }
+
+  $('listaFimDeAnoSolicitados').innerHTML = lista.map(a =>
+    '<div class="linha">' +
+      '<div class="bola">' + esc(iniciais(a.nome)) + '</div>' +
+      '<div class="txt"><b>' + esc(a.nome) + '</b><span>' + esc(a.inicio) + ' a ' + esc(a.fim) + ' · ' + a.dias + ' dia(s)</span></div>' +
+      '<span class="fda-selo">solicitado</span>' +
+    '</div>'
+  ).join('');
+}
+
+function abrirFimDeAno(idPeriodo){
+  const a = (FIM_DE_ANO_CACHE.colaboradores || []).find(x => x.idPeriodo === idPeriodo);
+  if(!a) return;
+
+  FIM_DE_ANO_ATUAL = a;
+
+  $('faNome').textContent = a.nome;
+  $('faSub').textContent = 'Saldo disponível: ' + a.saldo + ' dia(s)';
+
+  const o1 = a.opcoes.find(o => o.id === 'OPCAO_1');
+  const o2 = a.opcoes.find(o => o.id === 'OPCAO_2');
+
+  document.getElementById('faOpcao1').closest('label').style.display = o1 ? 'flex' : 'none';
+  document.getElementById('faOpcao2').closest('label').style.display = o2 ? 'flex' : 'none';
+
+  if(o1) $('faOpcao1Texto').textContent = 'Opção 1: ' + o1.inicio + ' a ' + o1.fim + ' (' + o1.dias + ' dias)';
+  if(o2) $('faOpcao2Texto').textContent = 'Opção 2: ' + o2.inicio + ' a ' + o2.fim + ' (' + o2.dias + ' dias)';
+
+  $('faOpcao1').checked = false;
+  $('faOpcao2').checked = false;
+
+  limpaAviso('faAviso');
+  abrir('ovFimDeAno');
+}
+
+async function enviarFimDeAno(){
+  limpaAviso('faAviso');
+
+  let opcao = '';
+  if($('faOpcao1').checked) opcao = 'OPCAO_1';
+  else if($('faOpcao2').checked) opcao = 'OPCAO_2';
+
+  if(!opcao) return aviso('faAviso', 'Escolha a opção.');
+
+  const b = $('faBtn');
+  ocupado(b, 'Enviando…');
+
+  try{
+    const r = await chamar('srvAgendarFimDeAno', TOKEN, FIM_DE_ANO_ATUAL.idPeriodo, opcao);
+    fechar('ovFimDeAno');
+    toast(r.mensagem || 'Enviado ao DP!', 'bom');
+    FIM_DE_ANO_CACHE = null;   // recarrega a lista (quem agendou sai dela)
+    FIM_DE_ANO_SOLICITADOS_CACHE = null;   // e força recarregar a aba Solicitados
+    CTX_FERIAS = null;
+    FILTRO = 'fimdeano';
+    await irPara('ferias');
+    if(FIM_DE_ANO_ABA === 'solicitados') fdaMostrarAba('solicitados');
+    if(LOCKDOWN_FIM_DE_ANO) _marcarFimDeAnoAtivo_();
+  }catch(e){
+    aviso('faAviso', e.message);
+  }finally{ livre(b); }
+}
+
+function cartao(id, titulo, n, sub){
+  return '<button class="status-card ' + (FILTRO === id ? 'ativo' : '') + '" onclick="filtrar(\'' + id + '\')">' +
+    '<span>' + titulo + '</span><strong>' + n + '</strong><small>' + sub + '</small></button>';
+}
+
+// Card sem número em destaque — para não chamar atenção (ex.: venda de dias).
+function cartaoDiscreto(id, titulo, sub, emoji){
+  return '<button class="status-card discreto ' + (FILTRO === id ? 'ativo' : '') + '" onclick="filtrar(\'' + id + '\')">' +
+    '<span>' + titulo + '</span><strong style="font-size:18px;opacity:.55">' + (emoji || _iconeModulo_('fimdeano', 18)) + '</strong><small>' + sub + '</small></button>';
+}
+
+function cartaoCarregando(id, titulo){
+  return '<div class="status-card discreto" id="' + id + '" style="cursor:default">' +
+    '<span>' + titulo + '</span>' +
+    '<strong style="font-size:15px;opacity:.6"><span class="girando" style="border-color:rgba(14,90,107,.25);border-top-color:#0E5A6B"></span></strong>' +
+    '<small>Verificando…</small></div>';
+}
+
+function filtrar(id){
+  FILTRO = id;
+  renderFerias();
+}
+
+function temStatus(c, st){
+  const solicitacoes = c && Array.isArray(c.solicitacoes) ? c.solicitacoes : [];
+  return solicitacoes.some(s => s.status === st);
+}
+
+/**
+ * Escolhe um cartão representativo por colaborador para o retrato "Toda a equipe".
+ * A API normalmente já entrega um período vigente por pessoa, mas a deduplicação protege a
+ * tela de dados antigos/duplicados. Mantém a ordem original nos empates.
+ */
+function representantesDaEquipe(colaboradores){
+  const lista = Array.isArray(colaboradores) ? colaboradores : [];
+  const porChave = {};
+  const ordem = [];
+
+  function prioridade(c){
+    // A classificação atual do vínculo prevalece sobre qualquer período histórico que tenha
+    // sobrado para a mesma pessoa.
+    if(c && (c.naoElegivelFerias || c.aprendiz)) return 100;
+    if(!c || c.semPeriodo || !c.idPeriodo) return 0;
+    if(temStatus(c, 'PENDENTE')) return 40;
+    if(Number(c.saldo || 0) > 0) return 30;
+    if(c.emCurso) return 20;
+    if(temStatus(c, 'DEFERIDA')) return 10;
+    return 5;
+  }
+
+  lista.forEach(function(c, indice){
+    // Sem ID não é seguro unir pessoas apenas pelo nome; cada linha permanece independente.
+    const idBruto = c && c.idColaborador != null ? c.idColaborador : '';
+    const id = String(idBruto).trim();
+    const chave = id ? 'ID:' + id : 'SEM_ID:' + indice;
+
+    if(!Object.prototype.hasOwnProperty.call(porChave, chave)){
+      porChave[chave] = c;
+      ordem.push(chave);
+      return;
+    }
+
+    if(prioridade(c) > prioridade(porChave[chave])) porChave[chave] = c;
+  });
+
+  return ordem.map(chave => porChave[chave]);
+}
+
+function _solicitacoesAtivasCard_(c){
+  const lista = c && Array.isArray(c.solicitacoes) ? c.solicitacoes : [];
+  return lista.filter(function(s){
+    const st = String(s.status || '').toUpperCase();
+    return st === 'PENDENTE' || st === 'DEFERIDA';
+  });
+}
+
+function _resumoAgendamentosCard_(c){
+  const ativas = _solicitacoesAtivasCard_(c);
+  const pendentes = ativas.filter(s => String(s.status || '').toUpperCase() === 'PENDENTE');
+  const confirmadas = ativas.filter(s => String(s.status || '').toUpperCase() === 'DEFERIDA');
+
+  const diasPendentes = pendentes.reduce((t, s) => t + Number(s.dias || 0), 0);
+  const diasConfirmados = confirmadas.reduce((t, s) => t + Number(s.dias || 0), 0);
+
+  return {
+    ativas: ativas,
+    pendentes: pendentes,
+    confirmadas: confirmadas,
+    diasPendentes: diasPendentes,
+    diasConfirmados: diasConfirmados,
+    diasComprometidos: diasPendentes + diasConfirmados
+  };
+}
+
+function renderCards(){
+  if(!CTX_FERIAS || FILTRO === 'fimdeano') return;
+  const q = ($('filtro').value || '').toLowerCase().trim();
+  let lista = Array.isArray(CTX_FERIAS.colaboradores) ? CTX_FERIAS.colaboradores.slice() : [];
+
+  // "Toda a equipe" mostra um representante por pessoa.
+  if(FILTRO === 'equipe')   lista = representantesDaEquipe(lista);
+  if(FILTRO === 'livre')    lista = lista.filter(x => !x.naoElegivelFerias && !x.aprendiz &&
+    (x.semPeriodo || Number(x.saldo || 0) > 0 || x.emCurso) && !temStatus(x, 'PENDENTE'));
+  if(FILTRO === 'pendente') lista = lista.filter(x => !x.semPeriodo && !x.naoElegivelFerias && !x.aprendiz && temStatus(x, 'PENDENTE'));
+  if(FILTRO === 'agendado') lista = lista.filter(x => !x.semPeriodo && !x.naoElegivelFerias && !x.aprendiz && temStatus(x, 'DEFERIDA'));
+
+  if(q) lista = lista.filter(x => (x.nome || '').toLowerCase().includes(q));
+
+  if(!lista.length){
+    $('cards').innerHTML = '<div class="vazio">Ninguém da sua equipe está nesta situação agora.</div>';
+    return;
+  }
+
+  $('cards').innerHTML = lista.map(c => {
+    const naoElegivel = !!(c.naoElegivelFerias || c.aprendiz);
+    const semPeriodo = !!c.semPeriodo;
+    const saldo = Number(c.saldo || 0);
+    const diasDireito = Number(c.diasDireito || 0);
+    const resumoAg = _resumoAgendamentosCard_(c);
+    const pendente = resumoAg.pendentes.length > 0;
+    const confirmada = resumoAg.confirmadas.length > 0;
+
+    // O ID_PERIODO é obrigatório para enviar um novo agendamento.
+    // Se houver saldo mas o identificador não vier da API, o card NÃO diz mais
+    // "Sem dias a agendar": isso é problema de vínculo/cadastro, não falta de saldo.
+    const temIdPeriodo = !!String(c.idPeriodo || '').trim();
+
+    const podeAgendar = !naoElegivel && !semPeriodo && temIdPeriodo &&
+      (saldo > 0 || (c.emCurso && diasDireito > 0));
+
+    let selo = '<span class="selo livre">Disponível</span>';
+    if(naoElegivel) selo = '<span class="selo naoelegivel">Não elegível</span>';
+    else if(semPeriodo) selo = '<span class="selo emcurso">Cadastro pendente</span>';
+    else if(!temIdPeriodo && saldo > 0) selo = '<span class="selo pendente">Vínculo pendente</span>';
+    else if(c.saldoEncalhado) selo = '<span class="selo pendente" title="Saldo de ' + saldo + ' dia(s), mas nenhuma fração já cumpriu o mínimo de 14 dias corridos exigido por lei, e não sobra saldo suficiente pra formar uma agora. Fale com o DP.">Saldo preso — fale com o DP</span>';
+    else if(pendente) selo = '<span class="selo pendente">Aguardando DP</span>';
+    else if(c.emCurso) selo = '<span class="selo emcurso">Período em curso</span>';
+    else if(c.urgencia === 'VENCIDO' && podeAgendar) selo = '<span class="selo critico">Prazo vencido — fale com o DP</span>';
+    else if(c.urgencia === 'CRITICO' && podeAgendar) selo = '<span class="selo critico">Prazo apertado</span>';
+    else if(confirmada && saldo <= 0) selo = '<span class="selo agendado">Confirmadas</span>';
+    else if(confirmada) selo = '<span class="selo agendado">Parcialmente agendado</span>';
+
+    // Mostra os agendamentos reais do período.
+    const solicitacoes = !naoElegivel && Array.isArray(c.solicitacoes) ? c.solicitacoes : [];
+    const sols = solicitacoes
+      .filter(s => {
+        const st = String(s.status || '').toUpperCase();
+        return st !== 'CANCELADA' && st !== 'INDEFERIDA';
+      })
+      .slice(-3)
+      .map(s => {
+        const quando = s.inicio ? (brDe(s.inicio) + ' a ' + brDe(s.fim)) : 'Venda de dias';
+        const cancelar = String(s.status || '').toUpperCase() === 'PENDENTE'
+          ? '<button class="mini" onclick="event.stopPropagation();cancelar(\'' + s.id + '\')">cancelar</button>'
+          : '';
+
+        return '<div class="sol"><span>' + quando + ' · ' + Number(s.dias || 0) + 'd' +
+          (s.abono ? ' + ' + Number(s.abono || 0) + ' vendidos' : '') + '</span>' +
+          '<span class="st ' + s.status + '">' + rotulo(s.status) + ' ' + cancelar + '</span></div>';
+      }).join('');
+
+    // Rodapé do card: distingue saldo disponível, saldo já comprometido e falha de vínculo.
+    let chamada;
+    if(naoElegivel){
+      chamada = '<div class="chamada off">Não elegível para agendamento de férias neste portal</div>';
+    } else if(semPeriodo){
+      chamada = '<div class="chamada off">Aguardando o DP cadastrar o período aquisitivo</div>';
+    } else if(!temIdPeriodo && saldo > 0){
+      chamada = '<div class="chamada off">⚠️ ' + saldo + ' dias disponíveis, mas o período está sem identificador. Acione o DP.</div>';
+    } else if(c.emCurso){
+      chamada = '<div class="chamada">🕒 Período em curso' +
+        (c.disponivelEm ? ' · agendar a partir de ' + brDe(c.disponivelEmISO) + ' →' : ' →') + '</div>';
+    } else if(podeAgendar){
+      chamada = '<div class="chamada">' + saldo + ' dia' + (saldo === 1 ? '' : 's') + ' disponível' +
+        (saldo === 1 ? '' : 'is') + ' para agendar →</div>';
+    } else if(confirmada){
+      chamada = '<div class="chamada off">✓ Saldo deste período totalmente agendado</div>';
+    } else if(pendente){
+      chamada = '<div class="chamada off">Aguardando análise do DP</div>';
+    } else {
+      chamada = '<div class="chamada off">Sem saldo disponível neste período</div>';
+    }
+
+    // Segunda pílula:
+    // - se todo o saldo já está confirmado, mostrar a situação do agendamento;
+    // - se ainda existe saldo, manter o prazo legal "Conceder até".
+    let segundaPilula = '';
+    if(confirmada && saldo <= 0){
+      segundaPilula =
+        '<div class="pilula"><div class="k">Dias confirmados</div><div class="v">' +
+        resumoAg.diasConfirmados + '</div></div>';
+    } else if(pendente && saldo <= 0){
+      segundaPilula =
+        '<div class="pilula"><div class="k">Dias em análise</div><div class="v">' +
+        resumoAg.diasPendentes + '</div></div>';
+    } else {
+      segundaPilula =
+        '<div class="pilula ' + (c.urgencia || '') +
+        (c.diasAteVencer !== null && c.diasAteVencer >= 0 && c.diasAteVencer <= 90 ? ' risco90' : '') +
+        '"><div class="k">Conceder até</div><div class="v">' + esc(c.concederAte || '—') + '</div></div>';
+    }
+
+    return '<div class="card ' + (podeAgendar ? 'clicavel' : '') + '"' +
+      (podeAgendar ? ' onclick="abrirAgendar(\'' + c.idPeriodo + '\')"' : '') + '>' +
+      selo +
+      '<div class="cabeca">' +
+        '<div class="avatar">' + esc(iniciais(c.nome)) + '</div>' +
+        '<div><div class="nome">' + esc(c.nome) + '</div>' +
+        '<div class="periodo">' + (naoElegivel
+          ? 'Vínculo cadastrado na equipe'
+          : semPeriodo
+          ? 'Período aquisitivo ainda não cadastrado'
+          : 'Período aquisitivo: ' + esc(c.periodoAquisitivo)) + '</div></div>' +
+      '</div>' +
+      (naoElegivel
+        ? '<div class="pilulas"><div class="pilula"><div class="k">Situação</div><div class="v">Sem agendamento pelo portal</div></div></div>'
+        : semPeriodo
+        ? '<div class="pilulas"><div class="pilula"><div class="k">Situação</div><div class="v">Aguardando cadastro do DP</div></div></div>'
+        : '<div class="pilulas">' +
+            '<div class="pilula"><div class="k">' +
+              (c.emCurso ? 'Dias (ainda em curso)' : (saldo > 0 ? 'Dias a tirar' : 'Saldo disponível')) +
+            '</div><div class="v">' + (c.emCurso ? diasDireito : saldo) + '</div></div>' +
+            segundaPilula +
+          '</div>') +
+      sols +
+      chamada +
+    '</div>';
+  }).join('');
+}
+
+function rotulo(st){
+  return { PENDENTE:'em análise', DEFERIDA:'confirmada', INDEFERIDA:'não aprovada', CANCELADA:'cancelada' }[st] || st;
+}
+
+/* ================= MODAL ================= */
+function abrirAgendar(idPeriodo){
+  if(!CTX_FERIAS) return;
+  const colaboradores = Array.isArray(CTX_FERIAS.colaboradores) ? CTX_FERIAS.colaboradores : [];
+  const c = colaboradores.find(x => x.idPeriodo === idPeriodo);
+  if(!c || c.semPeriodo || c.naoElegivelFerias || c.aprendiz || !c.idPeriodo) return;
+
+  // Prazo já vencido: a data mínima ficaria depois da máxima (concederAteISO), quebrando o
+  // formulário sem explicação nenhuma. Não abre o modal — orienta a falar com o DP.
+  if(c.urgencia === 'VENCIDO'){
+    toast('O prazo legal de ' + c.nome + ' já venceu (' + (c.concederAte || '—') + '). Fale com o Departamento Pessoal para agendar essas férias fora da janela normal.', 'err');
+    return;
+  }
+
+  ATUAL = c;
+  const r = CTX_FERIAS.regras;
+
+  $('mNome').textContent = c.nome;
+  $('mSub').textContent = c.emCurso
+    ? 'Período em curso · ' + c.diasDireito + ' dias · início a partir de ' + (c.disponivelEm || '—')
+    : c.saldo + ' dias a tirar · prazo do DP até ' + (c.concederAte || '—');
+
+  // A data mínima é a MAIOR entre: antecedência mínima e o dia seguinte ao fim do aquisitivo.
+  let minimo = maisDias(hojeISO(), r.antecedenciaMinimaDias);
+  if(c.emCurso && c.disponivelEmISO && c.disponivelEmISO > minimo){
+    minimo = c.disponivelEmISO;
+  }
+  $('mInicio').value = '';
+  $('mInicio').min = minimo;
+  if(c.concederAteISO) $('mInicio').max = c.concederAteISO;
+
+  $('dicaInicio').textContent =
+    'A partir de ' + brDe(minimo) + '. Não pode cair em quinta, sexta, fim de semana, feriado ou véspera de feriado.';
+
+  // Para período em curso o saldo é 0 (ainda não venceu), mas o direito é o total.
+  const diasUsaveis = c.emCurso ? c.diasDireito : c.saldo;
+  ATUAL.diasUsaveis = diasUsaveis;
+
+  $('mDias').value = Math.min(30, diasUsaveis);
+  $('mDias').max = diasUsaveis;
+  $('dicaDias').textContent =
+    'Até ' + diasUsaveis + ' dias. Se dividir, cada parte precisa ter no mínimo 5 dias, e uma delas 14 ou mais.';
+
+  // ABONO AUTOMÁTICO
+  // Se o DP liberou a venda de dias, ela entra sozinha — o gestor só é avisado.
+  // Se não liberou, nada aparece (sem campo, sem menção, sem informativo).
+  const ab = c.abono || { permitido: false, maximo: 0 };
+  ABONO_AUTO = ab.permitido ? (Number(ab.maximo) || 0) : 0;
+
+  const box = $('avisoAbonoAuto');
+
+  if(ABONO_AUTO > 0){
+    box.style.display = '';
+    box.className = 'explica';
+    box.innerHTML = '💰 <b>Venda de dias incluída automaticamente.</b><br>' +
+      'O Departamento Pessoal já autorizou a venda de <b>' + ABONO_AUTO + ' dias</b> desta pessoa. ' +
+      'Ao enviar, esses dias entram junto com as férias — você não precisa fazer nada.';
+  } else {
+    box.style.display = 'none';
+    box.innerHTML = '';
+  }
+
+  limpaAviso('mAviso');
+  $('mResumo').classList.remove('mostra');
+  abrir('ovAgendar');
+  atualizarPrazoModal_('');
+  recalcular();
+}
+
+function hojeISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function _mmddPortal_(iso){
+  if(!iso) return '';
+  const p = String(iso).split('-');
+  return p.length === 3 ? (p[1] + '-' + p[2]) : '';
+}
+
+function _mmddEntrePortal_(valor, inicio, fim){
+  if(!valor || !inicio || !fim) return false;
+  if(inicio <= fim) return valor >= inicio && valor <= fim;
+  return valor >= inicio || valor <= fim;
+}
+
+function _prazoRespostaPortal_(dataInicioGozo){
+  const regras = (CTX_FERIAS && CTX_FERIAS.regras) || {};
+  const janelas = Array.isArray(regras.janelas) ? regras.janelas : [];
+  const hoje = hojeISO();
+  const mmddHoje = _mmddPortal_(hoje);
+  const mmddGozo = _mmddPortal_(dataInicioGozo);
+
+  const janelaAgend = janelas.find(j =>
+    _mmddEntrePortal_(mmddHoje, String(j.agendInicio || ''), String(j.agendFim || ''))
+  );
+
+  const janelaGozo = janelas.find(j =>
+    _mmddEntrePortal_(mmddGozo, String(j.gozoInicio || ''), String(j.gozoFim || ''))
+  );
+
+  if(janelaAgend && janelaGozo && String(janelaAgend.id) === String(janelaGozo.id)){
+    const ano = Number(hoje.split('-')[0]);
+    const partes = String(janelaAgend.retornoDPFim || '').split('-');
+
+    if(partes.length === 2){
+      const iso = ano + '-' + partes[0] + '-' + partes[1];
+
+      return {
+        tipo: 'JANELA',
+        dataISO: iso,
+        dataBR: brDe(iso),
+        texto: 'O DP analisará as solicitações desta janela e dará retorno até <b>' +
+          brDe(iso) + '</b>. Você será avisado por e-mail.'
+      };
+    }
+  }
+
+  const dias = Number(regras.prazoRespostaPadraoDias || (D && D.prazoDP) || 15);
+
+  return {
+    tipo: 'PADRAO',
+    dias: dias,
+    texto: 'Fora da janela de agendamento, o DP analisa e responde em até <b>' +
+      dias + ' dias corridos</b>. Você será avisado por e-mail.'
+  };
+}
+
+function atualizarPrazoModal_(dataInicioGozo){
+  const el = $('prazoModalTexto');
+  if(!el) return;
+
+  if(!dataInicioGozo){
+    el.innerHTML = 'Escolha a data de início para ver o prazo de retorno do DP.';
+    return;
+  }
+
+  el.innerHTML = _prazoRespostaPortal_(dataInicioGozo).texto;
+}
+
+function recalcular(){
+  limpaAviso('mAviso');
+
+  const ini = $('mInicio').value;
+  const dias = parseInt($('mDias').value, 10) || 0;
+  const abono = ABONO_AUTO || 0;   // automático: vem do que o DP liberou
+  const cx = $('mResumo');
+
+  atualizarPrazoModal_(ini);
+
+  if(!dias || (dias > 0 && !ini)){ cx.classList.remove('mostra'); return; }
+
+  // o abono é vendido do período aquisitivo, não sai do saldo de descanso
+  const saldoRef = ATUAL.diasUsaveis != null ? ATUAL.diasUsaveis : ATUAL.saldo;
+  if(dias > saldoRef){
+    aviso('mAviso', 'A pessoa tem ' + saldoRef + ' dias de descanso, e você pediu ' + dias +
+      '. Ajuste o número.');
+    cx.classList.remove('mostra'); return;
+  }
+
+  let fim = '';
+
+  if(dias > 0 && ini){
+    const d = new Date(ini + 'T12:00:00');
+    const dow = d.getDay();
+
+    if([4,5,6,0].indexOf(dow) > -1){
+      aviso('mAviso', 'As férias não podem começar em ' + diaSemana(ini) +
+        '. Por lei, o início precisa ser de segunda a quarta-feira.');
+      cx.classList.remove('mostra'); return;
+    }
+
+    const fer = CTX_FERIAS.regras.feriados || {};
+
+    if(fer[ini]){
+      aviso('mAviso', 'Esse dia é feriado (' + fer[ini] + '). As férias não podem começar em feriado.');
+      cx.classList.remove('mostra'); return;
+    }
+
+    for(let k = 1; k <= 2; k++){
+      const p = maisDias(ini, k);
+      if(fer[p]){
+        aviso('mAviso', 'Esse dia é véspera do feriado de ' + fer[p] + ' (' + brDe(p) +
+          '). As férias não podem começar nos 2 dias antes de um feriado.');
+        cx.classList.remove('mostra'); return;
+      }
+    }
+
+    fim = maisDias(ini, dias - 1);
+  }
+
+  const sobra = (ATUAL.diasUsaveis != null ? ATUAL.diasUsaveis : ATUAL.saldo) - dias;
+
+  cx.innerHTML =
+    (dias > 0 ? '<div class="r-linha"><span>Descanso</span><b>' + brDe(ini) + ' a ' + brDe(fim) + '</b></div>' +
+                '<div class="r-linha"><span>Dias de férias</span><b>' + dias + ' dias</b></div>' : '') +
+    (abono > 0 ? '<div class="r-linha"><span>Dias vendidos (automático)</span><b>' + abono + ' dias</b></div>' : '') +
+    '<div class="r-linha"><span>Sobra para depois</span><b>' + sobra + ' dias</b></div>';
+
+  cx.classList.add('mostra');
+}
+
+async function enviar(){
+  const ini = $('mInicio').value;
+  const dias = parseInt($('mDias').value, 10) || 0;
+  const abono = ABONO_AUTO || 0;   // automático — o gestor não digita
+
+  if(dias <= 0) return aviso('mAviso', 'Informe quantos dias de descanso você quer solicitar.');
+  if(!ini) return aviso('mAviso', 'Escolha a data de início das férias.');
+
+  const b = $('mBtn');
+  ocupado(b, 'Enviando…');
+
+  try{
+    const r = await chamar('srvSolicitarFerias', TOKEN, {
+      idPeriodo: ATUAL.idPeriodo,
+      dias: dias,
+      abono: abono,
+      dataInicio: ini || null
+    });
+
+    fechar('ovAgendar');
+
+    let msgPrazo = 'Solicitação enviada!';
+    if(r && r.prazoRespostaDP){
+      if(r.prazoRespostaTipo === 'JANELA' || r.prazoRespostaTipo === 'FIM_DE_ANO'){
+        msgPrazo += ' O DP dará retorno até ' + r.prazoRespostaDP + '.';
+      } else {
+        const diasPadrao = (CTX_FERIAS && CTX_FERIAS.regras &&
+          CTX_FERIAS.regras.prazoRespostaPadraoDias) || D.prazoDP || 15;
+        msgPrazo += ' O DP responde em até ' + diasPadrao + ' dias corridos.';
+      }
+    }
+
+    toast(msgPrazo, 'bom');
+    CTX_FERIAS = null;
+    await carregar(SECAO === 'ferias' ? 'FERIAS' : '');
+    await irPara(SECAO);
+    filtrar('pendente');
+  }catch(e){
+    aviso('mAviso', e.message);
+  }finally{ livre(b); }
+}
+
+async function cancelar(id){
+  if(!confirm('Cancelar esta solicitação? Os dias voltam a ficar disponíveis.')) return;
+
+  try{
+    await chamar('srvCancelarFerias', TOKEN, id);
+    toast('Solicitação cancelada.', 'bom');
+    CTX_FERIAS = null;
+    await carregar(SECAO === 'ferias' ? 'FERIAS' : '');
+    await irPara(SECAO);
+  }catch(e){
+    toast(e.message, 'ruim');
+  }
+}
+
+/* ================= MOVIMENTAÇÕES ================= */
+/* [2026-10-21] Visual novo: os números (Em andamento / Não aprovadas / Aprovadas) filtram a lista, cada
+ * pedido mostra o que muda e o caminho Você → RH → DP, e o pedido novo mostra o cargo e o departamento
+ * atuais, uma dica do tipo escolhido e o resumo antes de enviar. Cancelada deixa de contar como
+ * "em andamento". O envio e as validações são os mesmos de antes (srvMovSolicitar). */
+
+let MOV_FILTRO_G = '';
+
+const MOV_DICAS = {
+  TRANSFERENCIA_DEPARTAMENTO: 'A pessoa passa a trabalhar em outro departamento ou posto.',
+  ALTERACAO_TURNO: 'Mudar para noturno gera junto o pedido de inclusão do adicional noturno; mudar para diurno gera o de retirada.',
+  ALTERACAO_CARGA_HORARIA: 'Mudança na quantidade de horas de trabalho.',
+  ALTERACAO_CARGO: 'Mudança de função. O sistema avisa se ninguém mais tem esse cargo no departamento.',
+  ALTERACAO_SALARIO: 'O valor é comparado com o que já se paga no mesmo cargo e departamento.',
+  ADICIONAL_PAGAMENTO: 'Gratificação, ajuda de transporte ou outro valor a pagar.',
+  OUTRO: 'Qualquer outra mudança no contrato. Descreva com detalhes na justificativa.'
+};
+
+function classificarMov(k){
+  if(k.status === 'DP_APROVADA') return 'aprovada';
+  if(k.status === 'DP_REPROVADA' || k.status === 'RH_REPROVADA') return 'reprovada';
+  if(k.status === 'CANCELADA') return 'cancelada';
+  return 'andamento'; // SOLICITADA, AGUARDANDO_DP
+}
+
+function textoStatusMov(k){
+  const m = {
+    SOLICITADA: 'Aguardando o RH analisar',
+    AGUARDANDO_DP: 'Aprovado pelo RH — aguardando o DP lançar na folha',
+    DP_APROVADA: 'Aprovado' + (k.dpFolhaCompetencia ? ' — reflete na folha de ' + esc(k.dpFolhaCompetencia) : ''),
+    DP_REPROVADA: 'Não aprovado pelo DP',
+    RH_REPROVADA: 'Não aprovado pelo RH',
+    CANCELADA: 'Cancelada'
+  };
+  return m[k.status] || k.status;
+}
+
+function _movBrlG_(v){ return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+/** O que muda: { rotulo, de, para } — "de" só quando o sistema conhece o valor atual. */
+function _movMudancaG_(k){
+  const d = k.detalhe || {};
+  switch(k.tipoCod){
+    case 'TRANSFERENCIA_DEPARTAMENTO': return { rotulo: 'Departamento', de: k.departamento, para: d.departamentoNovo };
+    case 'ALTERACAO_TURNO': return { rotulo: 'Turno', de: '', para: d.turnoNovo === 'NOTURNO' ? 'Noturno' : 'Diurno' };
+    case 'ALTERACAO_CARGA_HORARIA': return { rotulo: 'Carga horária', de: '', para: d.cargaHorariaNova };
+    case 'ALTERACAO_CARGO': return { rotulo: 'Cargo', de: k.cargo, para: d.cargoNovo };
+    case 'ALTERACAO_SALARIO': return { rotulo: 'Salário', de: '', para: d.salarioNovo ? _movBrlG_(d.salarioNovo) : '' };
+    default: {
+      const rot = k.tipoCod === 'ADICIONAL_PAGAMENTO' ? (d.acaoAdicional === 'RETIRAR' ? 'Retirar' : 'Pagar') : 'Pedido';
+      return { rotulo: rot, de: '', para: [d.descricaoAdicional, d.valorAdicional ? _movBrlG_(d.valorAdicional) : ''].filter(Boolean).join(' · ') };
+    }
+  }
+}
+function detalheMov(k){
+  const m = _movMudancaG_(k);
+  return '<span class="mov-rot">' + esc(m.rotulo) + '</span>' +
+    (m.de ? '<span class="mov-de">' + esc(m.de) + '</span><span class="mov-seta" aria-hidden="true">→</span>' : '') +
+    '<b>' + esc(m.para || '—') + '</b>';
+}
+
+function _movAjusteTxtG_(a){
+  if(a == null) return '';
+  if(typeof a !== 'object') return String(a);
+  const txt = [a.campo || a.rotulo || '', a.de ? 'de ' + a.de : '', a.para ? 'para ' + a.para : ''].filter(Boolean).join(' ');
+  return txt || JSON.stringify(a);
+}
+
+/** Caminho do pedido: Você (pediu) → RH → DP, com a situação de cada etapa. */
+function _movTrilhaG_(k){
+  const s = k.status;
+  const rh = s === 'SOLICITADA' ? ['atual', 'Analisando'] : s === 'RH_REPROVADA' ? ['cr', 'Não aprovou'] : s === 'CANCELADA' ? ['cinza', 'Cancelado'] :
+    ['ok', (k.rhAjustes && k.rhAjustes.length) ? 'Aprovou com ajustes' : 'Aprovou'];
+  const dp = s === 'AGUARDANDO_DP' ? ['atual', 'Lançando na folha'] : s === 'DP_APROVADA' ? ['ok', k.dpFolhaCompetencia ? 'Folha de ' + k.dpFolhaCompetencia : 'Aprovou'] :
+    s === 'DP_REPROVADA' ? ['cr', 'Não aprovou'] : ['', '—'];
+  return '<ol class="mov-trilha" aria-label="Caminho do pedido">' +
+    '<li class="ok"><span>Você</span><b>Pediu em ' + brDe(k.solicitadoEm) + '</b></li>' +
+    '<li class="' + rh[0] + '"><span>RH</span><b>' + esc(rh[1]) + '</b></li>' +
+    '<li class="' + dp[0] + '"><span>DP</span><b>' + esc(dp[1]) + '</b></li>' +
+  '</ol>';
+}
+
+function movFiltroGestor(f){
+  MOV_FILTRO_G = (MOV_FILTRO_G === f) ? '' : f;
+  renderMov();
+}
+
+function renderMov(){
+  const c = CTX_MOV;
+  if(!c) return;
+
+  if(c.guiaUrl){
+    const g = $('guiaMov');
+    if(g){ g.href = c.guiaUrl; g.style.display = 'flex'; }
+  }
+
+  const casos = c.casos.map(k => Object.assign({}, k, { _bucket: classificarMov(k) }));
+  const conta = b => casos.filter(k => k._bucket === b).length;
+
+  $('kpiMovAndamento').textContent = conta('andamento');
+  $('kpiMovReprovada').textContent = conta('reprovada');
+  $('kpiMovAprovada').textContent = conta('aprovada');
+  $('kpiMovReprovadaBox').classList.toggle('destaque', conta('reprovada') > 0);
+  document.querySelectorAll('#secMovimentacao .mov-kpi').forEach(b => {
+    b.classList.toggle('on', b.dataset.f === MOV_FILTRO_G);
+    b.setAttribute('aria-pressed', b.dataset.f === MOV_FILTRO_G ? 'true' : 'false');
+  });
+
+  if(!casos.length){
+    ver('movFiltroInfo', false);
+    $('cardsMov').innerHTML =
+      '<div class="vazio-acolhedor">' +
+        '<div class="icone">🔀</div>' +
+        '<h3>Nenhuma movimentação ainda</h3>' +
+        '<p>Quando você pedir uma mudança para alguém da equipe, o acompanhamento aparece aqui, etapa por etapa.</p>' +
+        '<button class="btn primario" style="width:auto;padding:11px 20px" onclick="abrirSolicitarMov()">+ Nova movimentação</button>' +
+      '</div>';
+    return;
+  }
+
+  const NOMES = { andamento: 'em andamento', reprovada: 'não aprovadas', aprovada: 'aprovadas' };
+  const lista = MOV_FILTRO_G ? casos.filter(k => k._bucket === MOV_FILTRO_G) : casos;
+  if(MOV_FILTRO_G){
+    $('movFiltroInfo').innerHTML = 'Mostrando só as <b>' + NOMES[MOV_FILTRO_G] + '</b> (' + lista.length + ').' +
+      ' <button type="button" class="mov-limpar" onclick="movFiltroGestor(\'\')">Mostrar todas</button>';
+    ver('movFiltroInfo', true);
+  }else{
+    ver('movFiltroInfo', false);
+  }
+
+  if(!lista.length){
+    $('cardsMov').innerHTML = '<div class="vazio">Nenhuma movimentação ' + NOMES[MOV_FILTRO_G] + '.</div>';
+    return;
+  }
+
+  const ordem = { andamento: 0, reprovada: 1, aprovada: 2, cancelada: 3 };
+  lista.sort((a, b) => (ordem[a._bucket] - ordem[b._bucket]) || String(b.solicitadoEm).localeCompare(String(a.solicitadoEm)));
+
+  $('cardsMov').innerHTML = lista.map(k => {
+    const badge = k._bucket === 'reprovada' ? '<span class="proc-badge pendente" style="background:var(--danger-soft);color:var(--danger)">Não aprovada</span>'
+      : k._bucket === 'aprovada' ? '<span class="proc-badge concluida">Aprovada</span>'
+      : k._bucket === 'cancelada' ? '<span class="proc-badge cancelada">Cancelada</span>'
+      : '<span class="proc-badge andamento">Em andamento</span>';
+
+    const motivo = k.rhMotivo || k.dpMotivo;
+    const ajustes = (k.rhAjustes || []).map(_movAjusteTxtG_).filter(Boolean);
+    const ajustesTxt = ajustes.length ? '<div class="proc-linha">Ajustes do RH: <b>' + ajustes.map(esc).join('; ') + '</b></div>' : '';
+
+    const cancelar = (k.status === 'SOLICITADA')
+      ? '<button class="btn" style="width:auto;padding:8px 14px;font-size:12.5px;background:var(--danger-soft);color:var(--danger)" ' +
+        'onclick="cancelarMov(\'' + esc(k.id) + '\')">Cancelar pedido</button>' : '';
+
+    return '<div class="proc-card mov-card' + (k._bucket === 'reprovada' ? ' pendente' : '') + (k._bucket === 'cancelada' ? ' cancelada' : '') + '">' +
+      '<div class="proc-topo">' +
+        '<div><div class="proc-nome">' + esc(k.nome) + '</div><div class="proc-tipo">' + esc(k.tipo) + ' · a partir de ' + esc(k.competenciaInicio) + '</div></div>' +
+        badge +
+      '</div>' +
+      '<div class="mov-mudanca">' + detalheMov(k) + '</div>' +
+      _movTrilhaG_(k) +
+      ajustesTxt +
+      (motivo ? '<div class="proc-pendencia">⚠️ ' + esc(motivo) + '</div>' : '') +
+      '<div class="proc-rodape">' +
+        '<span class="proc-atualizado">' + textoStatusMov(k) + '</span>' +
+        cancelar +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function _movProximoMes_(){
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function abrirSolicitarMov(){
+  if(!CTX_MOV) return;
+
+  $('movColab').innerHTML = '<option value="">Escolha um colaborador…</option>' +
+    CTX_MOV.equipe.map(c => '<option value="' + esc(c.idColaborador) + '">' +
+      esc(c.nome) + (c.matricula ? ' (' + esc(c.matricula) + ')' : '') + '</option>').join('');
+
+  $('movTipo').innerHTML = CTX_MOV.tipos.map(t =>
+    '<option value="' + esc(t.cod) + '">' + esc(t.nome) + '</option>').join('');
+
+  $('movCompetencia').value = _movProximoMes_();
+  $('movDepartamentoNovo').value = '';
+  $('movTurnoNovo').value = 'DIURNO';
+  $('movCargaHorariaNova').value = '';
+  $('movCargoNovo').value = '';
+  $('movSalarioNovo').value = '';
+  $('movConfirmarDivergencia').checked = false;
+  $('movJustificativaDivergencia').value = '';
+  $('movDescricaoAdicional').value = '';
+  $('movValorAdicional').value = '';
+  $('movJustificativa').value = '';
+  ver('boxMovDivergencia', false);
+  limpaAviso('movAviso');
+
+  onColabMovChange();
+  onTipoMovChange();
+  abrir('ovMov');
+}
+
+function _movColabEscolhido_(){
+  const id = $('movColab').value;
+  return id && CTX_MOV ? (CTX_MOV.equipe.find(c => String(c.idColaborador) === String(id)) || null) : null;
+}
+
+function onColabMovChange(){
+  const c = _movColabEscolhido_();
+  const box = $('movAtual');
+  if(c){
+    box.innerHTML = 'Hoje: <b>' + esc(c.cargo || 'cargo não informado') + '</b> · ' + esc(c.departamento || 'departamento não informado');
+    ver('movAtual', true);
+  }else{
+    ver('movAtual', false);
+  }
+  movAtualizarResumo();
+}
+
+function onTipoMovChange(){
+  const cod = $('movTipo').value;
+  ver('boxMovDepartamento', cod === 'TRANSFERENCIA_DEPARTAMENTO');
+  ver('boxMovTurno', cod === 'ALTERACAO_TURNO');
+  ver('boxMovCarga', cod === 'ALTERACAO_CARGA_HORARIA');
+  ver('boxMovCargo', cod === 'ALTERACAO_CARGO');
+  ver('boxMovSalario', cod === 'ALTERACAO_SALARIO');
+  ver('boxMovAdicional', cod === 'ADICIONAL_PAGAMENTO' || cod === 'OUTRO');
+  ver('boxMovDivergencia', false);
+  $('movTipoDica').textContent = MOV_DICAS[cod] || '';
+  movAtualizarResumo();
+}
+
+/** Resumo do pedido acima do botão de enviar, montado com o que já foi preenchido. */
+function movAtualizarResumo(){
+  const c = _movColabEscolhido_();
+  const cod = $('movTipo').value;
+  const tipo = (CTX_MOV && CTX_MOV.tipos.find(t => t.cod === cod)) || null;
+  if(!c || !tipo){ ver('movResumo', false); return; }
+
+  const val = id => String($(id).value || '').trim();
+  const brl = v => v ? _movBrlG_(String(v).replace(',', '.')) : '';
+  const para = {
+    TRANSFERENCIA_DEPARTAMENTO: val('movDepartamentoNovo') && ('para ' + val('movDepartamentoNovo')),
+    ALTERACAO_TURNO: 'para ' + ($('movTurnoNovo').value === 'NOTURNO' ? 'noturno' : 'diurno'),
+    ALTERACAO_CARGA_HORARIA: val('movCargaHorariaNova') && ('para ' + val('movCargaHorariaNova')),
+    ALTERACAO_CARGO: val('movCargoNovo') && ((c.cargo ? 'de ' + c.cargo + ' ' : '') + 'para ' + val('movCargoNovo')),
+    ALTERACAO_SALARIO: val('movSalarioNovo') && ('para ' + brl(val('movSalarioNovo'))),
+    ADICIONAL_PAGAMENTO: [val('movDescricaoAdicional'), brl(val('movValorAdicional'))].filter(Boolean).join(' · '),
+    OUTRO: val('movDescricaoAdicional')
+  }[cod] || '';
+  const comp = String($('movCompetencia').value || '').split('-');
+  const desde = comp.length === 2 ? comp[1] + '/' + comp[0] : '';
+
+  $('movResumo').innerHTML = '<span class="mov-resumo-rot">Resumo do pedido</span>' +
+    '<b>' + esc(c.nome) + '</b> · ' + esc(tipo.nome) + (para ? ' ' + esc(para) : '') +
+    (desde ? ', a partir de <b>' + esc(desde) + '</b>' : '') + '.' +
+    '<span class="mov-resumo-pass">Vai primeiro para o RH. Você acompanha tudo nesta tela.</span>';
+  ver('movResumo', true);
+}
+
+async function enviarSolicitacaoMov(){
+  limpaAviso('movAviso');
+
+  const idColab = $('movColab').value;
+  const tipo = $('movTipo').value;
+  const competenciaMes = $('movCompetencia').value; // "YYYY-MM"
+  const justificativa = $('movJustificativa').value.trim();
+
+  if(!idColab) return aviso('movAviso', 'Escolha o colaborador.');
+  if(!tipo) return aviso('movAviso', 'Escolha o tipo de movimentação.');
+  if(!competenciaMes) return aviso('movAviso', 'Informe a competência de início.');
+  if(!justificativa) return aviso('movAviso', 'Informe a justificativa.');
+
+  const partes = competenciaMes.split('-'); // [YYYY, MM]
+  const competenciaInicio = partes[1] + '/' + partes[0];
+
+  const dados = {
+    idColaborador: idColab,
+    tipoCod: tipo,
+    competenciaInicio: competenciaInicio,
+    justificativa: justificativa
+  };
+
+  if(tipo === 'TRANSFERENCIA_DEPARTAMENTO'){
+    dados.departamentoNovo = $('movDepartamentoNovo').value.trim();
+    if(!dados.departamentoNovo) return aviso('movAviso', 'Informe o departamento novo.');
+  } else if(tipo === 'ALTERACAO_TURNO'){
+    dados.turnoNovo = $('movTurnoNovo').value;
+  } else if(tipo === 'ALTERACAO_CARGA_HORARIA'){
+    dados.cargaHorariaNova = $('movCargaHorariaNova').value.trim();
+    if(!dados.cargaHorariaNova) return aviso('movAviso', 'Informe a nova carga horária.');
+  } else if(tipo === 'ALTERACAO_CARGO'){
+    dados.cargoNovo = $('movCargoNovo').value.trim();
+    if(!dados.cargoNovo) return aviso('movAviso', 'Informe o cargo novo.');
+  } else if(tipo === 'ALTERACAO_SALARIO'){
+    const salario = $('movSalarioNovo').value;
+    if(!salario) return aviso('movAviso', 'Informe o novo salário.');
+    dados.salarioNovo = salario;
+    if($('movConfirmarDivergencia').checked){
+      dados.confirmarDivergenciaSalarial = true;
+      dados.justificativaDivergencia = $('movJustificativaDivergencia').value.trim();
+      if(!dados.justificativaDivergencia) return aviso('movAviso', 'Informe a justificativa da divergência.');
+    }
+  } else if(tipo === 'ADICIONAL_PAGAMENTO' || tipo === 'OUTRO'){
+    dados.descricaoAdicional = $('movDescricaoAdicional').value.trim();
+    if(!dados.descricaoAdicional) return aviso('movAviso', 'Descreva o que está sendo solicitado.');
+    if($('movValorAdicional').value) dados.valorAdicional = $('movValorAdicional').value;
+  }
+
+  const b = $('movBtn');
+  ocupado(b, 'Enviando…');
+  try{
+    const r = await chamar('srvMovSolicitar', TOKEN, dados);
+    fechar('ovMov');
+    toast(r.mensagem || 'Solicitação enviada.', 'bom');
+    CTX_MOV = null;
+    MOV_FILTRO_G = '';
+    await irPara('movimentacao');
+  }catch(e){
+    if(String(e.message).indexOf('diverge do praticado') > -1){
+      $('movDivergenciaTexto').textContent = e.message;
+      ver('boxMovDivergencia', true);
+      aviso('movAviso', 'Confira a divergência de salário abaixo antes de reenviar.');
+    }else{
+      aviso('movAviso', e.message);
+    }
+  }finally{ livre(b); }
+}
+
+async function cancelarMov(id){
+  if(!confirm('Cancelar esta movimentação?')) return;
+  try{
+    const r = await chamar('srvMovCancelar', TOKEN, id);
+    toast(r.mensagem || 'Movimentação cancelada.', 'bom');
+    CTX_MOV = null;
+    await irPara('movimentacao');
+  }catch(e){
+    toast(e.message, 'ruim');
+  }
+}
+</script>

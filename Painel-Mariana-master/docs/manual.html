@@ -1,0 +1,467 @@
+<title>Manual do DP360</title>
+<meta name="description" content="Guia de uso dos três portais do DP360 — Gestor, Departamento Pessoal e Férias de Fim de Ano — e das páginas de ajuda.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f8f7; --surface:#ffffff; --surface-2:#fbfdfc;
+  --ink:#17252a; --muted:#5c7169; --muted-2:#7e938b;
+  --brand:#247662; --brand-dark:#18564a; --brand-soft:#e3f1ec;
+  --accent:#b51061; --accent-soft:#fbe6f0;
+  --line:#e1e9e5;
+  --ok:#2a8e47; --ok-soft:#e7f5ec;
+  --danger:#c9142e; --danger-soft:#fbeaec;
+  --r-lg:20px; --r-md:14px; --r-sm:9px;
+  --sh:0 1px 2px rgba(20,40,35,.04), 0 8px 24px -12px rgba(20,40,35,.12);
+}
+:root[data-theme="dark"]{
+  --bg:#0f1815; --surface:#152420; --surface-2:#122019;
+  --ink:#eaf3ef; --muted:#a9beb6; --muted-2:#8ba69c;
+  --brand:#4fb89a; --brand-dark:#7fd4ba; --brand-soft:#1c332c;
+  --accent:#ff6fa8; --accent-soft:#3a1a29;
+  --line:#24382f;
+  --ok:#5fce85; --ok-soft:#173225;
+  --danger:#ff7a86; --danger-soft:#3a1620;
+  --sh:0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1815; --surface:#152420; --surface-2:#122019;
+    --ink:#eaf3ef; --muted:#a9beb6; --muted-2:#8ba69c;
+    --brand:#4fb89a; --brand-dark:#7fd4ba; --brand-soft:#1c332c;
+    --accent:#ff6fa8; --accent-soft:#3a1a29;
+    --line:#24382f;
+    --ok:#5fce85; --ok-soft:#173225;
+    --danger:#ff7a86; --danger-soft:#3a1620;
+    --sh:0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.55);
+  }
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Karla',-apple-system,'Segoe UI',sans-serif;
+  font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif; text-wrap:balance; color:var(--ink); margin:0}
+a{color:var(--brand-dark)}
+::selection{background:var(--brand-soft)}
+
+/* ---- top bar ---- */
+.topbar{
+  position:sticky; top:0; z-index:40; background:var(--bg);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:14px;
+  padding:14px 24px;
+  backdrop-filter:blur(6px);
+}
+.topbar .mark{
+  display:flex; align-items:center; gap:9px; font-family:'Fraunces',serif;
+  font-weight:600; font-size:17px; white-space:nowrap;
+}
+.topbar .mark .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+.topbar nav{display:flex; gap:6px; flex-wrap:wrap; margin-left:auto}
+.topbar nav a{
+  font-family:'Karla',sans-serif; font-size:13.5px; font-weight:600;
+  color:var(--muted); text-decoration:none; padding:7px 13px;
+  border-radius:99px; border:1px solid transparent; white-space:nowrap;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.topbar nav a:hover{background:var(--brand-soft); color:var(--brand-dark)}
+.theme-btn{
+  border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:15px;
+  flex:none; display:flex; align-items:center; justify-content:center;
+}
+.theme-btn:focus-visible, a:focus-visible, summary:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+
+/* ---- hero ---- */
+.hero{max-width:760px; margin:0 auto; padding:56px 24px 20px}
+.hero .eyebrow{
+  font-family:'Karla',sans-serif; font-weight:700; font-size:12.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:14px; display:block;
+}
+.hero h1{font-size:clamp(32px,5vw,46px); font-weight:600; line-height:1.08; margin-bottom:16px}
+.hero p{font-size:17px; color:var(--muted); max-width:56ch; margin-bottom:26px}
+
+.hero-nav{display:flex; gap:12px; flex-wrap:wrap}
+.hero-nav a{
+  display:flex; align-items:center; gap:9px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
+  padding:12px 16px; text-decoration:none; color:var(--ink); font-weight:600; font-size:14.5px;
+  box-shadow:var(--sh); transition:transform .15s, border-color .15s;
+}
+.hero-nav a:hover{transform:translateY(-1px); border-color:var(--brand)}
+.hero-nav .ic{font-size:17px}
+
+main{max-width:760px; margin:0 auto; padding:8px 24px 100px}
+
+/* ---- portal section ---- */
+.portal{margin-top:64px; scroll-margin-top:74px}
+.portal-head{
+  display:flex; align-items:center; gap:14px; margin-bottom:6px;
+}
+.portal-head .badge{
+  width:46px; height:46px; border-radius:13px; background:var(--brand-soft);
+  color:var(--brand-dark); display:flex; align-items:center; justify-content:center;
+  font-size:21px; flex:none;
+}
+.portal-head h2{font-size:27px; font-weight:600}
+.portal-sub{color:var(--muted); font-size:15px; margin:10px 0 30px; max-width:60ch}
+
+/* ---- step list ---- */
+.steps{list-style:none; margin:0 0 30px; padding:0; counter-reset:step}
+.steps li{
+  counter-increment:step; position:relative;
+  padding:0 0 22px 40px; margin-bottom:0;
+  border-left:2px solid var(--line);
+}
+.steps li:last-child{border-color:transparent; padding-bottom:2px}
+.steps li::before{
+  content:counter(step);
+  position:absolute; left:-15px; top:0;
+  width:29px; height:29px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--brand);
+  color:var(--brand-dark); font-family:'Karla',sans-serif; font-weight:700; font-size:13px;
+  display:flex; align-items:center; justify-content:center;
+}
+.steps strong{color:var(--ink)}
+.steps .note{
+  display:block; margin-top:7px; font-size:13.8px; color:var(--muted);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:var(--r-sm);
+  padding:9px 12px;
+}
+.steps .note.warn{background:var(--danger-soft); border-color:transparent; color:var(--danger)}
+.steps .note b{color:inherit}
+
+/* ---- feature cards (grid of things inside a screen) ---- */
+.cardgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; margin:0 0 30px}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
+  padding:16px 17px; box-shadow:var(--sh);
+}
+.card h4{font-size:14.5px; font-weight:700; font-family:'Karla',sans-serif; margin-bottom:6px; color:var(--brand-dark)}
+.card p{margin:0; font-size:13.6px; color:var(--muted); line-height:1.55}
+
+/* ---- callout ---- */
+.callout{
+  display:flex; gap:12px; align-items:flex-start;
+  background:var(--brand-soft); border-radius:var(--r-md); padding:16px 18px; margin:0 0 30px;
+}
+.callout.pink{background:var(--accent-soft)}
+.callout .ic{font-size:19px; flex:none; line-height:1.3}
+.callout p{margin:0; font-size:14.3px; color:var(--ink); line-height:1.6}
+.callout p + p{margin-top:8px}
+.callout b{color:var(--brand-dark)}
+.callout.pink b{color:var(--accent)}
+
+/* ---- guide subsection ---- */
+.guide{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:26px 28px; margin:0 0 20px; box-shadow:var(--sh);
+}
+.guide h3{font-size:19px; margin-bottom:5px}
+.guide .tag{
+  display:inline-block; font-family:'Karla',sans-serif; font-size:11.5px; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--muted-2);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:99px;
+  padding:3px 10px; margin-bottom:14px;
+}
+.guide ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.3px; line-height:1.7}
+.guide ul li::marker{color:var(--brand)}
+
+/* ---- faq (native accordion) ---- */
+.faq{margin-top:64px}
+.faq h2{font-size:24px; margin-bottom:22px}
+details{
+  border-bottom:1px solid var(--line); padding:16px 2px;
+}
+details:first-of-type{border-top:1px solid var(--line)}
+summary{
+  cursor:pointer; font-weight:700; font-size:15px; color:var(--ink);
+  list-style:none; display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{
+  content:"+"; font-family:'Fraunces',serif; font-size:22px; color:var(--brand);
+  flex:none; transition:transform .2s;
+}
+details[open] summary::after{transform:rotate(45deg)}
+details p{margin:12px 0 0; color:var(--muted); font-size:14.3px; line-height:1.65; max-width:64ch}
+
+/* ---- footer ---- */
+footer{
+  max-width:760px; margin:60px auto 0; padding:26px 24px 50px;
+  border-top:1px solid var(--line); color:var(--muted-2); font-size:13px;
+  display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+
+@media(max-width:640px){
+  .topbar{padding:12px 16px}
+  .topbar nav{display:none}
+  .hero{padding:36px 18px 16px}
+  main{padding:8px 18px 80px}
+  .guide{padding:20px}
+}
+</style>
+
+<div class="topbar">
+  <div class="mark"><span class="dot"></span>DP360</div>
+  <nav>
+    <a href="#gestor">Portal do Gestor</a>
+    <a href="#dp">Portal do DP</a>
+    <a href="#fimdeano">Fim de Ano</a>
+    <a href="#guias">Guias</a>
+    <a href="#faq">Dúvidas</a>
+  </nav>
+  <button class="theme-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema claro/escuro">◐</button>
+</div>
+
+<div class="hero">
+  <span class="eyebrow">Manual de uso · CIEDS</span>
+  <h1>Como usar o DP360</h1>
+  <p>Um guia direto ao ponto pelos três portais do sistema — quem pede, quem decide, e onde cada coisa fica — mais as páginas de ajuda que já existem dentro do próprio sistema.</p>
+  <div class="hero-nav">
+    <a href="#gestor"><span class="ic">🧑‍💼</span>Portal do Gestor</a>
+    <a href="#dp"><span class="ic">🗂️</span>Portal do DP</a>
+    <a href="#fimdeano"><span class="ic">🎄</span>Férias de Fim de Ano</a>
+  </div>
+</div>
+
+<main>
+
+  <div class="callout">
+    <span class="ic">🔑</span>
+    <p><b>Login em qualquer portal</b> é sempre o mesmo: e-mail institucional + senha. Primeiro acesso ou esqueceu a senha? O link <b>"É meu primeiro acesso ou esqueci a senha"</b> serve pros dois casos — você recebe um código de 6 dígitos por e-mail e cria a senha na hora (mínimo 8 caracteres, com maiúscula, minúscula e número).</p>
+  </div>
+
+  <!-- ================= GESTOR ================= -->
+  <section class="portal" id="gestor">
+    <div class="portal-head">
+      <div class="badge">🧑‍💼</div>
+      <h2>Portal do Gestor</h2>
+    </div>
+    <p class="portal-sub">Para quem lidera uma equipe — pede férias, registra afastamentos, solicita desligamentos e movimentações para o próprio time.</p>
+
+    <div class="guide">
+      <span class="tag">Tela inicial</span>
+      <h3>Painel</h3>
+      <p>Ao entrar, você vê quatro blocos: <b>"O que precisa de você"</b> (pendências que exigem uma ação sua agora), <b>"Em andamento"</b> (o que já foi enviado e está esperando o DP), <b>"Seu time"</b> (números rápidos da equipe), e atalhos para cada módulo disponível.</p>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Férias</h3>
+      <ol class="steps">
+        <li>Escolha o colaborador na lista — dá pra filtrar por status (Toda a equipe, Disponíveis, Aguardando o DP, Confirmadas) ou buscar por nome.</li>
+        <li>Clique em <strong>"Agendar"</strong> no card da pessoa.</li>
+        <li>Escolha a data de início e a quantidade de dias.
+          <span class="note">O sistema avisa na hora se a data ou a quantidade não são permitidas — dia da semana bloqueado, saldo insuficiente, ou a regra dos 14 dias corridos.</span>
+        </li>
+        <li>Confira o resumo e envie. O prazo de resposta do DP aparece na própria tela.</li>
+        <li>Pra cancelar um pedido que ainda está pendente, use o botão "cancelar" no histórico da pessoa.</li>
+      </ol>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Afastamentos</h3>
+      <ol class="steps">
+        <li>Clique em <strong>"+ Registrar afastamento"</strong>.</li>
+        <li>Escolha o colaborador, o tipo de afastamento, a data de início e a quantidade de dias. O CID é opcional.</li>
+        <li>Anexe o atestado — PDF ou foto.
+          <span class="note">Passou de 15 dias? O sistema já avisa que vai entrar no fluxo do INSS automaticamente.</span>
+        </li>
+        <li>Foi acidente de trabalho? Marque a caixinha correspondente.
+          <span class="note warn">Isso abre campos extras (tipo, data/hora, local, parte lesionada, relato) e gera automaticamente um rascunho de RAT, avisando o técnico de segurança.</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Rescisão</h3>
+      <ol class="steps">
+        <li>Clique em <strong>"+ Nova solicitação"</strong>.</li>
+        <li>Escolha o colaborador e o tipo de desligamento — pedido de demissão, sem/com justa causa, término de contrato, comum acordo, entre outros.</li>
+        <li>Diga se quer que o <strong>DP entre em contato</strong> com o colaborador, ou se você mesmo vai aplicar o desligamento.</li>
+        <li>Se o tipo exigir carta de demissão, baixe o modelo, colha a assinatura e anexe de volta.</li>
+        <li>Acompanhe cada caso pelo card — o texto mostra em linguagem simples onde o processo está.
+          <span class="note">"Ver processo" mostra o detalhe. "Cancelar" só funciona enquanto o status ainda é "Solicitação enviada".</span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Movimentações</h3>
+      <ol class="steps">
+        <li>Clique em <strong>"+ Nova movimentação"</strong>.</li>
+        <li>Escolha o colaborador e o tipo — departamento, turno, carga horária, cargo, salário, ou um "adicional" avulso.</li>
+        <li>Informe a competência (mês/ano) em que a mudança deve começar.
+          <span class="note warn">Pediu um salário muito diferente do praticado no departamento? O sistema trava e pede uma justificativa explícita antes de deixar enviar.</span>
+        </li>
+        <li>O pedido passa primeiro pelo RH, depois pelo DP — acompanhe pelo card, que mostra ajustes do RH (se houver) e o motivo, se recusado.</li>
+      </ol>
+    </div>
+
+    <div class="cardgrid">
+      <div class="card"><h4>🎨 Configurações</h4><p>Ícone de engrenagem na barra lateral — escolha entre Claro, Cinza neutro, Verde-azulado escuro ou Preto.</p></div>
+      <div class="card"><h4>🌗 Troca rápida de tema</h4><p>O ícone de sol/lua na barra lateral alterna direto entre claro e o último escuro escolhido.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= DP ================= -->
+  <section class="portal" id="dp">
+    <div class="portal-head">
+      <div class="badge">🗂️</div>
+      <h2>Portal do Departamento Pessoal</h2>
+    </div>
+    <p class="portal-sub">Para a equipe de RH — recebe e decide tudo que os gestores enviam, mais ferramentas de gestão, financeiro e indicadores.</p>
+
+    <div class="guide">
+      <span class="tag">Tela inicial</span>
+      <h3>Painel Geral</h3>
+      <p>Um quadro com uma coluna por módulo disponível, cada card sendo uma pendência clicável que leva direto pra tela certa. O botão <b>"Importar Raio-X"</b> atualiza o cadastro de colaboradores a partir da planilha exportada da folha de pagamento.</p>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo · 6 abas</span>
+      <h3>Férias</h3>
+      <ul>
+        <li><b>Fila</b> — pedidos dos gestores esperando decisão. "Confirmar" aprova, "Não" recusa (com justificativa por e-mail ao gestor). "Memória" mostra o cálculo detalhado do valor.</li>
+        <li><b>Calendário</b> — previsão de custo mês a mês, com barra de progresso contra um teto configurável.</li>
+        <li><b>Venda de dias</b> — pedidos de abono esperando confirmação, mais registro manual em nome de qualquer colaborador.</li>
+        <li><b>Prazos</b> — quem já perdeu o prazo legal (viraria pagamento em dobro) e quem está a menos de 60 dias.</li>
+        <li><b>Agendadas</b> — férias aprovadas; selecione e envie em lote pro financeiro.</li>
+        <li><b>Recibos</b> — assinatura do recibo de férias via Autentique.</li>
+      </ul>
+      <span class="note warn" style="margin-top:14px;display:block">⚠️ <b>"Cancelar envio" em Recibos é irreversível</b> — o documento é apagado do Autentique de vez.</span>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Afastamentos</h3>
+      <p>Acompanhe pelas sub-abas — Em atestado, Encaminhados INSS, Prorrogados, Aguardando retorno, Encerrados. Ações disponíveis: agendar perícia, registrar a decisão do INSS, prorrogar, registrar o exame ocupacional de retorno, e confirmar o retorno ao trabalho.</p>
+    </div>
+
+    <div class="guide">
+      <span class="tag">Módulo</span>
+      <h3>Rescisão</h3>
+      <p>Fluxo em sub-abas — Solicitadas → Agendadas → Compareceram/Exame → Conciliação → Arquivados — mais uma área própria de <b>Homologação</b> (mesmo padrão de Pendentes / Enviadas / Assinadas da tela de Recibos).</p>
+      <ul>
+        <li>Agende o comparecimento, registre presença, marque ou dispense o exame demissional, confirme o desligamento.</li>
+        <li>Na Conciliação: anexe a rescisão calculada, confirme os valores, envie pro financeiro, depois pro Autentique.</li>
+        <li><b>"+ Nova rescisão"</b> abre um caso pra qualquer colaborador da empresa. <b>"+ Rescisão complementar"</b> registra manualmente um caso antigo, só pra manter os indicadores certos.</li>
+      </ul>
+      <span class="note warn" style="margin-top:14px;display:block">⚠️ <b>"Cancelar envio" em Homologação também é irreversível.</b></span>
+    </div>
+
+    <div class="cardgrid">
+      <div class="card"><h4>⚖️ Trabalhista</h4><p>"+ Novo processo" registra um caso de FGTS/INSS judicial. Marque "Pagar FGTS"/"Pagar INSS" quando cada um for feito.</p></div>
+      <div class="card"><h4>🔀 Movimentações</h4><p>Fila de "Aguardando o DP" — já aprovadas pelo RH. "Decidir" aprova (com competência de folha) ou reprova (com motivo).</p></div>
+      <div class="card"><h4>🍽️ Benefícios</h4><p>Calcular por competência, importar lotes pedido/relatório, conciliar divergências, e definir regras por departamento.</p></div>
+      <div class="card"><h4>🔎 Busca global</h4><p>No topo da tela — digite um nome pra achar qualquer colaborador ou pular direto pra uma seção.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= FIM DE ANO ================= -->
+  <section class="portal" id="fimdeano">
+    <div class="portal-head">
+      <div class="badge">🎄</div>
+      <h2>Portal de Férias de Fim de Ano</h2>
+    </div>
+    <p class="portal-sub">Fica disponível só durante a janela da campanha (setembro–outubro). Mesmo login do resto do sistema.</p>
+
+    <ol class="steps">
+      <li>Depois de entrar, você vê a lista da sua equipe que pode agendar — aba <strong>Pendentes</strong>.</li>
+      <li>Clique em <strong>"agendar"</strong> no nome da pessoa.</li>
+      <li>Escolha uma das opções de data mostradas.
+        <span class="note">As opções variam por pessoa, respeitando a regra dos 14 dias corridos e a data em que cada um tem direito.</span>
+      </li>
+      <li>Clique em <strong>"Enviar ao DP"</strong>.</li>
+      <li>A pessoa some de Pendentes e passa pra aba <strong>Solicitados</strong>, com a data confirmada.</li>
+    </ol>
+
+    <div class="callout pink">
+      <span class="ic">☝️</span>
+      <p>Cada pessoa só pode escolher <b>uma única data</b> nessa campanha — depois de agendada, ela não aparece mais pra reagendar. Dúvidas sobre as regras? Tem um botão <b>"Guia de Férias de Fim de Ano"</b> na própria tela.</p>
+    </div>
+  </section>
+
+  <!-- ================= GUIAS ================= -->
+  <section class="portal" id="guias">
+    <div class="portal-head">
+      <div class="badge">📘</div>
+      <h2>Guias de ajuda</h2>
+    </div>
+    <p class="portal-sub">Páginas só de leitura, sem precisar logar — cada uma com explicações e perguntas frequentes.</p>
+
+    <div class="guide">
+      <h3>Guia de Férias de Fim de Ano</h3>
+      <p style="margin-top:10px">As duas datas fixas de dezembro, quem pode participar, a regra dos 14 dias corridos (com exemplo numérico), o passo a passo de agendamento, o que acontece depois — e um FAQ com 4 perguntas comuns.</p>
+    </div>
+    <div class="guide">
+      <h3>Guia de Afastamento</h3>
+      <p style="margin-top:10px">Os três caminhos de um afastamento (até 15 dias / mais de 15 com INSS / acidente de trabalho), a regra dos 15 dias, RAT x CAT, o passo a passo de registro — e um FAQ com 6 perguntas.</p>
+    </div>
+    <div class="guide">
+      <h3>Guia de Movimentações</h3>
+      <p style="margin-top:10px">Os seis tipos de movimentação, a aprovação em duas etapas (RH → DP), os três desfechos possíveis, as três conferências automáticas do sistema — e um FAQ com 4 perguntas.</p>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="faq" id="faq">
+    <h2>Perguntas frequentes</h2>
+
+    <details open>
+      <summary>Esqueci minha senha, e agora?</summary>
+      <p>Na tela de login, clique em "É meu primeiro acesso ou esqueci a senha" — é o mesmo caminho pros dois casos. Você recebe um código por e-mail e cria uma senha nova.</p>
+    </details>
+    <details>
+      <summary>Errei a senha várias vezes e agora não consigo mais tentar.</summary>
+      <p>Depois de 5 tentativas erradas, o acesso fica bloqueado por 15 minutos. Se continuar bloqueado depois disso, fale com o suporte técnico — o desbloqueio manual precisa ser feito por quem administra o sistema.</p>
+    </details>
+    <details>
+      <summary>Cancelei uma ação sem querer, dá pra desfazer?</summary>
+      <p>Cancelamentos de solicitações (férias, rescisão, movimentação) só são possíveis enquanto o pedido ainda está pendente — depois que o DP começa a decidir, fale direto com o Departamento Pessoal.</p>
+    </details>
+    <details>
+      <summary>"Cancelar envio" em Recibos ou Homologação é reversível?</summary>
+      <p>Não — o documento é apagado do Autentique e não tem volta. Se precisar reenviar, é preciso fazer um novo envio do zero.</p>
+    </details>
+  </section>
+
+</main>
+
+<footer>
+  <span>DP360 · Manual de uso interno · CIEDS</span>
+  <span>Consulte também a Documentação Técnica para detalhes de implementação.</span>
+</footer>
+
+<script>
+(function(){
+  var KEY='dp360_manual_theme';
+  var btn=document.getElementById('themeBtn');
+  function apply(t){
+    if(t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+  }
+  var saved=null;
+  try{ saved=localStorage.getItem(KEY); }catch(e){}
+  apply(saved);
+  btn.addEventListener('click', function(){
+    var current=document.documentElement.getAttribute('data-theme');
+    var prefersDark=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next;
+    if(!current) next = prefersDark ? 'light' : 'dark';
+    else if(current==='dark') next='light';
+    else next='dark';
+    apply(next);
+    try{ localStorage.setItem(KEY, next); }catch(e){}
+  });
+})();
+</script>

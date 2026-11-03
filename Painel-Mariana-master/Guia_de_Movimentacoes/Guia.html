@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+:root{
+  --brand:#0E5A6B; --brand-dark:#093F4B; --brand-soft:#E7F1F3;
+  --accent:#E4007C; --accent-soft:#fff2f8;
+  --ink:#17252a; --muted:#6b7c81; --line:#e6ecee; --bg:#f5f8f9;
+  --ok:#1a8a4b; --ok-soft:#e9f7ef;
+  --warn:#c47f00; --warn-soft:#fdf4e3;
+  --danger:#c0392b; --danger-soft:#fdeceb;
+  --r:16px;
+  --sh:0 4px 20px rgba(9,63,75,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+
+.topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:32px 22px 40px;
+  text-align:center}
+.topo .selo{display:inline-block;background:rgba(255,255,255,.14);padding:5px 14px;border-radius:99px;
+  font-size:11.5px;font-weight:700;letter-spacing:.3px;margin-bottom:14px}
+.topo h1{margin:0 0 8px;font-size:26px}
+.topo p{margin:0;opacity:.85;font-size:14px;max-width:520px;margin:0 auto}
+
+.wrap{max-width:760px;margin:-24px auto 60px;padding:0 18px}
+
+.sec{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  padding:26px 26px 22px;margin-bottom:20px}
+.sec h2{margin:0 0 6px;font-size:18px;display:flex;align-items:center;gap:10px}
+.sec h2 .n{background:var(--brand);color:#fff;width:26px;height:26px;border-radius:50%;font-size:12.5px;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.sec>p.desc{margin:0 0 18px;color:var(--muted);font-size:13.5px}
+
+.tipos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tipo{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.tipo b{display:block;font-size:13.5px;margin-bottom:4px}
+.tipo span{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+.timeline{position:relative;padding-left:34px}
+.timeline::before{content:'';position:absolute;left:13px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.etapa{position:relative;padding-bottom:22px}
+.etapa:last-child{padding-bottom:0}
+.etapa::before{content:attr(data-n);position:absolute;left:-34px;top:0;width:28px;height:28px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.etapa b{display:block;font-size:14px;margin-bottom:3px}
+.etapa span{font-size:13px;color:var(--muted);display:block}
+.etapa .quem{display:inline-block;margin-top:6px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.quem.dp{background:var(--brand-soft);color:var(--brand-dark)}
+.quem.voce{background:var(--accent-soft);color:var(--accent)}
+.quem.rh{background:#f3e8fd;color:#6b3fa0}
+
+.explica{background:var(--brand-soft);color:var(--brand-dark);border-radius:12px;padding:14px 16px;
+  font-size:13px;line-height:1.55;margin-top:14px}
+.explica.aviso-cor{background:var(--warn-soft);color:#8a5b00}
+.explica.ok-cor{background:var(--ok-soft);color:#0f5c33}
+
+.desfechos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px}
+.desfecho{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px}
+.desfecho.ok{border-color:#bfe3cc;background:var(--ok-soft)}
+.desfecho.nao{border-color:#f0c4bd;background:var(--danger-soft)}
+.desfecho b{display:block;font-size:13.5px;margin-bottom:4px}
+.desfecho p{margin:0;font-size:12.5px;color:var(--muted)}
+
+.faq{border-top:1px solid var(--line);padding:14px 0}
+.faq:first-child{border-top:0;padding-top:0}
+.faq b{display:block;font-size:13.5px;margin-bottom:4px}
+.faq p{margin:0;font-size:13px;color:var(--muted)}
+
+.rodape{text-align:center;font-size:12px;color:var(--muted);padding:10px 18px 30px}
+.rodape .contato{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 22px;
+  max-width:420px;margin:0 auto 18px;box-shadow:var(--sh)}
+.rodape .contato b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+.rodape .contato a{color:var(--brand);font-weight:700;text-decoration:none}
+
+@media(max-width:560px){
+  .topo h1{font-size:21px}
+  .sec{padding:20px 18px}
+}
+</style>
+</head>
+<body>
+
+  <div class="topo">
+    <span class="selo">DEPARTAMENTO PESSOAL · CIEDS</span>
+    <h1>Guia da Movimentação</h1>
+    <p>Como solicitar mudanças de departamento, turno, carga horária, cargo, salário ou um adicional — e como funciona a aprovação.</p>
+  </div>
+
+  <div class="wrap">
+
+    <!-- TIPOS -->
+    <div class="sec">
+      <h2><span class="n">1</span>Tipos de movimentação</h2>
+      <p class="desc">Escolha o que mais se aproxima do que você precisa mudar no contrato da pessoa.</p>
+      <div class="tipos">
+        <div class="tipo"><b>Transferência de departamento</b><span>Move a pessoa de um departamento para outro.</span></div>
+        <div class="tipo"><b>Alteração de turno</b><span>Diurno ↔ noturno. Gera automaticamente a inclusão ou retirada do adicional noturno.</span></div>
+        <div class="tipo"><b>Alteração de carga horária</b><span>Muda a jornada de trabalho contratada.</span></div>
+        <div class="tipo"><b>Alteração de cargo</b><span>Promoção, mudança de função ou correção de cadastro.</span></div>
+        <div class="tipo"><b>Alteração de salário</b><span>Reajuste, equiparação ou correção. Passa por uma conferência automática com o que já é pago no cargo/departamento.</span></div>
+        <div class="tipo"><b>Pagamento de um adicional</b><span>Gratificação, ajuda de transporte ou qualquer outro valor — campo livre para descrever.</span></div>
+      </div>
+    </div>
+
+    <!-- FLUXO -->
+    <div class="sec">
+      <h2><span class="n">2</span>Como funciona a aprovação</h2>
+      <p class="desc">Duas etapas, em sequência — o RH analisa primeiro, o DP lança na folha depois.</p>
+      <div class="timeline">
+        <div class="etapa" data-n="1">
+          <b>Você solicita</b>
+          <span>Escolhe o colaborador, o tipo de movimentação e a competência de início (o mês a partir do qual a mudança deve valer).</span>
+          <span class="quem voce">Gestor(a)</span>
+        </div>
+        <div class="etapa" data-n="2">
+          <b>O RH analisa</b>
+          <span>Pode aprovar, aprovar com ajustes (por exemplo, adequando a um valor de política interna) ou não aprovar, sempre com um motivo.</span>
+          <span class="quem rh">RH</span>
+        </div>
+        <div class="etapa" data-n="3">
+          <b>O DP lança na folha</b>
+          <span>Confirma o lançamento e informa em qual folha/competência a mudança vai refletir — ou não aprova por um motivo trabalhista.</span>
+          <span class="quem dp">DP</span>
+        </div>
+        <div class="etapa" data-n="4">
+          <b>Você recebe a confirmação</b>
+          <span>Só depois que o DP decidir é que você recebe o e-mail final — com a folha em que vai aparecer, ou o motivo caso não tenha sido aprovado.</span>
+          <span class="quem voce">Gestor(a)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESFECHOS -->
+    <div class="sec">
+      <h2><span class="n">3</span>Possíveis desfechos</h2>
+      <div class="desfechos">
+        <div class="desfecho ok"><b>✅ Aprovada</b><p>Você recebe a confirmação com a folha em que vai refletir.</p></div>
+        <div class="desfecho nao"><b>❌ Não aprovada pelo RH</b><p>O processo termina aqui, com o motivo explicado.</p></div>
+        <div class="desfecho nao"><b>❌ Não aprovada pelo DP</b><p>Motivo trabalhista explicado, mesmo já tendo passado pelo RH.</p></div>
+      </div>
+    </div>
+
+    <!-- CONFERÊNCIAS AUTOMÁTICAS -->
+    <div class="sec">
+      <h2><span class="n">4</span>Conferências automáticas</h2>
+      <p class="desc">O sistema faz duas checagens sozinho, para evitar erros de digitação ou pedidos fora do padrão.</p>
+      <div class="explica aviso-cor">
+        💰 <b>Salário:</b> se o valor pedido for diferente do que já é praticado para o mesmo cargo no mesmo departamento,
+        a solicitação é bloqueada até você confirmar explicitamente que a diferença é intencional (com uma justificativa).
+      </div>
+      <div class="explica">
+        🧭 <b>Cargo:</b> se não existir mais ninguém com esse cargo no departamento, aparece um aviso — só para conferir
+        que não foi engano. Isso não impede o envio.
+      </div>
+      <div class="explica ok-cor">
+        🌙 <b>Turno noturno:</b> ao mudar alguém para o turno noturno, uma segunda movimentação é criada automaticamente
+        para incluir o adicional noturno. Ao mudar para o diurno, é criada a de retirada. As duas seguem o mesmo fluxo de aprovação.
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="sec">
+      <h2><span class="n">5</span>Perguntas frequentes</h2>
+      <div class="faq">
+        <b>O que é a "competência de início"?</b>
+        <p>É o mês a partir do qual a mudança deve valer — por exemplo, se a alteração deve refletir já na folha de agosto ou só na de setembro.</p>
+      </div>
+      <div class="faq">
+        <b>Posso cancelar depois de enviar?</b>
+        <p>Sim, enquanto ainda estiver aguardando o RH. Depois que o RH decidir, não é mais possível cancelar pelo portal — fale com o DP.</p>
+      </div>
+      <div class="faq">
+        <b>Por que meu pedido de salário foi bloqueado?</b>
+        <p>O valor informado diverge do que já é pago para esse cargo nesse departamento. Se for intencional (uma promoção, por exemplo), confirme a divergência com uma justificativa e envie de novo.</p>
+      </div>
+      <div class="faq">
+        <b>Quando recebo a confirmação?</b>
+        <p>Só depois que o DP lançar (ou não aprovar) na folha — é nessa etapa final que você é avisado(a), com a folha em que vai refletir.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="rodape">
+    <div class="contato">
+      <b>Dúvidas?</b>
+      Fale com o Departamento Pessoal<br>
+      <a href="mailto:dp@cieds.org.br">dp@cieds.org.br</a>
+    </div>
+    Este guia tem caráter informativo geral. Para orientações específicas do seu caso, procure o DP.
+  </div>
+
+</body>
+</html>

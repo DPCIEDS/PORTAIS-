@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{--teal:#247662;--teal-dark:#18564A;--ink:#173029;--muted:#5b6f69;--line:#e3ebe8;--bg:#f4f7f6;--red:#B5123A;--red-soft:#fbe9ee;--amarelo:#fff3d9}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px 18px;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:14px;line-height:1.45}
+  h2{font-size:15px;margin:0 0 8px}
+  p{margin:0 0 10px}
+  .muted{color:var(--muted);font-size:13px}
+  .filtros{display:flex;gap:8px;margin:0 0 8px}
+  .filtros input,.filtros select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink);background:#fff}
+  .filtros input{flex:1;min-width:0}
+  .filtros input:focus,.filtros select:focus,.campo input:focus,.campo textarea:focus{outline:2px solid #cfe5dd;border-color:var(--teal)}
+  .lista{border:1px solid var(--line);border-radius:10px;height:250px;overflow:auto}
+  .pessoa{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .pessoa:last-child{border-bottom:0}
+  .pessoa:hover{background:var(--bg)}
+  .pessoa.sel{background:var(--red-soft)}
+  .pessoa.ja{cursor:default;opacity:.6}
+  .pessoa input{margin-top:3px}
+  .pessoa b{font-size:13.5px}
+  .pessoa .det{display:block;font-size:12px;color:var(--muted)}
+  .tag{display:inline-block;font-size:11px;font-weight:bold;padding:1px 7px;border-radius:99px;background:var(--bg);color:var(--muted);margin-left:6px}
+  .barra-sel{display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px;font-size:13px}
+  .link{background:none;border:0;padding:0;color:var(--teal);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  .campo{margin:0 0 10px}
+  .campo label{display:block;font-weight:bold;font-size:13px;margin:0 0 4px}
+  .campo input,.campo textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink)}
+  .campo textarea{resize:vertical;min-height:44px}
+  .aviso{background:var(--amarelo);border:1px solid #f1dfbf;color:#77510a;border-radius:10px;padding:10px 12px;margin:0 0 12px}
+  .resumo{background:#eef6f3;border:1px solid #d3e8e0;border-radius:10px;padding:10px 12px;margin:0 0 12px}
+  .acoes{display:flex;gap:10px;justify-content:flex-end}
+  button.b{font:inherit;font-weight:bold;border:0;border-radius:9px;padding:10px 16px;cursor:pointer}
+  .perigo{background:var(--red);color:#fff}
+  .prim{background:var(--teal);color:#fff}
+  .sec{background:var(--bg);color:var(--ink)}
+  button.b:disabled{opacity:.5;cursor:default}
+  ul.nomes{margin:6px 0 0;padding:0 0 0 18px;max-height:170px;overflow:auto;font-size:13px}
+  ul.nomes li span{color:var(--red)}
+  .hidden{display:none}
+
+  /* [2026-10-23] Botões com o mesmo visual nas janelas de Admissão. Cores de sempre:
+     verde = ação principal, vermelho = cancelar admissão; os secundários ficam brancos com borda. */
+  button.prim,button.sec,button.perigo{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;
+    padding:9px 16px;border-radius:10px;font-weight:bold;line-height:1.2;transition:background .15s,border-color .15s,box-shadow .15s,transform .05s}
+  button.prim svg,button.sec svg,button.perigo svg{flex:none;width:16px;height:16px}
+  button.prim{background:var(--teal);color:#fff;border:1px solid var(--teal);box-shadow:0 2px 6px rgba(24,86,74,.22)}
+  button.prim:not(:disabled):hover{background:var(--teal-dark);border-color:var(--teal-dark)}
+  button.sec{background:#fff;color:var(--ink);border:1px solid #cad8d3;box-shadow:0 1px 2px rgba(23,48,41,.06)}
+  button.sec:not(:disabled):hover{background:#eef6f3;border-color:var(--teal);color:var(--teal-dark)}
+  button.perigo{background:var(--red);color:#fff;border:1px solid var(--red);box-shadow:0 2px 6px rgba(181,18,58,.22)}
+  button.perigo:not(:disabled):hover{background:#8f0e2e;border-color:#8f0e2e}
+  button.prim:disabled,button.sec:disabled,button.perigo:disabled{opacity:.45;cursor:default;box-shadow:none}
+  button.prim:not(:disabled):active,button.sec:not(:disabled):active,button.perigo:not(:disabled):active{transform:translateY(1px)}
+  button:focus-visible{outline:3px solid #9fd0c0;outline-offset:2px}
+  button.mini{min-height:32px;padding:5px 11px;font-size:13px}
+  .acoes{flex-wrap:wrap}
+
+  /* [2026-10-23] Visual novo das janelas de Admissão (mesmo jeito do Portal do DP). Cores de sempre:
+     verde = principal/certo, vermelho = cancelar/problema, amarelo = atenção. */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root{--teal-soft:#eaf4f0;--line:#e1e9e6;--bg:#f5f8f7;--borda:#cad8d3;--sh:0 1px 2px rgba(23,48,41,.05),0 4px 14px rgba(23,48,41,.05)}
+  body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;padding:0 20px 20px;background:#fff}
+  .topo{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;margin:0 -20px 16px;padding:12px 20px 10px;background:#fff;border-bottom:1px solid var(--line)}
+  .topo-ico{width:36px;height:36px;border-radius:10px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;flex:none}
+  .topo-ico svg{width:19px;height:19px}
+  .topo.perigo .topo-ico{background:#fbe9ee;color:var(--red)}
+  .passos{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:0}
+  .passos li{flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 7px;border-bottom:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .passos li i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:#fff;border:1.5px solid var(--borda);flex:none}
+  .passos li.on{color:var(--teal-dark);border-bottom-color:var(--teal)}
+  .passos li.on i{background:var(--teal);border-color:var(--teal);color:#fff}
+  .passos li.feito{color:var(--teal);border-bottom-color:#9fd0c0}
+  .passos li.feito i{background:#9fd0c0;border-color:#9fd0c0;color:#fff;font-size:0}
+  .passos li.feito i::after{content:'✓';font-size:12px}
+  h2{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted);font-size:12.5px}
+  b{font-weight:700}
+  /* resumo (verde) e aviso (amarelo) com ícone */
+  .resumo,.aviso{position:relative;border-radius:12px;padding:12px 14px 12px 40px;line-height:1.5}
+  .resumo{background:var(--teal-soft);border:1px solid #cfe5dc;color:var(--ink)}
+  .aviso{background:#fff6e0;border:1px solid #f1dfbf;color:#5e4108}
+  .resumo::before,.aviso::before{content:'';position:absolute;left:14px;top:13px;width:17px;height:17px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E") no-repeat center/contain}
+  .aviso::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2377510a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E")}
+  /* datas para escolher (formulário e lembrete) */
+  .datas{gap:8px}
+  .data{align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;box-shadow:var(--sh);transition:border-color .15s,background .15s,box-shadow .15s}
+  .data:hover{border-color:#9fd0c0;background:#fbfdfc}
+  .data.sel{border-color:var(--teal);background:var(--teal-soft);box-shadow:0 0 0 3px rgba(36,118,98,.12)}
+  .data input{margin:0;width:16px;height:16px;accent-color:var(--teal)}
+  .data b{font-size:15px}
+  .check{align-items:center}
+  input[type=checkbox],input[type=radio]{accent-color:var(--teal)}
+  /* campos */
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]),textarea{
+    font:inherit;font-size:13.5px;border:1px solid var(--borda);border-radius:10px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]){height:40px;padding:0 12px}
+  textarea{padding:9px 12px}
+  select[size]{border:1px solid var(--borda);border-radius:12px;padding:4px}
+  input:focus,select:focus,textarea:focus{outline:0;border-color:var(--teal);box-shadow:0 0 0 3px rgba(36,118,98,.15)}
+  label.campo,.campo label{font-size:12.5px;font-weight:700;color:var(--ink)}
+  /* cartões, números e tabelas */
+  .card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grande{font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--teal-dark);line-height:1.1}
+  table{border:1px solid var(--line);border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden}
+  th{background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px}
+  td{padding:8px 10px}
+  tr:last-child td{border-bottom:0}
+  /* listas de pessoas */
+  .lista,.lista-check{border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh)}
+  .pessoa,.lista-check label{transition:background .12s}
+  .pessoa.sel{box-shadow:inset 3px 0 0 var(--red)}
+  .tag{border-radius:99px}
+  /* progresso */
+  .barra{height:8px;background:#e6eeeb;margin:12px 0 8px}
+  .barra div{background:linear-gradient(90deg,var(--teal),#2f9a7e)}
+  #telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{content:'';flex:none;width:16px;height:16px;border:2.5px solid #cfe5dc;border-top-color:var(--teal);border-radius:50%;animation:gira .8s linear infinite}
+  #telaCarregando p{display:flex;align-items:center;gap:10px;padding:18px 0}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){#telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{animation:none}}
+  /* resultado: ícone verde quando deu certo, vermelho quando deu problema */
+  .fim-ok h2::before,.fim-aviso h2::before{content:'';flex:none;width:22px;height:22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E") no-repeat center/contain}
+  .fim-aviso h2::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  .fim-aviso .resumo{background:#fbe9ee;border-color:#f3c9d4}
+  .fim-aviso .resumo::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  ul.erros,ul.nomes{border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:#fff}
+  ul.nomes{padding:6px 12px 6px 30px}
+  ul.erros li:last-child{border-bottom:0}
+  /* botões ficam visíveis no rodapé da janela quando a tela é mais alta que ela */
+  .acoes{position:sticky;bottom:0;z-index:4;margin:4px -20px 0;padding:12px 20px 4px;background:linear-gradient(rgba(255,255,255,0),#fff 35%)}
+</style>
+</head>
+<body>
+<div class="topo perigo"><span class="topo-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="m17 8 5 5M22 8l-5 5"/></svg></span><ol class="passos" aria-label="Etapas"><li data-p="1"><i>1</i>Marcar as pessoas</li><li data-p="2"><i>2</i>Confirmar</li><li data-p="3"><i>3</i>Registrar</li></ol></div>
+
+<div id="telaCarregando"><p class="muted">Lendo a aba BASE...</p></div>
+
+<div id="telaEscolha" class="hidden">
+  <p class="muted">Marque uma ou mais pessoas da aba BASE. Cada uma ganha uma linha na aba Cancelados com o motivo abaixo. Ela continua na BASE, com o nome pintado de vermelho.</p>
+  <div class="filtros">
+    <input type="search" id="busca" placeholder="Pesquisar por nome, e-mail ou CPF" aria-label="Pesquisar por nome, e-mail ou CPF">
+    <select id="data" aria-label="Data de admissão"><option value="">Todas as datas de admissão</option></select>
+  </div>
+  <div class="lista" id="lista" role="group" aria-label="Pessoas da aba BASE"></div>
+  <div class="barra-sel"><span id="contSel">Nenhuma pessoa marcada.</span><button type="button" class="link hidden" id="btnLimpar">Desmarcar todas</button></div>
+  <div class="campo">
+    <label for="motivo">Motivo do cancelamento</label>
+    <input id="motivo" list="motivosUsados" placeholder="Escolha um motivo já usado ou escreva outro" autocomplete="off">
+    <datalist id="motivosUsados"></datalist>
+  </div>
+  <div class="campo">
+    <label for="obs">Observação <span class="muted">(opcional)</span></label>
+    <textarea id="obs" rows="2" placeholder="Ex.: comunicada por e-mail e WhatsApp"></textarea>
+  </div>
+  <div class="acoes">
+    <button type="button" class="b sec" onclick="google.script.host.close()">Fechar</button>
+    <button type="button" class="b perigo" id="btnCancelar" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><span class="rot">Cancelar admissão</span></button>
+  </div>
+</div>
+
+<div id="telaConfirmar" class="hidden">
+  <h2>Confirmar cancelamento</h2>
+  <div class="aviso" id="textoConfirmar"></div>
+  <ul class="nomes" id="nomesConfirmar"></ul>
+  <p class="muted" style="margin-top:12px" id="motivoConfirmar"></p>
+  <div class="acoes">
+    <button type="button" class="b sec" id="btnVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="b perigo" id="btnConfirmar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><span class="rot">Confirmar cancelamento</span></button>
+  </div>
+</div>
+
+<div id="telaFim" class="hidden">
+  <h2 id="tituloFim">Cancelamento registrado</h2>
+  <div class="resumo" id="resumoFim"></div>
+  <div id="blocoPulados" class="hidden"><p><b>Já estavam em Cancelados</b> <span class="muted">(não foram registradas de novo)</span></p><ul class="nomes" id="listaPulados"></ul></div>
+  <div id="blocoErros" class="hidden" style="margin-top:10px"><p><b>Não registradas</b></p><ul class="nomes" id="listaErros"></ul></div>
+  <div class="acoes" style="margin-top:14px">
+    <button type="button" class="b sec" id="btnOutro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Cancelar outras pessoas</button>
+    <button type="button" class="b prim" onclick="google.script.host.close()">Fechar</button>
+  </div>
+</div>
+
+<script>
+  var DADOS = null, SEL = {}; // SEL: linha -> { linha, nome }
+
+  function $(id){ return document.getElementById(id); }
+  function tela(id){ ['telaCarregando','telaEscolha','telaConfirmar','telaFim'].forEach(function(t){ $(t).classList.toggle('hidden', t !== id); }); }
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function norm(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
+  function marcadas(){ return Object.keys(SEL).map(function(k){ return SEL[k]; }); }
+
+  function falhou(e){
+    tela('telaFim');
+    $('tituloFim').textContent = 'Não foi possível continuar';
+    $('resumoFim').textContent = e && e.message ? e.message : String(e);
+    $('blocoPulados').classList.add('hidden'); $('blocoErros').classList.add('hidden');
+  }
+
+  function carregar(){
+    tela('telaCarregando');
+    google.script.run.withSuccessHandler(function(d){
+      DADOS = d; SEL = {};
+      // Admissão mais recente primeiro (é quem costuma ser cancelado), depois pelo nome.
+      DADOS.pessoas.sort(function(a, z){ return String(z.iso || '').localeCompare(String(a.iso || '')) || a.nome.localeCompare(z.nome); });
+      $('data').innerHTML = '<option value="">Todas as datas de admissão</option>' + d.datas.map(function(x){
+        return '<option value="' + x.iso + '">Admissão em ' + x.br + ' (' + x.total + ')</option>'; }).join('');
+      $('motivosUsados').innerHTML = d.motivos.map(function(m){ return '<option value="' + esc(m) + '"></option>'; }).join('');
+      $('busca').value = ''; $('motivo').value = ''; $('obs').value = '';
+      desenhar(); tela('telaEscolha'); $('busca').focus();
+    }).withFailureHandler(falhou).cancAdmListar();
+  }
+
+  function desenhar(){
+    var b = norm($('busca').value), dig = $('busca').value.replace(/\D/g, ''), data = $('data').value;
+    var lista = DADOS.pessoas.filter(function(p){
+      if(data && p.iso !== data) return false;
+      if(!b) return true;
+      return norm(p.nome).indexOf(b) > -1 || norm(p.email).indexOf(b) > -1 || (dig.length >= 3 && p.cpf.replace(/\D/g, '').indexOf(dig) > -1);
+    });
+    var box = $('lista');
+    if(!lista.length){ box.innerHTML = '<p class="muted" style="padding:12px">Ninguém encontrado.</p>'; atualizarSel(); return; }
+    box.innerHTML = lista.map(function(p){
+      var det = [p.posto, p.departamento, p.admissao ? 'Admissão ' + p.admissao : '', p.cpf ? 'CPF ' + p.cpf : ''].filter(Boolean).join(' · ');
+      var sel = !!SEL[p.linha];
+      return '<label class="pessoa' + (p.cancelado ? ' ja' : '') + (sel ? ' sel' : '') + '">' +
+        '<input type="checkbox" data-linha="' + p.linha + '"' + (sel ? ' checked' : '') + (p.cancelado ? ' disabled' : '') + '>' +
+        '<span><b>' + esc(p.nome) + '</b>' + (p.cancelado ? '<span class="tag">Já em Cancelados</span>' : '') +
+        '<span class="det">' + esc(det || p.email) + '</span></span></label>';
+    }).join('');
+    box.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.onchange = function(){
+        var p = DADOS.pessoas.find(function(x){ return x.linha === Number(cb.dataset.linha); });
+        if(cb.checked) SEL[p.linha] = { linha: p.linha, nome: p.nome }; else delete SEL[p.linha];
+        cb.closest('.pessoa').classList.toggle('sel', cb.checked);
+        atualizarSel();
+      };
+    });
+    atualizarSel();
+  }
+
+  function atualizarSel(){
+    var n = marcadas().length;
+    $('contSel').textContent = n ? plural(n, 'pessoa marcada', 'pessoas marcadas') + '.' : 'Nenhuma pessoa marcada.';
+    $('btnLimpar').classList.toggle('hidden', !n);
+    $('btnCancelar').disabled = !n || !$('motivo').value.trim();
+    $('btnCancelar').querySelector('.rot').textContent = n ? 'Cancelar admissão de ' + plural(n, 'pessoa', 'pessoas') : 'Cancelar admissão';
+  }
+
+  $('busca').oninput = desenhar;
+  $('data').onchange = desenhar;
+  $('motivo').oninput = atualizarSel;
+  $('btnLimpar').onclick = function(){ SEL = {}; desenhar(); };
+
+  $('btnCancelar').onclick = function(){
+    var lista = marcadas();
+    $('textoConfirmar').textContent = 'Confirma o cancelamento da admissão de ' + plural(lista.length, 'pessoa', 'pessoas') +
+      '? Cada uma ganha uma linha na aba Cancelados e o nome dela na BASE fica com fundo vermelho. A linha na BASE não é apagada.';
+    $('nomesConfirmar').innerHTML = lista.map(function(p){ return '<li>' + esc(p.nome) + '</li>'; }).join('');
+    $('motivoConfirmar').textContent = 'Motivo: ' + $('motivo').value.trim() + ($('obs').value.trim() ? ' · Observação: ' + $('obs').value.trim() : '');
+    tela('telaConfirmar');
+  };
+  $('btnVoltar').onclick = function(){ tela('telaEscolha'); };
+
+  $('btnConfirmar').onclick = function(){
+    var b = $('btnConfirmar'); b.disabled = true; b.querySelector('.rot').textContent = 'Registrando...';
+    google.script.run.withSuccessHandler(function(r){
+      b.disabled = false; b.querySelector('.rot').textContent = 'Confirmar cancelamento';
+      tela('telaFim');
+      $('tituloFim').textContent = r.registrados.length ? 'Cancelamento registrado' : 'Nada registrado';
+      $('resumoFim').textContent = r.registrados.length
+        ? plural(r.registrados.length, 'pessoa registrada', 'pessoas registradas') + ' na aba Cancelados: ' + r.registrados.join(', ') + '.'
+        : 'Nenhuma linha nova na aba Cancelados.';
+      $('blocoPulados').classList.toggle('hidden', !r.pulados.length);
+      $('listaPulados').innerHTML = r.pulados.map(function(n){ return '<li>' + esc(n) + '</li>'; }).join('');
+      $('blocoErros').classList.toggle('hidden', !r.erros.length);
+      $('listaErros').innerHTML = r.erros.map(function(e){ return '<li>' + esc(e.nome) + ': <span>' + esc(e.motivo) + '</span></li>'; }).join('');
+    }).withFailureHandler(function(e){ b.disabled = false; b.querySelector('.rot').textContent = 'Confirmar cancelamento'; falhou(e); })
+      .cancAdmRegistrar(marcadas(), $('motivo').value.trim(), $('obs').value.trim());
+  };
+  $('btnOutro').onclick = carregar;
+
+  carregar();
+</script>
+<script>
+  // [2026-10-23] Visual novo: marca a etapa do topo e o ícone do resultado. Só observa as telas; não muda nada no envio.
+  (function(){
+    var PASSO = {"telaCarregando":1,"telaEscolha":1,"telaConfirmar":2,"telaFim":4}, FINS = [["telaFim","tituloFim"]];
+    function el(id){ return document.getElementById(id); }
+    function marcar(){
+      var vis = Object.keys(PASSO).filter(function(id){ return el(id) && !el(id).classList.contains('hidden'); })[0];
+      var p = vis ? PASSO[vis] : 0;
+      Array.prototype.forEach.call(document.querySelectorAll('.passos li'), function(li){
+        var n = Number(li.getAttribute('data-p'));
+        li.classList.toggle('on', n === p); li.classList.toggle('feito', n < p);
+        if (n === p) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+      });
+    }
+    function resultado(){
+      FINS.forEach(function(f){
+        var box = el(f[0]), t = el(f[1]); if (!box || !t) return;
+        var ruim = /n[ãa]o foi poss[íi]vel|interrompid|nada registrado|n[ãa]o saiu|n[ãa]o conclu/i.test(t.textContent);
+        box.classList.toggle('fim-aviso', ruim); box.classList.toggle('fim-ok', !ruim);
+      });
+    }
+    var obs = new MutationObserver(function(){ marcar(); resultado(); });
+    Object.keys(PASSO).forEach(function(id){ if (el(id)) obs.observe(el(id), { attributes: true, attributeFilter: ['class'] }); });
+    FINS.forEach(function(f){ if (el(f[1])) obs.observe(el(f[1]), { childList: true, characterData: true, subtree: true }); });
+    marcar(); resultado();
+  })();
+</script>
+</body>
+</html>

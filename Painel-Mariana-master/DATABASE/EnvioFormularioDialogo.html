@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{--teal:#247662;--teal-dark:#18564A;--ink:#173029;--muted:#5b6f69;--line:#e3ebe8;--bg:#f4f7f6;--red:#B5123A;--amarelo:#fff3d9}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px 18px;font-family:Arial,Helvetica,sans-serif;color:var(--ink);font-size:14px;line-height:1.45}
+  h2{font-size:15px;margin:0 0 8px}
+  p{margin:0 0 10px}
+  .muted{color:var(--muted);font-size:13px}
+  .datas{display:flex;flex-direction:column;gap:8px;margin:10px 0 14px}
+  .data{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+  .data:hover{background:var(--bg)}
+  .data.sel{border-color:var(--teal);background:#eef6f3}
+  .data input{margin-top:3px}
+  .data b{font-size:15px}
+  .check{display:flex;gap:8px;align-items:flex-start;margin:4px 0 14px}
+  .resumo{background:#eef6f3;border:1px solid #d3e8e0;border-radius:10px;padding:10px 12px;margin:0 0 14px}
+  .aviso{background:var(--amarelo);border:1px solid #f1dfbf;color:#77510a;border-radius:10px;padding:10px 12px;margin:0 0 14px}
+  .acoes{display:flex;gap:10px;justify-content:flex-end}
+  button{font:inherit;font-weight:bold;border:0;border-radius:9px;padding:10px 16px;cursor:pointer}
+  .prim{background:var(--teal);color:#fff}
+  .prim:disabled{opacity:.5;cursor:default}
+  .sec{background:var(--bg);color:var(--ink)}
+  .barra{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0}
+  .barra div{height:100%;width:0;background:var(--teal);transition:width .3s}
+  ul.erros{margin:6px 0 0;padding:0;list-style:none;max-height:180px;overflow:auto;border-top:1px solid var(--line)}
+  ul.erros li{padding:6px 2px;border-bottom:1px solid var(--line);font-size:13px}
+  ul.erros li span{color:var(--red)}
+  .hidden{display:none}
+
+  /* [2026-10-23] Botões com o mesmo visual nas janelas de Admissão. Cores de sempre:
+     verde = ação principal, vermelho = cancelar admissão; os secundários ficam brancos com borda. */
+  button.prim,button.sec,button.perigo{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;
+    padding:9px 16px;border-radius:10px;font-weight:bold;line-height:1.2;transition:background .15s,border-color .15s,box-shadow .15s,transform .05s}
+  button.prim svg,button.sec svg,button.perigo svg{flex:none;width:16px;height:16px}
+  button.prim{background:var(--teal);color:#fff;border:1px solid var(--teal);box-shadow:0 2px 6px rgba(24,86,74,.22)}
+  button.prim:not(:disabled):hover{background:var(--teal-dark);border-color:var(--teal-dark)}
+  button.sec{background:#fff;color:var(--ink);border:1px solid #cad8d3;box-shadow:0 1px 2px rgba(23,48,41,.06)}
+  button.sec:not(:disabled):hover{background:#eef6f3;border-color:var(--teal);color:var(--teal-dark)}
+  button.perigo{background:var(--red);color:#fff;border:1px solid var(--red);box-shadow:0 2px 6px rgba(181,18,58,.22)}
+  button.perigo:not(:disabled):hover{background:#8f0e2e;border-color:#8f0e2e}
+  button.prim:disabled,button.sec:disabled,button.perigo:disabled{opacity:.45;cursor:default;box-shadow:none}
+  button.prim:not(:disabled):active,button.sec:not(:disabled):active,button.perigo:not(:disabled):active{transform:translateY(1px)}
+  button:focus-visible{outline:3px solid #9fd0c0;outline-offset:2px}
+  button.mini{min-height:32px;padding:5px 11px;font-size:13px}
+  .acoes{flex-wrap:wrap}
+
+  /* [2026-10-23] Visual novo das janelas de Admissão (mesmo jeito do Portal do DP). Cores de sempre:
+     verde = principal/certo, vermelho = cancelar/problema, amarelo = atenção. */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root{--teal-soft:#eaf4f0;--line:#e1e9e6;--bg:#f5f8f7;--borda:#cad8d3;--sh:0 1px 2px rgba(23,48,41,.05),0 4px 14px rgba(23,48,41,.05)}
+  body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;padding:0 20px 20px;background:#fff}
+  .topo{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;margin:0 -20px 16px;padding:12px 20px 10px;background:#fff;border-bottom:1px solid var(--line)}
+  .topo-ico{width:36px;height:36px;border-radius:10px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;flex:none}
+  .topo-ico svg{width:19px;height:19px}
+  .topo.perigo .topo-ico{background:#fbe9ee;color:var(--red)}
+  .passos{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:0}
+  .passos li{flex:1;min-width:0;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 7px;border-bottom:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .passos li i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;background:#fff;border:1.5px solid var(--borda);flex:none}
+  .passos li.on{color:var(--teal-dark);border-bottom-color:var(--teal)}
+  .passos li.on i{background:var(--teal);border-color:var(--teal);color:#fff}
+  .passos li.feito{color:var(--teal);border-bottom-color:#9fd0c0}
+  .passos li.feito i{background:#9fd0c0;border-color:#9fd0c0;color:#fff;font-size:0}
+  .passos li.feito i::after{content:'✓';font-size:12px}
+  h2{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted);font-size:12.5px}
+  b{font-weight:700}
+  /* resumo (verde) e aviso (amarelo) com ícone */
+  .resumo,.aviso{position:relative;border-radius:12px;padding:12px 14px 12px 40px;line-height:1.5}
+  .resumo{background:var(--teal-soft);border:1px solid #cfe5dc;color:var(--ink)}
+  .aviso{background:#fff6e0;border:1px solid #f1dfbf;color:#5e4108}
+  .resumo::before,.aviso::before{content:'';position:absolute;left:14px;top:13px;width:17px;height:17px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E") no-repeat center/contain}
+  .aviso::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2377510a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E")}
+  /* datas para escolher (formulário e lembrete) */
+  .datas{gap:8px}
+  .data{align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;box-shadow:var(--sh);transition:border-color .15s,background .15s,box-shadow .15s}
+  .data:hover{border-color:#9fd0c0;background:#fbfdfc}
+  .data.sel{border-color:var(--teal);background:var(--teal-soft);box-shadow:0 0 0 3px rgba(36,118,98,.12)}
+  /* [2026-10-27] Data sem nada para enviar hoje: aparece, mas não dá para escolher. */
+  .data.inativa{cursor:default;background:var(--bg);box-shadow:none}
+  .data.inativa:hover{border-color:var(--line);background:var(--bg)}
+  .data.inativa b{color:var(--muted)}
+  .data input{margin:0;width:16px;height:16px;accent-color:var(--teal)}
+  .data b{font-size:15px}
+  .check{align-items:center}
+  input[type=checkbox],input[type=radio]{accent-color:var(--teal)}
+  /* campos */
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]),textarea{
+    font:inherit;font-size:13.5px;border:1px solid var(--borda);border-radius:10px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select:not([size]){height:40px;padding:0 12px}
+  textarea{padding:9px 12px}
+  select[size]{border:1px solid var(--borda);border-radius:12px;padding:4px}
+  input:focus,select:focus,textarea:focus{outline:0;border-color:var(--teal);box-shadow:0 0 0 3px rgba(36,118,98,.15)}
+  label.campo,.campo label{font-size:12.5px;font-weight:700;color:var(--ink)}
+  /* cartões, números e tabelas */
+  .card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grande{font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--teal-dark);line-height:1.1}
+  table{border:1px solid var(--line);border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden}
+  th{background:var(--bg);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px}
+  td{padding:8px 10px}
+  tr:last-child td{border-bottom:0}
+  /* listas de pessoas */
+  .lista,.lista-check{border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh)}
+  .pessoa,.lista-check label{transition:background .12s}
+  .pessoa.sel{box-shadow:inset 3px 0 0 var(--red)}
+  .tag{border-radius:99px}
+  /* progresso */
+  .barra{height:8px;background:#e6eeeb;margin:12px 0 8px}
+  .barra div{background:linear-gradient(90deg,var(--teal),#2f9a7e)}
+  #telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{content:'';flex:none;width:16px;height:16px;border:2.5px solid #cfe5dc;border-top-color:var(--teal);border-radius:50%;animation:gira .8s linear infinite}
+  #telaCarregando p{display:flex;align-items:center;gap:10px;padding:18px 0}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){#telaEnviando h2::before,#telaAvEnviando h2::before,#telaCarregando p::before{animation:none}}
+  /* resultado: ícone verde quando deu certo, vermelho quando deu problema */
+  .fim-ok h2::before,.fim-aviso h2::before{content:'';flex:none;width:22px;height:22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23247662' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E") no-repeat center/contain}
+  .fim-aviso h2::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  .fim-aviso .resumo{background:#fbe9ee;border-color:#f3c9d4}
+  .fim-aviso .resumo::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B5123A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E")}
+  ul.erros,ul.nomes{border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:#fff}
+  ul.nomes{padding:6px 12px 6px 30px}
+  ul.erros li:last-child{border-bottom:0}
+  /* botões ficam visíveis no rodapé da janela quando a tela é mais alta que ela */
+  .acoes{position:sticky;bottom:0;z-index:4;margin:4px -20px 0;padding:12px 20px 4px;background:linear-gradient(rgba(255,255,255,0),#fff 35%)}
+  /* [2026-10-26] explicação curta embaixo de cada opção */
+  .check small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .check span b{font-weight:700}
+</style>
+</head>
+<body>
+<div class="topo"><span class="topo-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><ol class="passos" aria-label="Etapas"><li data-p="1"><i>1</i>Escolher a data</li><li data-p="2"><i>2</i>Confirmar</li><li data-p="3"><i>3</i>Enviar</li></ol></div>
+
+<div id="telaCarregando"><p class="muted">Comparando a aba BASE com os cadastros recebidos...</p></div>
+
+<div id="telaEscolha" class="hidden">
+  <h2>Escolha a data de admissão</h2>
+  <p class="muted">Quem ainda não recebeu o convite ganha o link do formulário. Quem já recebeu e ainda não preencheu ganha o lembrete. Quem já preencheu (aba CADASTROS) ou está em Cancelados fica de fora. Todos os e-mails vão com cópia para dp@cieds.org.br.</p>
+  <div class="datas" id="datas"></div>
+  <div id="blocoOpcoes" class="hidden">
+    <label class="check" id="boxConvite"><input type="checkbox" id="optConvite" checked><span id="txtConvite"></span></label>
+    <label class="check" id="boxLembrete"><input type="checkbox" id="optLembrete" checked><span id="txtLembrete"></span></label>
+  </div>
+  <div class="resumo" id="resumo"></div>
+  <div class="acoes">
+    <button type="button" class="sec" onclick="google.script.host.close()">Cancelar</button>
+    <button type="button" class="prim" id="btnEnviar" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Enviar</button>
+  </div>
+  <p class="muted" style="margin-top:14px">Quer ver como chega?
+    <button type="button" class="sec mini" id="btnExConvite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Convite</button>
+    <button type="button" class="sec mini" id="btnExLembrete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Lembrete</button>
+    <span id="exemploMsg"></span></p>
+</div>
+
+<div id="telaConfirmar" class="hidden">
+  <h2>Confirmar envio</h2>
+  <div class="aviso" id="textoConfirmar"></div>
+  <div class="acoes">
+    <button type="button" class="sec" id="btnVoltar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Voltar</button>
+    <button type="button" class="prim" id="btnConfirmar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Confirmar envio</button>
+  </div>
+</div>
+
+<div id="telaEnviando" class="hidden">
+  <h2 id="tituloEnviando">Enviando...</h2>
+  <div class="barra"><div id="barra"></div></div>
+  <p id="progresso" class="muted"></p>
+  <p class="muted">Não feche esta janela até terminar. Se ela fechar, abra de novo e envie a mesma data: quem já recebeu o convite não recebe de novo, e o lembrete vai no máximo uma vez por dia.</p>
+</div>
+
+<div id="telaFim" class="hidden">
+  <h2 id="tituloFim">Envio concluído</h2>
+  <div class="resumo" id="resumoFim"></div>
+  <div id="blocoErros" class="hidden">
+    <p><b>Não enviados</b> <span class="muted">(corrija o e-mail na aba BASE e envie de novo a mesma data)</span></p>
+    <ul class="erros" id="listaErros"></ul>
+  </div>
+  <p class="muted" style="margin-top:12px">Os convites ficam nas colunas Status do Envio, Data/Hora do Envio e Erro da aba BASE; os lembretes, na aba LEMBRETE_FORMULARIO.</p>
+  <div class="acoes">
+    <button type="button" class="prim" onclick="google.script.host.close()">Fechar</button>
+  </div>
+</div>
+
+<script>
+  // [2026-10-26] Janela única do formulário de admissão: convite (envioFormEnviarLote) para quem ainda não
+  // recebeu e lembrete (lembreteFormEnviarLote) para quem recebeu e não preencheu. Contas: formAdmResumo.
+  var datas = [], escolhida = null, plano = null;
+  var total = 0, env = { convite: 0, lembrete: 0 }, erros = [], inicio = 0;
+
+  function $(id){ return document.getElementById(id); }
+  function tela(id){
+    ['telaCarregando','telaEscolha','telaConfirmar','telaEnviando','telaFim'].forEach(function(t){ $(t).classList.toggle('hidden', t !== id); });
+  }
+  function plural(n, um, varios){ return n + ' ' + (n === 1 ? um : varios); }
+  function conv(d){ return d.convite || { total: 0, enviados: 0, pendentes: 0, preencheram: 0, cancelados: 0 }; }
+  function lemb(d){ return d.lembrete || { pendentes: 0, aEnviar: 0, semEmail: 0, lembradosHoje: 0, lembradosHojeSemEmail: 0 }; }
+  // Lembrete: "de novo" inclui quem já recebeu lembrete hoje; quem está sem e-mail entra para aparecer como não enviado.
+  function lembretes(d, deNovo){ var l = lemb(d); return l.aEnviar + l.semEmail + (deNovo ? l.lembradosHoje : 0); }
+  function semEmailLembrete(d, deNovo){ var l = lemb(d); return l.semEmail + (deNovo ? l.lembradosHojeSemEmail : 0); }
+
+  function falhou(e){
+    tela('telaFim');
+    $('tituloFim').textContent = 'Não foi possível continuar';
+    $('resumoFim').textContent = (e && e.message ? e.message : String(e)) +
+      ((env.convite + env.lembrete) ? ' Já saíram ' + plural(env.convite, 'convite', 'convites') + ' e ' + plural(env.lembrete, 'lembrete', 'lembretes') + ' nesta rodada.' : '');
+  }
+
+  function carregar(){
+    google.script.run.withSuccessHandler(function(lista){
+      // [2026-10-27] Todas as datas da BASE aparecem, a mais nova primeiro (pedido da Taynara). Data sem
+      // nada para enviar hoje fica visível, desativada, com o motivo.
+      datas = (lista || []).slice().sort(function(a, b){ return a.iso < b.iso ? 1 : (a.iso > b.iso ? -1 : 0); });
+      var box = $('datas'); box.innerHTML = '';
+      if (!datas.length){ box.innerHTML = '<p class="muted">Nenhuma data de admissão na aba BASE.</p>'; }
+      datas.forEach(function(d, i){
+        var c = conv(d), l = lemb(d), partes = [];
+        var temEnvio = !!(c.pendentes || l.pendentes);
+        if (c.pendentes) partes.push(plural(c.pendentes, 'ainda sem convite', 'ainda sem convite'));
+        if (l.pendentes) partes.push(plural(l.pendentes, 'recebeu e não preencheu', 'receberam e não preencheram'));
+        if (c.convidadosHoje) partes.push(plural(c.convidadosHoje, 'recebeu o convite hoje (lembrete a partir de amanhã)', 'receberam o convite hoje (lembrete a partir de amanhã)'));
+        var todosPreencheram = !temEnvio && !c.convidadosHoje;
+        if (c.preencheram) partes.push(todosPreencheram ? 'Todos já preencheram (' + c.preencheram + ')' : c.preencheram + ' já ' + (c.preencheram === 1 ? 'preencheu' : 'preencheram'));
+        else if (todosPreencheram) partes.push('Nada para enviar');
+        if (c.cancelados) partes.push(plural(c.cancelados, 'cancelado', 'cancelados'));
+        var el = document.createElement('label'); el.className = 'data' + (temEnvio ? '' : ' inativa');
+        el.innerHTML = '<input type="radio" name="data" value="' + i + '"' + (temEnvio ? '' : ' disabled') + '><div><b>' + d.br + '</b><br><span class="muted">' + partes.join(' · ') + '</span></div>';
+        if (!temEnvio) el.title = 'Não há convite nem lembrete para enviar nesta data hoje.';
+        el.querySelector('input').onchange = function(){
+          escolhida = d;
+          document.querySelectorAll('.data').forEach(function(x){ x.classList.remove('sel'); });
+          el.classList.add('sel'); montarOpcoes(); atualizarResumo();
+        };
+        box.appendChild(el);
+      });
+      atualizarResumo(); tela('telaEscolha');
+    }).withFailureHandler(falhou).formAdmResumo();
+  }
+
+  // [2026-10-26] Duas opções, com o que cada uma faz (pedido da Taynara). Lembrete em dois jeitos:
+  // 'normal' = cobra quem ainda não recebeu lembrete hoje (vem marcado);
+  // 'deNovo' = todos já receberam lembrete hoje; marcar cobra de novo (vem desmarcado).
+  var modoLembrete = '';
+  function montarOpcoes(){
+    var c = conv(escolhida), l = lemb(escolhida), nL = lembretes(escolhida, false);
+    modoLembrete = nL ? 'normal' : (l.lembradosHoje ? 'deNovo' : '');
+    $('blocoOpcoes').classList.remove('hidden');
+    $('boxConvite').classList.toggle('hidden', !c.pendentes);
+    $('optConvite').checked = c.pendentes > 0;
+    $('txtConvite').innerHTML = '<b>Convite:</b> enviar o formulário para ' + plural(c.pendentes, 'pessoa que ainda não recebeu', 'pessoas que ainda não receberam') +
+      '<small>É o primeiro e-mail, com o link do formulário.</small>';
+    $('boxLembrete').classList.toggle('hidden', !modoLembrete);
+    if (modoLembrete === 'normal'){
+      $('optLembrete').checked = true;
+      $('txtLembrete').innerHTML = '<b>Lembrete:</b> cobrar ' + plural(nL, 'pessoa que recebeu e não preencheu', 'pessoas que receberam e não preencheram') +
+        '<small>' + (l.lembradosHoje ? plural(l.lembradosHoje, 'pessoa já recebeu lembrete hoje e fica de fora.', 'pessoas já receberam lembrete hoje e ficam de fora.') : 'Vai no máximo um lembrete por dia para cada pessoa.') + '</small>';
+    } else if (modoLembrete === 'deNovo'){
+      $('optLembrete').checked = false;
+      $('txtLembrete').innerHTML = '<b>Lembrete:</b> cobrar de novo ' + plural(l.lembradosHoje, 'pessoa que recebeu e não preencheu', 'pessoas que receberam e não preencheram') +
+        '<small>' + (l.lembradosHoje === 1 ? 'Ela já recebeu' : 'Elas já receberam') + ' um lembrete hoje. Marque só se quiser mandar outro hoje mesmo.</small>';
+    }
+  }
+
+  function calcular(){
+    var c = conv(escolhida), l = lemb(escolhida), deNovo = modoLembrete === 'deNovo' && $('optLembrete').checked;
+    var nC = $('optConvite').checked ? c.pendentes : 0;
+    var nL = $('optLembrete').checked ? lembretes(escolhida, deNovo) : 0;
+    return { iso: escolhida.iso, br: escolhida.br, convites: nC, lembretes: nL, deNovo: deNovo,
+             semEmailL: $('optLembrete').checked ? semEmailLembrete(escolhida, deNovo) : 0,
+             preencheram: c.preencheram, cancelados: c.cancelados, lembradosHoje: deNovo ? 0 : l.lembradosHoje };
+  }
+
+  function atualizarResumo(){
+    if (!escolhida){ $('resumo').textContent = 'Escolha uma data para ver quantos e-mails vão sair.'; $('btnEnviar').disabled = true; return; }
+    plano = calcular();
+    var partes = [];
+    if (plano.convites) partes.push(plural(plano.convites, 'convite', 'convites'));
+    if (plano.lembretes) partes.push(plural(plano.lembretes, 'lembrete', 'lembretes'));
+    var txt = partes.length ? 'Vão sair ' + partes.join(' e ') + ' para quem tem admissão em ' + plano.br + ', cada um com cópia para dp@cieds.org.br.'
+      : 'Nada para enviar em ' + plano.br + ' com as opções marcadas.';
+    var fora = [];
+    if (plano.preencheram) fora.push(plano.preencheram + ' já ' + (plano.preencheram === 1 ? 'preencheu' : 'preencheram'));
+    if (plano.cancelados) fora.push(plano.cancelados + ' em Cancelados');
+    if (plano.lembradosHoje && $('optLembrete').checked) fora.push(plural(plano.lembradosHoje, 'já recebeu lembrete hoje', 'já receberam lembrete hoje'));
+    if (fora.length) txt += ' Ficam de fora: ' + fora.join(', ') + '.';
+    if (plano.semEmailL) txt += ' ' + plural(plano.semEmailL, 'pessoa está', 'pessoas estão') + ' sem e-mail válido na aba BASE e ' + (plano.semEmailL === 1 ? 'vai aparecer' : 'vão aparecer') + ' como não enviado.';
+    $('resumo').textContent = txt;
+    $('btnEnviar').disabled = !(plano.convites + plano.lembretes);
+  }
+  ['optConvite', 'optLembrete'].forEach(function(id){ $(id).onchange = atualizarResumo; });
+
+  $('btnEnviar').onclick = function(){
+    var partes = [];
+    if (plano.convites) partes.push(plural(plano.convites, 'convite', 'convites') + ' com o link do formulário');
+    if (plano.lembretes) partes.push(plural(plano.lembretes, 'lembrete', 'lembretes'));
+    $('textoConfirmar').textContent = 'Confirma o envio para quem tem admissão em ' + plano.br + '? Vão sair ' + partes.join(' e ') +
+      ', pela sua conta, cada um com cópia para dp@cieds.org.br.';
+    tela('telaConfirmar');
+  };
+  $('btnVoltar').onclick = function(){ tela('telaEscolha'); };
+
+  $('btnConfirmar').onclick = function(){
+    total = plano.convites + plano.lembretes; env = { convite: 0, lembrete: 0 }; erros = []; inicio = 0;
+    tela('telaEnviando'); progresso();
+    if (plano.convites) { $('tituloEnviando').textContent = 'Enviando os convites...'; loteConvite(); } else iniciarLembretes();
+  };
+
+  function progresso(){
+    var feitos = env.convite + env.lembrete + erros.length;
+    $('barra').style.width = (total ? Math.min(100, Math.round(feitos * 100 / total)) : 100) + '%';
+    $('progresso').textContent = feitos + ' de ' + total + ' processados · ' + plural(env.convite, 'convite', 'convites') + ' e ' +
+      plural(env.lembrete, 'lembrete', 'lembretes') + ' enviados' + (erros.length ? ' · ' + erros.length + ' com erro' : '');
+  }
+  function loteConvite(){
+    google.script.run.withSuccessHandler(function(r){
+      inicio = r.inicio; env.convite += r.enviados; erros = erros.concat((r.erros || []).map(function(e){ return { nome: e.nome, motivo: 'convite: ' + e.motivo }; }));
+      total = Math.max(total, env.convite + erros.length + r.restantes + plano.lembretes);
+      progresso();
+      if (r.parouPorCota){ fim('A cota diária de e-mails da sua conta acabou. Faltaram ' + plural(r.restantes, 'convite', 'convites') + (plano.lembretes ? ' e os lembretes' : '') + '. Envie de novo amanhã: continua de onde parou.'); return; }
+      if (r.restantes > 0 && (r.enviados + (r.erros || []).length) > 0){ loteConvite(); return; }
+      iniciarLembretes();
+    }).withFailureHandler(falhou).envioFormEnviarLote(plano.iso, false, inicio);
+  }
+  function iniciarLembretes(){
+    if (!plano.lembretes){ fim(''); return; }
+    inicio = 0; $('tituloEnviando').textContent = 'Enviando os lembretes...'; loteLembrete();
+  }
+  function loteLembrete(){
+    google.script.run.withSuccessHandler(function(r){
+      inicio = r.inicio; env.lembrete += r.enviados; erros = erros.concat((r.erros || []).map(function(e){ return { nome: e.nome, motivo: 'lembrete: ' + e.motivo }; }));
+      progresso();
+      if (r.parouPorCota){ fim('A cota diária de e-mails da sua conta acabou. Faltaram ' + plural(r.restantes, 'lembrete', 'lembretes') + '. Envie de novo amanhã.'); return; }
+      if (r.restantes > 0 && (r.enviados + (r.erros || []).length) > 0){ loteLembrete(); return; }
+      fim('');
+    }).withFailureHandler(falhou).lembreteFormEnviarLote(plano.iso, inicio, plano.deNovo);
+  }
+
+  function fim(extra){
+    tela('telaFim');
+    $('tituloFim').textContent = extra ? 'Envio interrompido' : 'Envio concluído';
+    $('resumoFim').textContent = plural(env.convite, 'convite enviado', 'convites enviados') + ' e ' + plural(env.lembrete, 'lembrete enviado', 'lembretes enviados') +
+      ' para quem tem admissão em ' + plano.br + (erros.length ? ', ' + plural(erros.length, 'pessoa não recebeu', 'pessoas não receberam') + '.' : '.') + (extra ? ' ' + extra : '');
+    $('blocoErros').classList.toggle('hidden', !erros.length);
+    var ul = $('listaErros'); ul.innerHTML = '';
+    erros.forEach(function(e){
+      var li = document.createElement('li'); li.textContent = e.nome + ': ';
+      var s = document.createElement('span'); s.textContent = e.motivo; li.appendChild(s); ul.appendChild(li);
+    });
+  }
+
+  function exemplo(qual){
+    var iso = escolhida ? escolhida.iso : '';
+    $('btnExConvite').disabled = $('btnExLembrete').disabled = true; $('exemploMsg').textContent = ' Enviando...';
+    var run = google.script.run.withSuccessHandler(function(r){
+      $('btnExConvite').disabled = $('btnExLembrete').disabled = false; $('exemploMsg').textContent = ' Enviado para ' + r.para + '.';
+    }).withFailureHandler(function(e){
+      $('btnExConvite').disabled = $('btnExLembrete').disabled = false; $('exemploMsg').textContent = ' Não foi possível enviar: ' + (e && e.message ? e.message : e);
+    });
+    if (qual === 'convite') run.envioFormEnviarExemplo(iso); else run.lembreteFormEnviarExemplo(iso);
+  }
+  $('btnExConvite').onclick = function(){ exemplo('convite'); };
+  $('btnExLembrete').onclick = function(){ exemplo('lembrete'); };
+
+  carregar();
+</script>
+
+<script>
+  // [2026-10-23] Visual novo: marca a etapa do topo e o ícone do resultado. Só observa as telas; não muda nada no envio.
+  (function(){
+    var PASSO = {"telaCarregando":1,"telaEscolha":1,"telaConfirmar":2,"telaEnviando":3,"telaFim":4}, FINS = [["telaFim","tituloFim"]];
+    function el(id){ return document.getElementById(id); }
+    function marcar(){
+      var vis = Object.keys(PASSO).filter(function(id){ return el(id) && !el(id).classList.contains('hidden'); })[0];
+      var p = vis ? PASSO[vis] : 0;
+      Array.prototype.forEach.call(document.querySelectorAll('.passos li'), function(li){
+        var n = Number(li.getAttribute('data-p'));
+        li.classList.toggle('on', n === p); li.classList.toggle('feito', n < p);
+        if (n === p) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+      });
+    }
+    function resultado(){
+      FINS.forEach(function(f){
+        var box = el(f[0]), t = el(f[1]); if (!box || !t) return;
+        var ruim = /n[ãa]o foi poss[íi]vel|interrompid|nada registrado|n[ãa]o saiu|n[ãa]o conclu/i.test(t.textContent);
+        box.classList.toggle('fim-aviso', ruim); box.classList.toggle('fim-ok', !ruim);
+      });
+    }
+    var obs = new MutationObserver(function(){ marcar(); resultado(); });
+    Object.keys(PASSO).forEach(function(id){ if (el(id)) obs.observe(el(id), { attributes: true, attributeFilter: ['class'] }); });
+    FINS.forEach(function(f){ if (el(f[1])) obs.observe(el(f[1]), { childList: true, characterData: true, subtree: true }); });
+    marcar(); resultado();
+  })();
+</script>
+</body>
+</html>

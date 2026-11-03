@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    try{
+      var temaSalvo = localStorage.getItem('portal_gestor_tema');
+      if(temaSalvo && temaSalvo.indexOf('escuro') === 0) document.documentElement.setAttribute('data-tema', temaSalvo);
+    }catch(e){}
+  </script>
+  <?!= include('Estilos'); ?>
+</head>
+<body>
+
+<!-- ===================== CABEÇALHO ===================== -->
+<header class="topo">
+  <button class="menu-btn" id="btnMenu" onclick="alternarMenu()" aria-label="Menu" style="display:none">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div class="marca">
+    <img id="logo" src="https://www.cieds.org.br/storage/settings/November2023/EpbAW45QebvsTGIqQIoi.svg" alt="CIEDS">
+    <div>
+      <b>Portal</b>
+      <span>Departamento Pessoal · CIEDS</span>
+    </div>
+  </div>
+
+  <div id="seletorVisao" style="display:none;align-items:center;gap:4px;background:var(--card);border-radius:99px;padding:3px;margin-right:10px">
+    <button type="button" id="btnVisaoEquipe" onclick="abrirMinhaEquipe()"
+      aria-pressed="false">👥 Minha equipe</button>
+    <button type="button" id="btnVisaoGeral" onclick="abrirVisaoGeral()"
+      aria-pressed="false">🏢 Visão geral</button>
+  </div>
+
+  <div class="usuario" id="usuario"></div>
+</header>
+
+<!-- ===================== MENU LATERAL ===================== -->
+<div class="fundo-menu" id="fundoMenu" onclick="fecharMenu()"></div>
+
+<nav class="lateral" id="lateral">
+  <div class="lateral-topo">
+    <div class="lateral-nome" id="lateralNome"></div>
+    <div class="lateral-email" id="lateralEmail"></div>
+  </div>
+  <div id="menuItens"></div>
+  <div class="lateral-rodape">
+    <button class="item sair" onclick="sair()">↩ Sair da conta</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="tema-switch" onclick="alternarTemaRapido()" aria-label="Alternar modo claro/escuro" title="Claro/Escuro">
+        <span class="ic">☀️</span><span class="ic">🌙</span><span class="bola"></span>
+      </button>
+      <button class="config-btn" onclick="abrirConfig()" aria-label="Configurações" title="Configurações">⚙️</button>
+    </div>
+  </div>
+</nav>
+
+<div class="overlay" id="ovConfig">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovConfig')">&times;</button>
+      <div class="mt-nome">Personalizar o portal</div>
+    </div>
+    <div class="modal-corpo">
+      <div class="config-linha" style="border:0">
+        <div class="tit">🎨 Aparência</div>
+        <div class="desc">Escolha o tema. O ícone 🌙 na barra lateral alterna rápido entre claro e o escuro escolhido aqui.</div>
+        <div class="tema-opcoes">
+          <label class="tema-op"><input type="radio" name="tema" value="claro" onchange="aplicarTema(this.value)"><span class="amostra tema-claro"></span>Claro</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-cinza" onchange="aplicarTema(this.value)"><span class="amostra tema-cinza"></span>Cinza neutro</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-teal" onchange="aplicarTema(this.value)"><span class="amostra tema-teal"></span>Verde-azulado</label>
+          <label class="tema-op"><input type="radio" name="tema" value="escuro-preto" onchange="aplicarTema(this.value)"><span class="amostra tema-preto"></span>Preto</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="telaLogin" class="login-hero">
+  <div class="login-grid">
+
+    <div class="login-marketing">
+      <span class="login-selo">CIEDS · Portal do Gestor</span>
+      <h1>Portal do Gestor</h1>
+      <p class="login-lead">Acompanhe sua equipe de forma simples, rápida e organizada.</p>
+      <p class="login-desc">Acesse informações da sua equipe, acompanhe solicitações e mantenha tudo organizado em um ambiente institucional seguro e preparado para o dia a dia.</p>
+
+      <div class="login-ilustra" aria-hidden="true">
+        <div class="li-card li-a">
+          <span class="li-linha"></span>
+          <span class="li-linha curta"></span>
+        </div>
+        <div class="li-card li-b">
+          <span class="li-linha branca"></span>
+          <span class="li-check">✓</span>
+        </div>
+        <div class="li-card li-c">
+          <span class="li-avatar"></span>
+          <span class="li-linha"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h2>Acesse o Portal do Gestor</h2>
+      <p>Entre com seu e-mail institucional para acompanhar sua equipe.</p>
+
+      <div class="aviso" id="loginAviso"></div>
+
+      <div id="boxLogin">
+        <div class="campo">
+          <label>E-mail institucional</label>
+          <input type="email" id="inEmail" placeholder="seu.nome@cieds.org.br" autocomplete="username">
+        </div>
+        <div class="campo">
+          <div class="campo-cab">
+            <label>Senha</label>
+            <a href="#" onclick="abrirCadastro();return false">Esqueci minha senha</a>
+          </div>
+          <div class="campo-senha">
+            <input type="password" id="inSenha" placeholder="Digite sua senha" autocomplete="current-password">
+            <button type="button" class="olho" onclick="alternarSenhaVisivel()" aria-label="Mostrar senha" id="btnOlhoSenha">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn primario" id="btnEntrar" onclick="entrar()">Entrar</button>
+        <p style="margin-top:16px;font-size:13px">
+          Primeiro acesso?
+          <a href="#" onclick="abrirCadastro();return false" style="color:var(--accent);font-weight:700">Criar minha senha</a>
+        </p>
+      </div>
+
+      <div id="boxCadastro" style="display:none">
+        <p class="ajuda">Vamos enviar um código de 6 números para o seu e-mail. Com ele, você cria a sua senha.</p>
+
+        <div class="campo">
+          <label>E-mail institucional</label>
+          <input type="email" id="cadEmail" placeholder="seu.nome@cieds.org.br">
+        </div>
+        <button class="btn contorno" id="btnCodigo" onclick="pedirCodigo()">Enviar código para o meu e-mail</button>
+
+        <div class="separador"></div>
+
+        <div class="campo">
+          <label>Código que chegou no e-mail</label>
+          <input type="text" id="cadCodigo" placeholder="000000" inputmode="numeric" maxlength="6">
+        </div>
+        <div class="campo">
+          <label>Crie sua senha</label>
+          <input type="password" id="cadSenha" placeholder="Mínimo de 8 caracteres" autocomplete="new-password">
+        </div>
+        <div class="campo">
+          <label>Repita a senha</label>
+          <input type="password" id="cadSenha2" placeholder="Digite de novo" autocomplete="new-password">
+        </div>
+        <div class="regras">A senha precisa ter pelo menos <b>8 caracteres</b>, com <b>letra maiúscula, minúscula e número</b>.</div>
+
+        <button class="btn primario" id="btnSalvarSenha" onclick="salvarSenha()">Salvar minha senha</button>
+        <button class="btn texto" onclick="voltarLogin()">Voltar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== CARREGANDO ===================== -->
+<div id="telaLoading" style="display:none">
+  <div class="conteudo">
+    <div class="esqueleto" style="height:80px"></div>
+    <div class="cards">
+      <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SEM EQUIPE ===================== -->
+<div id="telaSemEquipe" class="cartao-central" style="display:none">
+  <div class="emoji">🤔</div>
+  <h2>Ainda não encontramos a sua equipe</h2>
+  <p>Nenhum colaborador está vinculado ao seu nome na nossa base. Fale com o Departamento Pessoal — é rapidinho de resolver.</p>
+  <button class="btn contorno" style="margin-top:18px" onclick="sair()">Sair</button>
+</div>
+
+<!-- ===================== APLICAÇÃO ===================== -->
+<div id="app" style="display:none">
+  <div class="conteudo">
+
+    <!-- ---------- PAINEL (genérico, todos os assuntos) ---------- -->
+    <section id="secPainel">
+      <div class="saudacao">
+        <h1 id="ola"></h1>
+        <p id="subOla"></p>
+      </div>
+
+      <div class="visao" id="visao" style="display:none"></div>
+
+      <div class="bloco" id="blocoPendencias">
+        <div class="bloco-titulo">
+          <h3>✋ O que precisa de você</h3>
+          <span>Tudo o que está esperando uma ação sua, de qualquer assunto.</span>
+        </div>
+        <div id="listaPendencias"></div>
+      </div>
+
+      <div class="bloco" id="blocoAndamento" style="display:none">
+        <div class="bloco-titulo">
+          <h3>⏱️ Em andamento</h3>
+          <span>O que você já enviou e está com o Departamento Pessoal. Retorno em até <b id="prazoDias">15</b> dias.</span>
+        </div>
+        <div id="listaAndamento"></div>
+      </div>
+
+      <div class="bloco">
+        <div class="bloco-titulo">
+          <h3>👥 Seu time</h3>
+          <span>Um retrato rápido de quem está com você.</span>
+        </div>
+        <div class="time" id="resumoTime"></div>
+      </div>
+
+      <div class="bloco" id="blocoAtalhos">
+        <div class="bloco-titulo">
+          <h3>🧭 Assuntos disponíveis</h3>
+          <span>Aos poucos, tudo o que você precisa do DP vai estar aqui.</span>
+        </div>
+        <div class="atalhos" id="atalhos"></div>
+      </div>
+    </section>
+
+    <!-- ---------- FÉRIAS ---------- -->
+    <section id="secFerias" style="display:none">
+      <div class="saudacao">
+        <h1>Férias do seu time!</h1>
+        <p>Selecione um colaborador para agendar as férias.</p>
+      </div>
+
+      <div class="filtro-depto" id="filtroDepto" style="display:none">
+        <div class="fd-fechado" id="fdFechado" style="display:none">
+          <span>Departamento: <b id="fdNomeAtual"></b></span>
+          <button type="button" onclick="limparFiltroDepto()">×</button>
+        </div>
+        <div id="fdAberto">
+          <div class="fd-busca-caixa">
+            <input type="text" id="fdBusca" placeholder="🔎 Buscar departamento..." autocomplete="off"
+              oninput="renderListaDepto()" onfocus="abrirListaDepto()">
+          </div>
+          <div class="fd-lista" id="fdLista" style="display:none"></div>
+        </div>
+      </div>
+
+      <a class="guia" id="guia" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="guia-ico">📘</span>
+        <span class="guia-txt">
+          <b>Guia de Férias</b>
+          Prazos, regras de divisão dos dias e o que pode ou não pode. Bate o olho antes de agendar.
+        </span>
+        <span class="guia-cta">Abrir →</span>
+      </a>
+
+      <div class="painel-status" id="painelStatus"></div>
+
+      <div class="bloco fimdeano" id="blocoFimDeAno" style="display:none">
+        <div class="bloco-titulo">
+          <h3>Férias de fim de ano 2026</h3>
+          <span>Duas opções fixas de férias, com 10 dias cada. Escolha uma delas para cada pessoa da equipe que tiver saldo suficiente até 31/12/2026.</span>
+          <span>Se for preciso completar a regra de fracionamento (um período de 14 dias), o sistema ajusta as datas automaticamente.</span>
+          <span>🗓️ Agendamento de 09/09/2026 até 22/09/2026.</span>
+          <span style="color:var(--brand);font-weight:600">Organize-se com antecedência — assim todo mundo aproveita esse período com tranquilidade.</span>
+        </div>
+
+        <a class="guia" href="https://script.google.com/macros/s/AKfycbxVmulJXf9roYVedvjnZhvWT6CAyABapI5OOWJIbnW52GMUMPUrzSFfJiJSh5oOT_Jt/exec" target="_blank" rel="noopener">
+          <span class="guia-ico">🎄</span>
+          <span class="guia-txt">
+            <b>Guia de Férias de Fim de Ano</b>
+            <span>As duas opções, a regra dos 14 dias explicada com exemplo, e o passo a passo pra agendar.</span>
+          </span>
+          <span class="guia-cta">Abrir →</span>
+        </a>
+
+        <div class="fda-abas">
+          <button class="fda-aba ativa" id="fdaAbaPendentes" onclick="fdaMostrarAba('pendentes')">Pendentes</button>
+          <button class="fda-aba" id="fdaAbaSolicitados" onclick="fdaMostrarAba('solicitados')">Solicitados</button>
+        </div>
+        <div id="listaFimDeAno"></div>
+        <div id="listaFimDeAnoSolicitados" style="display:none"></div>
+      </div>
+
+      <div class="buscador" id="buscador">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9bb0b5" stroke-width="2">
+          <circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input id="filtro" placeholder="Buscar pessoa da equipe…" oninput="renderCards()">
+      </div>
+
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <!-- ---------- AFASTAMENTOS ---------- -->
+    <section id="secAfast" style="display:none">
+      <div class="hello">
+        <div>
+          <h1>Afastamentos do seu time</h1>
+          <p>Registre o atestado de alguém da equipe. Se passar de 15 dias, o sistema já cuida do INSS.</p>
+        </div>
+        <button class="btn primario" style="width:auto;padding:12px 20px" onclick="abrirLancarAfast()">+ Registrar afastamento</button>
+      </div>
+
+      <a class="guia" id="guiaAfast" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="guia-ico">🩺</span>
+        <span class="guia-txt">
+          <b>Guia de Afastamento</b>
+          <span>Como registrar, a regra dos 15 dias e o que fazer em acidente de trabalho.</span>
+        </span>
+        <span class="guia-cta">Abrir →</span>
+      </a>
+
+      <div class="cards" id="cardsAfast"></div>
+    </section>
+
+    <!-- ---------- RESCISÃO ---------- -->
+    <section id="secRescisao" style="display:none">
+      <div class="hello">
+        <div>
+          <h1>Rescisões da sua equipe</h1>
+          <p>Solicite e acompanhe os desligamentos da sua equipe. Você será atualizado a cada etapa do processo.</p>
+        </div>
+        <button class="btn primario" style="width:auto;padding:12px 20px" onclick="abrirSolicitarResc()">+ Nova solicitação</button>
+      </div>
+
+      <a class="guia" id="guiaResc" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="guia-ico">📄</span>
+        <span class="guia-txt">
+          <b>Guia da Rescisão</b>
+          <span>Tipos de desligamento, aviso prévio, prazos e o passo a passo do processo.</span>
+        </span>
+        <span class="guia-cta">Abrir →</span>
+      </a>
+
+      <div class="kpis-resc">
+        <div class="kpi-resc"><div class="num" id="kpiRescAndamento">0</div><div class="rot">Em andamento</div></div>
+        <div class="kpi-resc" id="kpiRescPendenteBox"><div class="num" id="kpiRescPendente">0</div><div class="rot">Aguardando sua ação</div></div>
+        <div class="kpi-resc"><div class="num" id="kpiRescConcluidas">0</div><div class="rot">Concluídas</div></div>
+      </div>
+
+      <div id="cardsResc"></div>
+    </section>
+
+    <!-- ---------- MOVIMENTAÇÕES ---------- -->
+    <!-- [2026-10-21] Visual novo: os 3 passos do pedido, números que filtram a lista e, em cada pedido,
+         o que muda e o caminho Você → RH → DP. -->
+    <section id="secMovimentacao" style="display:none">
+      <div class="hello">
+        <div>
+          <h1>Movimentações da sua equipe</h1>
+          <p>Peça transferências, mudanças de turno, carga horária, cargo, salário ou o pagamento de um adicional.</p>
+        </div>
+        <button class="btn primario" style="width:auto;padding:12px 20px" onclick="abrirSolicitarMov()">+ Nova movimentação</button>
+      </div>
+
+      <ol class="mov-etapas" aria-label="Como funciona">
+        <li><span class="n">1</span><div><b>Você pede</b><span>Escolhe a pessoa, o que muda e a partir de quando.</span></div></li>
+        <li><span class="n">2</span><div><b>O RH analisa</b><span>Aprova, ajusta ou reprova. Se reprovar, você recebe o motivo.</span></div></li>
+        <li><span class="n">3</span><div><b>O DP lança na folha</b><span>Você recebe por e-mail em qual folha a mudança entra.</span></div></li>
+      </ol>
+
+      <a class="guia" id="guiaMov" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="guia-ico">🔀</span>
+        <span class="guia-txt">
+          <b>Guia da Movimentação</b>
+          <span>Os tipos de movimentação, como funciona a aprovação em duas etapas e os prazos.</span>
+        </span>
+        <span class="guia-cta">Abrir →</span>
+      </a>
+
+      <div class="kpis-resc" role="group" aria-label="Filtrar pedidos">
+        <button type="button" class="kpi-resc mov-kpi" data-f="andamento" onclick="movFiltroGestor('andamento')"><div class="num" id="kpiMovAndamento">0</div><div class="rot">Em andamento</div></button>
+        <button type="button" class="kpi-resc mov-kpi" data-f="reprovada" id="kpiMovReprovadaBox" onclick="movFiltroGestor('reprovada')"><div class="num" id="kpiMovReprovada">0</div><div class="rot">Não aprovadas</div></button>
+        <button type="button" class="kpi-resc mov-kpi" data-f="aprovada" onclick="movFiltroGestor('aprovada')"><div class="num" id="kpiMovAprovada">0</div><div class="rot">Aprovadas</div></button>
+      </div>
+      <div class="mov-filtro-info" id="movFiltroInfo" style="display:none"></div>
+
+      <div id="cardsMov"></div>
+    </section>
+
+    <!-- ---------- EM BREVE ---------- -->
+    <section id="secEmBreve" style="display:none">
+      <div class="cartao-central" style="margin-top:20px">
+        <div class="emoji" id="breveIcone">🚧</div>
+        <h2 id="breveNome"></h2>
+        <p>Estamos construindo esta parte. Assim que estiver pronta, avisamos você por e-mail.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ===================== MODAL: LANÇAR AFASTAMENTO ===================== -->
+<div class="overlay" id="ovAfast">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovAfast')">&times;</button>
+      <div class="mt-nome">Registrar afastamento</div>
+      <div class="mt-sub">O atestado fica guardado com segurança, vinculado ao colaborador.</div>
+    </div>
+
+    <div class="modal-corpo">
+      <div class="aviso" id="afAviso"></div>
+
+      <div class="campo">
+        <label>Colaborador</label>
+        <select id="afColab"></select>
+      </div>
+
+      <div class="campo">
+        <label>Tipo de afastamento</label>
+        <select id="afTipo"></select>
+      </div>
+
+      <div class="linha-dupla">
+        <div class="campo">
+          <label>Data de início</label>
+          <input type="date" id="afInicio">
+        </div>
+        <div class="campo">
+          <label>Quantidade de dias</label>
+          <input type="number" id="afDias" min="1" step="1">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>CID <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+        <input type="text" id="afCid" placeholder="Ex.: M54.5">
+      </div>
+
+      <!-- ACIDENTE DE TRABALHO -->
+      <label style="display:flex;gap:9px;align-items:flex-start;background:#fdeceb;border-radius:11px;
+        padding:12px 14px;margin:4px 0 14px;font-size:13.5px;line-height:1.5;cursor:pointer">
+        <input type="checkbox" id="afAcidente" onchange="toggleAcidente()" style="margin-top:2px">
+        <span><b>Este afastamento é por acidente de trabalho</b><br>
+        <span style="color:var(--muted);font-size:12.5px">Marque se foi acidente típico, de trajeto ou doença ocupacional.
+        O técnico de segurança será acionado para emitir a CAT.</span></span>
+      </label>
+
+      <div id="boxAcidente" style="display:none">
+        <div class="explica" style="background:#fdf4e3;margin-bottom:14px">
+          ⚠️ Preencha os dados do acidente. Com eles, o sistema gera o <b>RAT preenchido</b> e o envia ao técnico de segurança.
+        </div>
+
+        <div class="campo">
+          <label>Tipo do acidente</label>
+          <select id="afAcTipo">
+            <option value="1">Típico (ocorreu no trabalho)</option>
+            <option value="3">Trajeto (ida/volta do trabalho)</option>
+            <option value="2">Doença ocupacional</option>
+          </select>
+        </div>
+
+        <div class="linha-dupla">
+          <div class="campo">
+            <label>Data do acidente</label>
+            <input type="date" id="afAcData">
+          </div>
+          <div class="campo">
+            <label>Hora</label>
+            <input type="time" id="afAcHora">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Local do acidente</label>
+          <input type="text" id="afAcLocal" placeholder="Ex.: pátio da unidade, rampa, sala 3">
+        </div>
+
+        <div class="linha-dupla">
+          <div class="campo">
+            <label>Município</label>
+            <input type="text" id="afAcMunicipio" placeholder="Ex.: Rio de Janeiro">
+          </div>
+          <div class="campo">
+            <label>Parte lesionada</label>
+            <input type="text" id="afAcParte" placeholder="Ex.: mão direita">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Agente causador / situação</label>
+          <input type="text" id="afAcAgente" placeholder="Ex.: queda, corte, esforço repetitivo">
+        </div>
+
+        <div class="campo">
+          <label>Relato do acidente</label>
+          <textarea id="afAcRelato" rows="3" placeholder="Descreva como o acidente aconteceu."></textarea>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Atestado médico</label>
+        <input type="file" id="afArquivo" accept="application/pdf,image/*">
+        <div class="dica-campo">PDF ou foto do atestado. Fica salvo no Drive do DP.</div>
+      </div>
+
+      <div class="explica" id="afInfo15" style="display:none">
+        ⚠️ <b>Mais de 15 dias:</b> ao registrar, o colaborador e você recebem por e-mail o
+        DUT e as orientações para dar entrada no INSS.
+      </div>
+
+      <button class="btn primario" id="afBtn" onclick="enviarAfast()">Registrar afastamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: SOLICITAR RESCISÃO ===================== -->
+<div class="overlay" id="ovResc">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovResc')">&times;</button>
+      <div class="mt-nome">Solicitação de desligamento</div>
+      <div class="mt-sub">O DP recebe a solicitação e dá andamento. Nada é aplicado sem passar pelo DP.</div>
+    </div>
+
+    <div class="modal-corpo">
+      <div class="aviso" id="rescAviso"></div>
+
+      <div class="campo">
+        <label>Colaborador</label>
+        <select id="rescColab"></select>
+      </div>
+
+      <div class="campo">
+        <label>Tipo de rescisão</label>
+        <select id="rescTipo" onchange="onTipoRescChange()"></select>
+      </div>
+
+      <div class="campo">
+        <label>Como conduzir o desligamento</label>
+        <select id="rescModo">
+          <option value="DP_CONTATA">Quero que o DP entre em contato com o colaborador</option>
+          <option value="APLICAR">Vou aplicar o desligamento (quero receber o comunicado)</option>
+        </select>
+      </div>
+
+      <div class="campo" id="boxAvisoResc" style="display:none">
+        <label>Aviso prévio</label>
+        <select id="rescAvisoModalidade">
+          <option value="TRABALHADO">Trabalhado</option>
+          <option value="INDENIZADO">Indenizado</option>
+        </select>
+      </div>
+
+      <div id="boxCartaResc" style="display:none">
+        <div class="explica" style="background:#fdf4e3;color:#8a5b00;margin-bottom:12px">
+          ⚠️ Este é apenas um modelo de referência para o pedido de demissão. A carta deverá ser
+          escrita de próprio punho e assinada pela pessoa colaboradora. Depois, basta anexar abaixo
+          uma cópia legível do documento assinado.
+        </div>
+        <div id="rescModelosCartaLista" style="margin-bottom:14px"></div>
+        <div class="campo">
+          <label>Carta assinada <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+          <input type="file" id="rescCartaArquivo" accept="application/pdf,image/*">
+          <div class="dica-campo">Fica salva no Drive do DP, junto do colaborador.</div>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Observação <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+        <textarea id="rescObs" rows="4" placeholder="Algo que o DP precise saber."></textarea>
+      </div>
+
+      <button class="btn primario" id="rescBtn" onclick="enviarSolicitacaoResc()">Enviar solicitação</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER PROCESSO (detalhe da rescisão) ===================== -->
+<div class="overlay" id="ovRescDetalhe">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovRescDetalhe')">&times;</button>
+      <div class="mt-nome" id="rdNome"></div>
+      <div class="mt-sub" id="rdTipo"></div>
+    </div>
+
+    <div class="modal-corpo" id="rdCorpo">
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: NOVA MOVIMENTAÇÃO ===================== -->
+<div class="overlay" id="ovMov">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovMov')">&times;</button>
+      <div class="mt-nome">Nova movimentação</div>
+      <div class="mt-sub">O RH analisa primeiro. Depois de aprovado, o DP lança na folha e você recebe a confirmação.</div>
+    </div>
+
+    <div class="modal-corpo">
+      <div class="aviso" id="movAviso"></div>
+
+      <div class="passo"><div class="passo-num">1</div><div class="passo-txt"><b>Quem</b></div></div>
+      <div class="campo">
+        <label for="movColab">Colaborador</label>
+        <select id="movColab" onchange="onColabMovChange()"></select>
+        <div class="mov-atual" id="movAtual" style="display:none"></div>
+      </div>
+
+      <div class="passo"><div class="passo-num">2</div><div class="passo-txt"><b>O que muda</b></div></div>
+      <div class="campo">
+        <label for="movTipo">Tipo de movimentação</label>
+        <select id="movTipo" onchange="onTipoMovChange()"></select>
+        <div class="dica-campo" id="movTipoDica"></div>
+      </div>
+
+      <div class="campo">
+        <label for="movCompetencia">Competência de início</label>
+        <input type="month" id="movCompetencia" oninput="movAtualizarResumo()">
+        <div class="dica-campo">O mês a partir do qual a mudança deve valer.</div>
+      </div>
+
+      <div class="campo" id="boxMovDepartamento" style="display:none">
+        <label>Novo departamento</label>
+        <input type="text" id="movDepartamentoNovo" oninput="movAtualizarResumo()">
+      </div>
+
+      <div class="campo" id="boxMovTurno" style="display:none">
+        <label>Novo turno</label>
+        <select id="movTurnoNovo" onchange="movAtualizarResumo()">
+          <option value="DIURNO">Diurno</option>
+          <option value="NOTURNO">Noturno</option>
+        </select>
+        <div class="dica-campo">Mudar para noturno gera automaticamente uma movimentação de inclusão do adicional noturno; mudar para diurno gera a de retirada.</div>
+      </div>
+
+      <div class="campo" id="boxMovCarga" style="display:none">
+        <label>Nova carga horária</label>
+        <input type="text" id="movCargaHorariaNova" placeholder="Ex.: 40h semanais" oninput="movAtualizarResumo()">
+      </div>
+
+      <div class="campo" id="boxMovCargo" style="display:none">
+        <label>Novo cargo</label>
+        <input type="text" id="movCargoNovo" oninput="movAtualizarResumo()">
+      </div>
+
+      <div id="boxMovSalario" style="display:none">
+        <div class="campo">
+          <label>Novo salário</label>
+          <input type="number" step="0.01" id="movSalarioNovo" placeholder="Ex.: 3200.00" oninput="movAtualizarResumo()">
+        </div>
+        <div id="boxMovDivergencia" style="display:none">
+          <div class="explica" style="background:#fdf4e3;color:#8a5b00;margin-bottom:10px">
+            ⚠️ <span id="movDivergenciaTexto"></span>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">
+            <input type="checkbox" id="movConfirmarDivergencia" style="width:auto">
+            Confirmo que é intencional, mesmo divergindo do praticado
+          </label>
+          <div class="campo">
+            <label>Justificativa da divergência</label>
+            <textarea id="movJustificativaDivergencia" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="boxMovAdicional" style="display:none">
+        <div class="campo">
+          <label>Descrição</label>
+          <input type="text" id="movDescricaoAdicional" placeholder="Ex.: Gratificação de função, ajuda de transporte..." oninput="movAtualizarResumo()">
+        </div>
+        <div class="campo">
+          <label>Valor <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+          <input type="number" step="0.01" id="movValorAdicional" oninput="movAtualizarResumo()">
+        </div>
+      </div>
+
+      <div class="passo"><div class="passo-num">3</div><div class="passo-txt"><b>Por quê</b><span>O RH e o DP leem esta justificativa para decidir.</span></div></div>
+      <div class="campo">
+        <label for="movJustificativa">Justificativa</label>
+        <textarea id="movJustificativa" rows="4"></textarea>
+      </div>
+
+      <div class="mov-resumo" id="movResumo" style="display:none"></div>
+      <button class="btn primario" id="movBtn" onclick="enviarSolicitacaoMov()">Enviar para o RH</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: VER MOVIMENTAÇÃO ===================== -->
+<div class="overlay" id="ovMovDetalhe">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovMovDetalhe')">&times;</button>
+      <div class="mt-nome" id="mdNome"></div>
+      <div class="mt-sub" id="mdTipo"></div>
+    </div>
+
+    <div class="modal-corpo" id="mdCorpo">
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: FÉRIAS DE FIM DE ANO ===================== -->
+<div class="overlay" id="ovFimDeAno">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovFimDeAno')">&times;</button>
+      <div class="mt-nome" id="faNome"></div>
+      <div class="mt-sub" id="faSub"></div>
+    </div>
+
+    <div class="modal-corpo">
+      <div class="aviso" id="faAviso"></div>
+
+      <div class="passo">
+        <div class="passo-num">1</div>
+        <div class="passo-txt"><b>Escolha a opção pra essa pessoa</b></div>
+      </div>
+
+      <label class="confirma">
+        <input type="radio" name="faOpcao" id="faOpcao1" value="OPCAO_1">
+        <span id="faOpcao1Texto"></span>
+      </label>
+      <label class="confirma">
+        <input type="radio" name="faOpcao" id="faOpcao2" value="OPCAO_2">
+        <span id="faOpcao2Texto"></span>
+      </label>
+
+      <div class="explica" style="margin-top:14px">
+        💡 Se os 10 dias dessa opção não completarem uma fração de 14 dias exigida por lei
+        (por exemplo, porque já tem outro período de férias menor tirado antes), o sistema
+        aumenta os dias automaticamente pra fechar a conta, sempre respeitando que as férias
+        não podem começar em quinta, sexta, sábado ou domingo.
+      </div>
+
+      <button class="btn primario" id="faBtn" onclick="enviarFimDeAno()">Enviar ao DP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: AGENDAR ===================== -->
+<div class="overlay" id="ovAgendar">
+  <div class="modal">
+    <div class="modal-topo">
+      <button class="fechar" onclick="fechar('ovAgendar')">&times;</button>
+      <div class="mt-nome" id="mNome"></div>
+      <div class="mt-sub" id="mSub"></div>
+    </div>
+
+    <div class="modal-corpo">
+      <div class="aviso" id="mAviso"></div>
+
+      <!-- PASSO 1 -->
+      <div class="passo">
+        <div class="passo-num">1</div>
+        <div class="passo-txt">
+          <b>Quando as férias começam?</b>
+          <span id="dicaInicio"></span>
+        </div>
+      </div>
+      <div class="campo">
+        <input type="date" id="mInicio" onchange="recalcular()">
+      </div>
+
+      <!-- PASSO 2 -->
+      <div class="passo">
+        <div class="passo-num">2</div>
+        <div class="passo-txt">
+          <b>Quantos dias de descanso?</b>
+          <span id="dicaDias"></span>
+        </div>
+      </div>
+      <div class="campo">
+        <input type="number" id="mDias" min="0" step="1" oninput="recalcular()">
+      </div>
+
+      <!-- ABONO AUTOMÁTICO: aparece só quando há venda de dias liberada -->
+      <div class="explica" id="avisoAbonoAuto" style="display:none"></div>
+
+      <div class="resumo" id="mResumo"></div>
+
+      <button class="btn primario" id="mBtn" onclick="enviar()">Enviar para o Departamento Pessoal</button>
+      <p class="rodape-modal" id="prazoModalTexto">Escolha a data de início para ver o prazo de retorno do DP.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<?!= include('Script'); ?>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <?!= include('Estilos'); ?>
+
+  <style>
+    .status-panel {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      gap: 14px;
+      margin: 18px 0 20px;
+    }
+
+    .status-card {
+      border: 2px solid transparent;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      cursor: pointer;
+      text-align: left;
+      transition: .18s ease;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    .status-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .status-card.ativo {
+      border-color: var(--accent);
+      background: #fff7fb;
+    }
+
+    .status-card span {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      margin-bottom: 8px;
+    }
+
+    .status-card strong {
+      display: block;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--brand);
+    }
+
+    .status-card small {
+      display: block;
+      margin-top: 7px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .badge.deferido {
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .badge.indeferido {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .badge.aprovado {
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .badge.recusado {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .info-extra {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .info-extra b {
+      color: var(--ink);
+    }
+
+    .info-extra.motivo {
+      background: var(--danger-soft);
+      color: var(--danger);
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+
+    .info-extra.motivo b {
+      color: var(--danger);
+    }
+
+    .btn.secondary {
+      margin-top: 12px;
+      background: var(--brand-soft);
+      color: var(--brand);
+    }
+
+
+    .login-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 18px 0 14px;
+      background: var(--brand-soft);
+      border-radius: 12px;
+      padding: 6px;
+    }
+
+    .login-tab {
+      flex: 1;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      padding: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    .login-tab.ativo {
+      background: #fff;
+      color: var(--brand);
+      box-shadow: var(--shadow);
+    }
+
+    .login-card .field { text-align: left; }
+
+    .login-card .linkbtn {
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 12px;
+      font-family: Inter, Arial, sans-serif;
+      text-decoration: underline;
+    }
+
+    .login-card .mini {
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+
+    .senha-regras {
+      text-align: left;
+      background: var(--brand-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--brand-dark);
+      margin: 8px 0 14px;
+    }
+
+    .btn.secondary {
+      margin-top: 12px;
+      background: var(--brand-soft);
+      color: var(--brand);
+    }
+
+
+    @media(max-width:900px){
+      .status-panel {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+    }
+
+    @media(max-width:560px){
+      .status-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- CABEÇALHO -->
+  <div class="topbar">
+    <div class="brand">
+      <img id="logo" src="" alt="CIEDS">
+      <div>
+        <b>Portal de Férias</b>
+        <span>Departamento Pessoal · CIEDS</span>
+      </div>
+    </div>
+    <div class="who" id="who"></div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- LOGIN POR SENHA DO GESTOR -->
+    <div id="login" class="center login-card">
+      <div class="big">🌴</div>
+      <h2>Portal de Férias</h2>
+      <p>Acesse com seu e-mail institucional e a senha cadastrada para o portal.</p>
+
+      <div id="loginErro" class="err"></div>
+
+      <div id="boxLogin">
+        <div class="field">
+          <label>E-mail institucional</label>
+          <input type="email" id="loginEmail" placeholder="seu.email@cieds.org.br" autocomplete="username">
+        </div>
+
+        <div class="field">
+          <label>Senha do portal</label>
+          <input type="password" id="loginSenha" placeholder="Digite sua senha" autocomplete="current-password">
+        </div>
+
+        <button class="btn primary" id="btnLogin" onclick="entrarComSenha()">Entrar</button>
+        <button class="linkbtn" onclick="abrirCadastroSenha()">Primeiro acesso / esqueci minha senha</button>
+      </div>
+
+      <div id="boxCadastroSenha" style="display:none">
+        <div class="field">
+          <label>E-mail institucional</label>
+          <input type="email" id="cadEmail" placeholder="seu.email@cieds.org.br" autocomplete="username">
+        </div>
+
+        <button class="btn secondary" id="btnCodigo" onclick="enviarCodigoSenha()">Enviar código para meu e-mail</button>
+
+        <div class="field" style="margin-top:16px">
+          <label>Código recebido por e-mail</label>
+          <input type="text" id="cadCodigo" placeholder="000000" inputmode="numeric" maxlength="6">
+        </div>
+
+        <div class="field">
+          <label>Nova senha</label>
+          <input type="password" id="cadSenha" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+        </div>
+
+        <div class="field">
+          <label>Confirmar nova senha</label>
+          <input type="password" id="cadSenha2" placeholder="Repita a senha" autocomplete="new-password">
+        </div>
+
+        <div class="senha-regras">A senha precisa ter pelo menos 8 caracteres, com letras e números. O código só serve para cadastrar ou redefinir a senha.</div>
+
+        <button class="btn primary" id="btnSalvarSenha" onclick="salvarSenhaComCodigo()">Salvar senha</button>
+        <button class="linkbtn" onclick="voltarParaLogin()">Voltar para o login</button>
+      </div>
+    </div>
+
+    <!-- CARREGANDO -->
+    <div id="loading" style="display:none">
+      <div class="hello">
+        <div>
+          <h1>Carregando…</h1>
+          <p>Validando acesso e buscando sua equipe</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      </div>
+    </div>
+
+    <!-- SEM ACESSO -->
+    <div id="denied" class="center" style="display:none">
+      <div class="big">🔒</div>
+      <h2>Acesso não liberado</h2>
+      <p id="deniedMsg"></p>
+      <button class="btn secondary" onclick="logoutPortal()">Voltar ao login</button>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div id="app" style="display:none">
+      <div class="hello">
+        <div>
+          <h1 id="greet"></h1>
+          <p>Selecione um colaborador para agendar as férias e enviar a solicitação ao DP.</p>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <!-- BANNER DA POLÍTICA DE FÉRIAS -->
+      <a id="politicaBanner" class="politica-banner" href="#" target="_blank" rel="noopener" style="display:none">
+        <span class="pb-ico">📄</span>
+        <span class="pb-txt">
+          <b>Antes de agendar, dê uma olhada na Política de Férias.</b>
+          Ela explica prazos, regras de fracionamento e o que o DP considera na aprovação.
+        </span>
+        <span class="pb-cta">Abrir política →</span>
+      </a>
+
+      <!-- PAINEL SUPERIOR -->
+      <div class="status-panel">
+        <button type="button" class="status-card ativo" data-status="livre" onclick="selecionarStatus('livre')">
+          <span>Disponíveis</span>
+          <strong id="qtdLivre">0</strong>
+          <small>Podem ser solicitadas</small>
+        </button>
+
+        <button type="button" class="status-card" data-status="pendente" onclick="selecionarStatus('pendente')">
+          <span>Aguardando aprovação</span>
+          <strong id="qtdPendente">0</strong>
+          <small>Enviadas ao DP</small>
+        </button>
+
+        <button type="button" class="status-card" data-status="deferido" onclick="selecionarStatus('deferido')">
+          <span>Agendados</span>
+          <strong id="qtdDeferido">0</strong>
+          <small>Aprovadas pelo DP</small>
+        </button>
+
+        <button type="button" class="status-card" data-status="indeferido" onclick="selecionarStatus('indeferido')">
+          <span>Negados</span>
+          <strong id="qtdIndeferido">0</strong>
+          <small>Recusadas pelo DP</small>
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input id="filtro" placeholder="Buscar colaborador…" oninput="filtrar()">
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE AGENDAMENTO -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="mhead">
+        <button class="x" onclick="fecharModal()">&times;</button>
+        <div class="name" id="mNome"></div>
+        <div class="sub" id="mSub"></div>
+      </div>
+
+      <div class="body">
+        <div class="err" id="mErr"></div>
+
+        <div class="field">
+          <label>Data de início das férias</label>
+          <input type="date" id="mInicio" onchange="recalcular()">
+          <div class="hint" id="mHintAquis"></div>
+        </div>
+
+        <div class="field">
+          <label>Quantidade de dias</label>
+          <input type="number" id="mDias" min="1" step="1" oninput="recalcular()">
+          <div class="hint" id="mHint"></div>
+        </div>
+
+        <div class="resumo" id="mResumo"></div>
+
+        <div class="modal-politica" id="modalPolitica" style="display:none">
+          Ao enviar, você confirma que revisou a <a id="modalPoliticaLink" href="#" target="_blank" rel="noopener">Política de Férias</a>.
+        </div>
+
+        <div class="revisao-box" id="mRevisao" style="display:none">
+          <div class="rb-tit">Confira antes de enviar</div>
+          <div class="rb-txt" id="mRevisaoTxt"></div>
+          <div class="rb-acoes">
+            <button class="btn ghost" onclick="voltarRevisao()">Voltar</button>
+            <button class="btn primary" id="mBtnConfirmar" onclick="enviar()">✓ Confirmar envio</button>
+          </div>
+        </div>
+
+        <button class="btn primary" id="mBtn" onclick="revisar()">Revisar e enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <?!= include('Script'); ?>
+</body>
+</html>

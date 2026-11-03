@@ -1,0 +1,589 @@
+<style>
+:root{
+  --brand:#0E5A6B; --brand-dark:#093F4B; --brand2:#0E5A6B; --brand-txt:#0E5A6B; --brand-soft:#E7F1F3;
+  --accent:#E4007C; --accent-soft:#fff2f8;
+  --roxo:#7B4FA0; --laranja:#E8792A; --ciano:#1B9C93;
+  --ink:#17252a; --muted:#6b7c81; --line:#e6ecee; --bg:#f5f8f9;
+  --card:#fff; --card2:#fafbfc;
+  --ok:#1a8a4b; --ok-soft:#e9f7ef;
+  --warn:#c47f00; --warn-soft:#fdf4e3;
+  --danger:#c0392b; --danger-soft:#fdeceb;
+  --r:16px;
+  --sh:0 4px 20px rgba(9,63,75,.07);
+  --sh-lg:0 18px 50px rgba(9,63,75,.18);
+}
+
+/* ---------- MODOS ESCUROS (3 à escolha em Configurações — mesmo recurso do Portal do DP) ---------- */
+html[data-tema^="escuro"]{
+  --sh:0 3px 14px rgba(0,0,0,.45);
+  --sh-lg:0 16px 44px rgba(0,0,0,.6);
+}
+html[data-tema^="escuro"] .esqueleto{background:linear-gradient(90deg,#1c2027 25%,#262c35 37%,#1c2027 63%)}
+/* Estados "selecionado/destaque" precisam se destacar do card ao redor — como --brand fica
+   próximo de --card nos temas escuros (de propósito, pros cabeçalhos ficarem discretos), esses
+   usam a cor viva (--brand2) em qualquer variação escura. */
+html[data-tema^="escuro"] .visao button.on,
+html[data-tema^="escuro"] #seletorVisao button.on,
+html[data-tema^="escuro"] .passo-num{background:var(--brand2)}
+
+/* Cinza neutro — estilo GitHub/Slack, sem tom colorido "aceso" no fundo */
+html[data-tema="escuro-cinza"]{
+  --brand:#1c2128; --brand-dark:#14181e; --brand2:#1fb8ad; --brand-txt:#4fd1c5; --brand-soft:#1c2530;
+  --accent:#ff6fb0; --accent-soft:#3a1f2c; --roxo:#a385c9; --laranja:#f2a35c; --ciano:#3fc1b5;
+  --ink:#eef2f6; --muted:#98a2ae; --line:#2f3540; --bg:#0d0f14;
+  --card:#171a21; --card2:#111319;
+  --ok:#3fb950; --ok-soft:#102a19;
+  --warn:#e3b341; --warn-soft:#2e2410;
+  --danger:#f85149; --danger-soft:#331717;
+}
+
+/* Verde-azulado escuro — mantém a identidade CIEDS (teal), escuro e discreto */
+html[data-tema="escuro-teal"]{
+  --brand:#0e2023; --brand-dark:#081416; --brand2:#2dd4bf; --brand-txt:#5eead4; --brand-soft:#132a2d;
+  --accent:#ff5fa8; --accent-soft:#2e1522; --roxo:#a98ad1; --laranja:#f2a35c; --ciano:#42c8bc;
+  --ink:#e6f2f1; --muted:#8aa8a5; --line:#1c3236; --bg:#081416;
+  --card:#0e1f22; --card2:#0a1719;
+  --ok:#3ecf7c; --ok-soft:#0f2a1e;
+  --warn:#eab24c; --warn-soft:#2f2410;
+  --danger:#ea6660; --danger-soft:#33191a;
+}
+
+/* Preto puro — alto contraste, bom pra tela OLED */
+html[data-tema="escuro-preto"]{
+  --brand:#171717; --brand-dark:#0a0a0a; --brand2:#2dd4bf; --brand-txt:#5eead4; --brand-soft:#1e1e1e;
+  --accent:#ff6fb5; --accent-soft:#2c1420; --roxo:#ae8fd6; --laranja:#f5a862; --ciano:#45cdc1;
+  --ink:#f5f5f5; --muted:#a3a3a3; --line:#2c2c2c; --bg:#000000;
+  --card:#131313; --card2:#0a0a0a;
+  --ok:#4ade80; --ok-soft:#12271b;
+  --warn:#f0b429; --warn-soft:#2c2208;
+  --danger:#f87171; --danger-soft:#301616;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;transition:background .15s,color .15s}
+button,input{font-family:inherit}
+
+/* ---------- TOPO ---------- */
+.topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:14px 22px;
+  display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:40}
+.marca{display:flex;align-items:center;gap:12px;flex:1}
+.marca img{height:28px}
+.marca b{font-size:15.5px;display:block;letter-spacing:.2px}
+.marca span{opacity:.7;font-size:11px;display:block;margin-top:1px}
+.usuario{text-align:right;font-size:12.5px;line-height:1.3}
+.usuario .n{font-weight:600}
+.usuario .e{opacity:.7;font-size:11px}
+
+.menu-btn{background:rgba(255,255,255,.12);border:0;border-radius:10px;width:38px;height:38px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;cursor:pointer;flex:none;transition:.15s}
+.menu-btn:hover{background:rgba(255,255,255,.22)}
+.menu-btn span{display:block;width:17px;height:2px;background:#fff;border-radius:2px}
+
+/* ---------- MENU LATERAL ---------- */
+.fundo-menu{position:fixed;inset:0;background:rgba(9,63,75,.45);backdrop-filter:blur(2px);z-index:49;display:none}
+.fundo-menu.aberto{display:block}
+.lateral{position:fixed;top:0;left:0;bottom:0;width:272px;background:var(--card);z-index:50;box-shadow:var(--sh-lg);
+  transform:translateX(-100%);transition:transform .22s ease;display:flex;flex-direction:column}
+.lateral.aberto{transform:none}
+.lateral-topo{padding:24px 20px 18px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff}
+.lateral-nome{font-weight:700;font-size:15px}
+.lateral-email{opacity:.75;font-size:11.5px;margin-top:2px;word-break:break-all}
+.lateral > div:nth-child(2){flex:1;padding:12px 10px;overflow-y:auto}
+.item{width:100%;display:flex;align-items:center;gap:11px;padding:12px 14px;border:0;background:transparent;
+  border-radius:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;transition:.12s}
+.item:hover{background:var(--brand-soft)}
+.item.ativo{background:var(--accent-soft);color:var(--accent);font-weight:800}
+.item.travado{color:#b4c2c6;cursor:default}
+.item.travado:hover{background:transparent}
+.item .ic{width:22px;display:inline-flex;align-items:center;justify-content:center}
+.item .breve{margin-left:auto;font-size:9.5px;font-weight:800;background:var(--line);color:var(--muted);padding:2px 7px;border-radius:99px}
+.lateral-rodape{padding:12px 10px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.item.sair{color:var(--muted);width:auto;padding:8px 10px}
+
+.config-btn{background:transparent;border:1.5px solid var(--line);border-radius:8px;
+  width:32px;height:32px;font-size:15px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;color:var(--muted);flex:none;padding:0}
+.config-btn:hover{border-color:var(--brand2);color:var(--brand2)}
+
+/* Alternador rápido claro/escuro (sol ☀️ / lua 🌙) — um clique já troca pro escuro (o último
+   escolhido em Configurações) ou volta pro claro. Mesmo recurso do Portal do DP. */
+.tema-switch{position:relative;display:inline-flex;align-items:center;justify-content:space-between;
+  width:52px;height:28px;border-radius:99px;background:var(--line);border:0;cursor:pointer;
+  flex:none;padding:0 7px;transition:background .2s}
+.tema-switch .ic{line-height:1;z-index:1;display:flex}
+.tema-switch .bola{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+  background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+html[data-tema^="escuro"] .tema-switch{background:var(--brand2)}
+html[data-tema^="escuro"] .tema-switch .bola{transform:translateX(24px)}
+
+.config-linha{padding:12px 0;border-bottom:1px solid var(--line)}
+.config-linha:last-child{border:0}
+.config-linha .tit{font-size:13.5px;font-weight:700}
+.config-linha .desc{font-size:11.5px;color:var(--muted);margin-top:2px;margin-bottom:10px}
+.tema-opcoes{display:flex;flex-direction:column;gap:2px}
+.tema-op{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--ink)}
+.tema-op:hover{background:var(--brand-soft)}
+.tema-op input{margin:0;accent-color:var(--brand2);flex:none}
+.tema-op .amostra{width:20px;height:20px;border-radius:50%;flex:none;border:1.5px solid var(--line)}
+.tema-op .amostra.tema-claro{background:#f5f8f9}
+.tema-op .amostra.tema-cinza{background:#0d1117}
+.tema-op .amostra.tema-teal{background:#081416}
+.tema-op .amostra.tema-preto{background:#000}
+
+/* ---------- CONTEÚDO ---------- */
+.conteudo{max-width:1060px;margin:0 auto;padding:26px 20px 70px}
+.saudacao{margin-bottom:22px}
+.saudacao h1{margin:0;font-size:24px;letter-spacing:-.2px}
+.saudacao p{margin:7px 0 0;color:var(--muted);font-size:14px;line-height:1.5;max-width:640px}
+
+/* ---------- DESTAQUES (painel) ---------- */
+.destaques{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:13px;margin-bottom:26px}
+.destaque{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px 18px;box-shadow:var(--sh);
+  border-left:4px solid var(--brand);cursor:pointer;transition:.15s;text-align:left}
+.destaque:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.destaque b{display:block;font-size:28px;line-height:1;color:var(--brand-txt)}
+.destaque span{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-top:7px;line-height:1.35}
+.destaque.urgente{border-left-color:var(--danger)} .destaque.urgente b{color:var(--danger)}
+.destaque.espera{border-left-color:var(--warn)} .destaque.espera b{color:var(--warn)}
+.destaque.bom{border-left-color:var(--ok)} .destaque.bom b{color:var(--ok)}
+
+/* ---------- FILTRO DE DEPARTAMENTO ---------- */
+.filtro-depto{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh);position:relative}
+
+.fd-fechado{display:flex;align-items:center;gap:10px;font-size:13.5px}
+.fd-fechado b{color:var(--brand-txt)}
+.fd-fechado button{border:0;background:var(--brand-soft);color:var(--brand-txt);width:24px;height:24px;
+  border-radius:50%;font-size:15px;cursor:pointer;line-height:1}
+
+.fd-busca-caixa input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;
+  font-size:13.5px;font-family:inherit;box-sizing:border-box}
+.fd-busca-caixa input:focus{outline:none;border-color:var(--brand)}
+
+.fd-lista{position:absolute;left:16px;right:16px;top:64px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.12);max-height:320px;overflow-y:auto;z-index:30}
+.fd-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;
+  cursor:pointer;border-bottom:1px solid var(--line)}
+.fd-item:last-child{border-bottom:0}
+.fd-item:hover{background:var(--brand-soft)}
+.fd-item .fd-nome{font-size:13.5px;font-weight:600;color:var(--ink)}
+.fd-item.fd-todos .fd-nome{font-weight:800}
+.fd-item .fd-num{display:flex;align-items:center;gap:8px;flex:none}
+.fd-item .fd-total{font-size:12.5px;color:var(--muted);font-weight:700}
+.fd-item .fd-alerta{background:var(--danger-soft);color:var(--danger);font-size:11px;font-weight:800;
+  padding:2px 8px;border-radius:99px;display:flex;align-items:center;gap:3px}
+.fd-vazio{padding:16px;text-align:center;font-size:13px;color:var(--muted)}
+
+/* ---------- GUIA / BANNER ---------- */
+.guia{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink);
+  background:linear-gradient(135deg,var(--brand-soft),#fff);border:1px solid var(--line);
+  border-left:5px solid var(--accent);border-radius:14px;padding:14px 18px;margin-bottom:18px;
+  box-shadow:var(--sh);transition:.15s}
+.guia:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.guia-ico{font-size:24px;flex:none}
+.guia-txt{font-size:12.5px;color:var(--muted);line-height:1.5}
+.guia-txt b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.guia-cta{margin-left:auto;flex:none;font-weight:800;font-size:13px;color:var(--accent);white-space:nowrap}
+
+/* ---------- CONSOLIDADO ---------- */
+.consolidado{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.cons{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--sh);
+  border-left:4px solid var(--brand);text-align:left}
+.cons b{display:block;font-size:24px;line-height:1;color:var(--brand-txt)}
+.cons span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:6px;line-height:1.35}
+.cons.urgente{border-left-color:var(--danger)} .cons.urgente b{color:var(--danger)}
+.cons.espera{border-left-color:var(--warn)} .cons.espera b{color:var(--warn)}
+.cons.bom{border-left-color:var(--ok)} .cons.bom b{color:var(--ok)}
+
+/* ---------- VISÃO (admin que também é gestor) ---------- */
+.visao{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;
+  margin-bottom:20px;box-shadow:var(--sh);width:fit-content}
+.visao button{border:0;background:transparent;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;
+  color:var(--muted);cursor:pointer}
+.visao button.on{background:var(--brand);color:#fff}
+
+/* ---------- ATALHOS / TIME ---------- */
+.atalhos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+.atalho{background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:16px 14px;cursor:pointer;
+  text-align:center;transition:.14s}
+.atalho:hover{background:var(--brand-soft);border-color:var(--brand)}
+.atalho.travado{opacity:.5;cursor:default}
+.atalho .ic{font-size:24px;display:block;margin-bottom:7px}
+.atalho .nm{font-size:13px;font-weight:700}
+.atalho .tag{display:block;font-size:10px;color:var(--muted);margin-top:4px;font-weight:600}
+.atalho .badge{display:inline-block;background:var(--accent);color:#fff;font-size:10px;font-weight:800;
+  padding:2px 7px;border-radius:99px;margin-top:5px}
+
+.time{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.time .t{background:var(--bg);border-radius:12px;padding:13px;text-align:center}
+.time .t b{display:block;font-size:21px;color:var(--brand-txt)}
+.time .t span{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:4px}
+
+/* ---------- BLOCOS ---------- */
+.bloco{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);margin-bottom:16px}
+.bloco-titulo{margin-bottom:14px}
+.bloco-titulo h3{margin:0;font-size:15.5px}
+.bloco-titulo h3 svg{vertical-align:-3px;margin-right:2px}
+.bloco-titulo span{display:block;color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.45}
+.fda-abas{display:flex;gap:8px;margin:14px 0 4px}
+.fda-aba{flex:1;border:1.5px solid var(--line);background:var(--card);color:var(--muted);border-radius:11px;
+  padding:9px 8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.fda-aba.ativa{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-dark)}
+.fda-selo{background:var(--brand-soft);color:var(--brand-dark);border-radius:99px;padding:4px 11px;font-size:11px;font-weight:700;flex:none}
+.linha{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.linha:last-child{border:0;padding-bottom:0}
+.linha .bola{width:36px;height:36px;border-radius:10px;flex:none;background:linear-gradient(135deg,var(--brand2),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.linha .txt{flex:1;min-width:0}
+.linha .txt b{display:block;font-size:13.5px;font-weight:700}
+.linha .txt span{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.linha .dir{text-align:right;flex:none;font-size:12px}
+.linha .dir b{display:block;font-size:13px}
+.chip{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
+.chip.critico{background:var(--danger-soft);color:var(--danger)}
+.chip.atencao{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.espera{background:var(--warn-soft);color:var(--warn)}
+.linha .acao{background:transparent;border:0;color:var(--accent);font-weight:800;font-size:12px;cursor:pointer;text-decoration:underline}
+
+/* ---------- PAINEL DE STATUS (férias) ---------- */
+.painel-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px;margin-bottom:20px}
+.status-card{border:2px solid transparent;border-radius:17px;background:var(--card);box-shadow:var(--sh);padding:16px 18px;
+  cursor:pointer;text-align:left;transition:.16s}
+.status-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.status-card.ativo{border-color:var(--accent);background:var(--accent-soft)}
+.status-card span{display:block;font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
+.status-card strong{display:block;font-size:29px;font-weight:800;line-height:1;color:var(--brand-txt)}
+.status-card small{display:block;margin-top:6px;font-size:11.5px;color:var(--muted);font-weight:500}
+.status-card.discreto{background:var(--card2);box-shadow:none;border:1px solid var(--line)}
+.status-card.discreto span{color:#9aa7b0}
+.status-card.discreto:hover{transform:none;box-shadow:var(--sh)}
+
+.buscador{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:0 14px;box-shadow:var(--sh);margin-bottom:18px}
+.buscador input{border:0;outline:0;padding:12px 0;font-size:14px;width:100%;background:transparent;color:var(--ink)}
+
+/* ---------- CARDS ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--sh);
+  display:flex;flex-direction:column;gap:13px;position:relative;transition:.15s}
+.card.clicavel{cursor:pointer}
+.card.clicavel:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:var(--brand)}
+
+/* ---------- CARTÕES DE AFASTAMENTO ---------- */
+.cartao{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--sh);
+  display:flex;flex-direction:column;gap:11px;position:relative}
+.cartao-topo{display:flex;align-items:center;gap:12px}
+.cartao .ini{width:42px;height:42px;border-radius:11px;flex:none;background:linear-gradient(135deg,var(--brand2),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.cartao-info{flex:1;min-width:0}
+.cartao-info b{display:block;font-size:14.5px}
+.cartao-info span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.cartao-linha{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
+.cartao-linha span{color:var(--muted)}
+.cartao-linha b{font-weight:700}
+.etiqueta{position:absolute;top:16px;right:16px;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:99px}
+.link-doc{display:inline-block;margin-top:4px;font-size:13px;font-weight:700;color:var(--brand-txt);text-decoration:none}
+.link-doc:hover{text-decoration:underline}
+.linha-dupla{display:flex;gap:12px}
+.linha-dupla .campo{flex:1}
+.dica-campo{font-size:11.5px;color:var(--muted);margin-top:5px}
+.campo select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;
+  font-family:inherit;color:var(--ink);background:var(--card);outline:none}
+.campo select:focus{border-color:var(--brand)}
+.card .cabeca{display:flex;align-items:center;gap:12px}
+.avatar{width:44px;height:44px;border-radius:12px;flex:none;background:linear-gradient(135deg,var(--brand2),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.card .nome{font-weight:700;font-size:14.5px;line-height:1.25;padding-right:110px}
+.card .periodo{color:var(--muted);font-size:11.5px;margin-top:2px}
+.selo{position:absolute;top:15px;right:15px;font-size:10px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.02em;
+  max-width:88px;text-align:right;white-space:normal;line-height:1.35}
+.selo.livre{background:var(--brand-soft);color:var(--brand-txt)}
+.selo.pendente{background:var(--warn-soft);color:var(--warn)}
+.selo.agendado{background:var(--ok-soft);color:var(--ok)}
+.selo.negado{background:var(--danger-soft);color:var(--danger)}
+.selo.critico{background:var(--danger);color:#fff}
+.selo.emcurso{background:#f1e9fb;color:#6b3fa0}
+.selo.naoelegivel{background:#eef1f4;color:#66737b}
+
+.pilulas{display:flex;gap:10px}
+.pilula{flex:1;border-radius:11px;padding:9px 12px;background:var(--brand-soft)}
+.pilula .k{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+.pilula .v{font-weight:800;font-size:14.5px;color:var(--brand-dark);margin-top:2px}
+.pilula.CRITICO{background:var(--danger-soft)} .pilula.CRITICO .v{color:var(--danger)}
+.pilula.ATENCAO{background:var(--warn-soft)} .pilula.ATENCAO .v{color:var(--warn)}
+.pilula.risco90{background:#fff4e5;border:1px solid #ffb84d} .pilula.risco90 .v{color:#b36b00;font-weight:800}
+
+.sol{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;padding:8px 11px;
+  border-radius:9px;background:var(--bg)}
+.sol .st{font-weight:800;font-size:10.5px}
+.st.PENDENTE{color:var(--warn)} .st.DEFERIDA{color:var(--ok)} .st.INDEFERIDA{color:var(--danger)}
+.recado{font-size:12px;background:var(--danger-soft);color:var(--danger);padding:9px 11px;border-radius:9px;line-height:1.45}
+.recado b{display:block;margin-bottom:2px}
+.chamada{font-size:12.5px;color:var(--accent);font-weight:800}
+.chamada.off{color:var(--muted);font-weight:600}
+.mini{background:0;border:0;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer;padding:0}
+
+/* ---------- LOGIN (telaSemEquipe reaproveita este cartão simples) ---------- */
+.cartao-central{max-width:440px;margin:52px auto;background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:38px 32px;box-shadow:var(--sh);text-align:center}
+.cartao-central .emoji{font-size:40px;margin-bottom:8px}
+.cartao-central h2{margin:0 0 8px;font-size:20px}
+.cartao-central p{color:var(--muted);font-size:14px;margin:0;line-height:1.55}
+.cartao-central .ajuda{font-size:13px;margin:16px 0 4px;text-align:left;background:var(--brand-soft);color:var(--brand-dark);
+  padding:11px 13px;border-radius:11px;line-height:1.5}
+#boxLogin,#boxCadastro{margin-top:22px}
+.separador{height:1px;background:var(--line);margin:20px 0}
+
+/* ---------- LOGIN (hero de duas colunas + card) ---------- */
+.login-hero{min-height:calc(100vh - 54px);background-image:radial-gradient(var(--line) 1px, transparent 1px);
+  background-size:22px 22px;display:flex;align-items:center;padding:48px 24px}
+.login-grid{max-width:1120px;margin:0 auto;width:100%;display:grid;grid-template-columns:1.15fr .85fr;
+  gap:64px;align-items:center}
+@media(max-width:860px){.login-grid{grid-template-columns:1fr;gap:40px}}
+
+.login-selo{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:800;font-size:11.5px;
+  letter-spacing:.04em;text-transform:uppercase;margin-bottom:16px}
+.login-selo::before{content:'';width:18px;height:2px;background:var(--accent);display:inline-block}
+.login-marketing h1{margin:0 0 14px;font-size:32px;line-height:1.22;color:var(--ink)}
+.login-lead{margin:0 0 14px;font-size:19px;font-weight:700;color:var(--brand-txt);line-height:1.4}
+.login-desc{margin:0;font-size:14px;color:var(--muted);line-height:1.75;max-width:440px}
+
+.login-ilustra{display:flex;gap:14px;margin-top:40px}
+.li-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-lg);
+  padding:14px;width:112px}
+.li-card.li-b{margin-top:26px;background:var(--brand);border-color:var(--brand)}
+.li-card.li-c{margin-top:-10px}
+.li-linha{display:block;height:7px;border-radius:99px;background:var(--line);margin-bottom:7px}
+.li-linha:last-child{margin-bottom:0}
+.li-linha.curta{width:55%}
+.li-linha.branca{background:rgba(255,255,255,.35)}
+.li-check{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  background:var(--ok);color:#fff;font-size:12px;font-weight:800;margin-top:4px}
+.li-avatar{display:block;width:26px;height:26px;border-radius:50%;background:var(--brand-soft);margin-bottom:9px}
+@media(max-width:860px){.login-ilustra{display:none}}
+
+.login-card{max-width:400px;width:100%;margin:0 auto;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:34px 30px;box-shadow:var(--sh-lg);text-align:center}
+.login-card h2{margin:0 0 6px;font-size:19px}
+.login-card p{color:var(--muted);font-size:13px;margin:0 0 20px}
+.campo-cab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.campo-cab label{margin-bottom:0!important}
+.campo-cab a{font-size:11.5px;color:var(--accent);font-weight:700;text-decoration:none}
+.campo-senha{position:relative}
+.campo-senha input{padding-right:40px}
+.campo-senha .olho{position:absolute;right:3px;top:3px;bottom:3px;width:32px;background:transparent;border:0;
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.campo-senha .olho:hover{color:var(--ink)}
+
+/* ---------- FORM ---------- */
+.campo{margin-bottom:15px;text-align:left}
+.campo label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.campo input{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;font-size:15px;
+  color:var(--ink);outline:0;background:var(--card);transition:border-color .15s}
+.campo input:focus{border-color:var(--brand)}
+.campo textarea{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;font-size:15px;
+  color:var(--ink);outline:0;background:var(--card);transition:border-color .15s;font-family:inherit;resize:vertical;
+  min-height:90px;display:block;box-sizing:border-box}
+.campo textarea:focus{border-color:var(--brand)}
+.regras{background:var(--brand-soft);border-radius:10px;padding:11px 13px;font-size:12px;color:var(--brand-dark);
+  margin-bottom:14px;text-align:left;line-height:1.5}
+
+.btn{width:100%;border:0;border-radius:12px;padding:13px;font-size:14.5px;font-weight:800;cursor:pointer;transition:.12s}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primario{background:var(--accent);color:#fff}
+.btn.primario:hover:not(:disabled){filter:brightness(1.07)}
+.btn.contorno{background:var(--card);color:var(--brand-txt);border:1.5px solid var(--brand-soft)}
+.btn.contorno:hover{background:var(--brand-soft)}
+.btn.texto{background:0;color:var(--accent);text-decoration:underline;margin-top:10px;font-weight:700;font-size:13px}
+
+.aviso{background:var(--danger-soft);color:var(--danger);border-radius:11px;padding:11px 13px;font-size:13px;
+  margin-bottom:14px;display:none;text-align:left;line-height:1.5}
+.aviso.mostra{display:block}
+.aviso.bom{background:var(--ok-soft);color:var(--ok)}
+.aviso.info{background:var(--brand-soft);color:var(--brand-dark)}
+
+/* ---------- MODAL ---------- */
+.overlay{position:fixed;inset:0;background:rgba(9,63,75,.5);backdrop-filter:blur(3px);display:none;
+  align-items:center;justify-content:center;padding:16px;z-index:70}
+.overlay.aberto{display:flex}
+.modal{background:var(--card);border-radius:20px;width:100%;max-width:470px;overflow:hidden;box-shadow:var(--sh-lg);
+  display:flex;flex-direction:column;max-height:94vh;animation:sobe .18s ease}
+@keyframes sobe{from{transform:translateY(12px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal-topo{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;padding:20px 24px;position:relative;flex:none}
+.mt-nome{font-weight:800;font-size:16.5px}
+.mt-sub{opacity:.82;font-size:12.5px;margin-top:3px}
+.fechar{position:absolute;top:15px;right:15px;background:0;border:0;color:#fff;font-size:23px;cursor:pointer;opacity:.85;line-height:1}
+.modal-corpo{padding:22px 24px;overflow-y:auto}
+
+.passo{display:flex;gap:11px;margin-bottom:9px;align-items:flex-start}
+.passo-num{width:23px;height:23px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.passo-txt b{display:block;font-size:14px}
+.passo-txt span{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
+.opcional{font-weight:600;color:var(--muted);font-size:12px}
+.explica{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:11px 13px;font-size:12px;
+  margin-top:8px;line-height:1.55}
+.explica b{color:var(--warn)}
+.explica.travado{background:var(--danger-soft);color:var(--danger)}
+
+.resumo{background:var(--brand-soft);border-radius:12px;padding:14px 16px;margin:16px 0;display:none}
+.resumo.mostra{display:block}
+.r-linha{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px;color:var(--brand-dark)}
+.r-linha + .r-linha{border-top:1px dashed rgba(14,90,107,.16)}
+.r-linha b{font-weight:800}
+.rodape-modal{font-size:11.5px;color:var(--muted);text-align:center;margin:12px 0 0;line-height:1.5}
+
+/* ---------- VENDA DE DIAS ---------- */
+.bloco.abono{border-left:5px solid var(--warn)}
+.confirma{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:11px;padding:13px 15px;
+  margin:6px 0 16px;font-size:13px;line-height:1.5;cursor:pointer}
+.confirma input{margin-top:2px;flex:none;width:17px;height:17px;accent-color:var(--accent)}
+.chip.prazo{background:var(--warn-soft);color:var(--warn)}
+.chip.feito{background:var(--brand-soft);color:var(--brand-txt)}
+
+/* ---------- OUTROS ---------- */
+/* ---------- RESCISÃO: kpis, estado vazio e cards de processo ---------- */
+.kpis-resc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 22px}
+.kpi-resc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;text-align:center}
+.kpi-resc .num{font-size:26px;font-weight:800;color:var(--brand-dark);line-height:1.1}
+.kpi-resc .rot{font-size:12.5px;color:var(--muted);margin-top:4px;font-weight:600}
+.kpi-resc.destaque{background:var(--warn-soft);border-color:#f0dca8}
+.kpi-resc.destaque .num{color:var(--warn)}
+
+.vazio-acolhedor{max-width:440px;margin:36px auto;background:var(--card);border:1px dashed var(--line);
+  border-radius:var(--r);padding:40px 28px;text-align:center}
+.vazio-acolhedor .icone{font-size:34px;margin-bottom:10px}
+.vazio-acolhedor h3{margin:0 0 8px;font-size:16.5px;color:var(--ink)}
+.vazio-acolhedor p{margin:0 0 20px;font-size:13.5px;color:var(--muted);line-height:1.6}
+
+.proc-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:12px}
+.proc-card.pendente{border-left:4px solid var(--warn)}
+.proc-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.proc-nome{font-size:15px;font-weight:700}
+.proc-tipo{font-size:12.5px;color:var(--muted);margin-top:2px}
+.proc-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.proc-badge.andamento{background:var(--brand-soft);color:var(--brand-dark)}
+.proc-badge.pendente{background:var(--warn-soft);color:var(--warn)}
+.proc-badge.concluida{background:var(--ok-soft);color:var(--ok)}
+.proc-linha{font-size:13px;color:var(--muted);margin-top:4px}
+.proc-linha b{color:var(--ink);font-weight:600}
+.proc-pendencia{background:var(--warn-soft);color:var(--warn);font-size:12.5px;font-weight:600;
+  padding:8px 12px;border-radius:10px;margin-top:10px}
+.proc-rodape{display:flex;justify-content:space-between;align-items:center;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--line)}
+.proc-atualizado{font-size:11.5px;color:var(--muted)}
+
+.esqueleto{height:150px;border-radius:var(--r);background:linear-gradient(90deg,#eef3f4 25%,#e3ebed 37%,#eef3f4 63%);
+  background-size:400% 100%;animation:sk 1.3s ease infinite;margin-bottom:16px}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.vazio{grid-column:1/-1;text-align:center;color:var(--muted);padding:46px 20px;font-size:14px;background:var(--card);
+  border:1px dashed var(--line);border-radius:var(--r);line-height:1.6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#17252a;color:#fff;
+  padding:13px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--sh-lg);opacity:0;transition:.25s;z-index:90;max-width:90%}
+.toast.mostra{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.bom{background:var(--ok)} .toast.ruim{background:var(--danger)}
+.girando{width:15px;height:15px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;
+  display:inline-block;vertical-align:-2px;margin-right:7px;animation:gira .7s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+@media(max-width:820px){
+  .painel-status{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .topo{padding:12px 14px}
+  .marca span{display:none}
+  .usuario .e{display:none}
+  .conteudo{padding:20px 14px 60px}
+  .painel-status{grid-template-columns:1fr}
+  .saudacao h1{font-size:20px}
+}
+#seletorVisao button{
+  border:0;border-radius:99px;padding:6px 12px;font-size:11.5px;font-weight:700;
+  cursor:pointer;background:transparent;color:var(--muted);transition:background .18s,color .18s
+}
+#seletorVisao button.on{background:var(--brand);color:#fff}
+
+/* ================================================================================================
+   MICROINTERAÇÕES — tudo em CSS puro, sem depender de JS: a animação de entrada reaproveita o
+   próprio truque de display:none → visível, que já reinicia @keyframes sozinho a cada troca de tela
+   ou reabertura de modal. Cartões (.card, .destaque, .status-card) já tinham hover — isso completa
+   com entrada suave nas telas/listas, o backdrop do modal e o feedback de clique nos botões.
+   ================================================================================================ */
+@keyframes entrarConteudo{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes entrarOverlay{from{opacity:0}to{opacity:1}}
+
+#app section{animation:entrarConteudo .32s ease both}
+
+.linha{transition:background .15s}
+.linha:hover{background:var(--card2)}
+.linha:nth-child(1){animation:entrarConteudo .3s ease both .02s}
+.linha:nth-child(2){animation:entrarConteudo .3s ease both .05s}
+.linha:nth-child(3){animation:entrarConteudo .3s ease both .08s}
+.linha:nth-child(4){animation:entrarConteudo .3s ease both .11s}
+.linha:nth-child(5){animation:entrarConteudo .3s ease both .14s}
+.linha:nth-child(6){animation:entrarConteudo .3s ease both .17s}
+.linha:nth-child(7){animation:entrarConteudo .3s ease both .2s}
+.linha:nth-child(8){animation:entrarConteudo .3s ease both .23s}
+
+.overlay.aberto{animation:entrarOverlay .18s ease}
+
+.btn:not(:disabled){transition:transform .12s,filter .12s,background .12s}
+.btn:not(:disabled):active{transform:scale(.96)}
+
+@media(prefers-reduced-motion: reduce){
+  #app section,.linha,.overlay.aberto,.modal{animation:none}
+  .btn,.card,.destaque,.status-card{transition:none}
+}
+/* [2026-10-21] Movimentações: os 3 passos, números que filtram, o que muda e o caminho Você → RH → DP em cada
+   pedido, e o resumo antes de enviar. As cores de situação são as mesmas de antes (andamento = marca,
+   não aprovada = vermelho, aprovada = verde); cancelada passa a ser cinza. */
+.mov-etapas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;list-style:none;margin:18px 0 14px;padding:0}
+.mov-etapas li{display:flex;gap:11px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;min-width:0}
+.mov-etapas .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand-txt);font-size:12.5px;font-weight:800;
+  display:flex;align-items:center;justify-content:center}
+.mov-etapas b{display:block;font-size:13.5px;color:var(--ink)}
+.mov-etapas div span{display:block;font-size:12px;color:var(--muted);line-height:1.45;margin-top:2px}
+.kpi-resc.mov-kpi{cursor:pointer;font:inherit;color:inherit;width:100%;transition:border-color .15s,box-shadow .15s,transform .12s}
+.kpi-resc.mov-kpi:hover{border-color:var(--brand2);transform:translateY(-1px)}
+.kpi-resc.mov-kpi.on{border-color:var(--brand2);box-shadow:inset 0 0 0 1.5px var(--brand2)}
+.kpi-resc.mov-kpi:focus-visible{outline:2px solid var(--brand2);outline-offset:2px}
+.mov-filtro-info{font-size:13px;color:var(--muted);margin:-8px 0 14px}
+.mov-filtro-info b{color:var(--ink)}
+.mov-limpar{border:0;background:0;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;padding:0 0 0 6px;text-decoration:underline}
+.mov-mudanca{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:14px;color:var(--ink);background:var(--card2);
+  border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin:2px 0 12px}
+.mov-mudanca .mov-rot{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.mov-mudanca .mov-de{color:var(--muted)}
+.mov-mudanca .mov-seta{color:var(--muted)}
+.mov-mudanca b{font-weight:800;overflow-wrap:anywhere}
+.mov-trilha{display:flex;gap:6px;list-style:none;margin:0 0 4px;padding:0}
+.mov-trilha li{flex:1;min-width:0;border-radius:10px;padding:8px 11px;background:var(--card2);border:1px solid var(--line)}
+.mov-trilha li span{display:block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.mov-trilha li b{display:block;font-size:12.5px;color:var(--ink);margin-top:2px;overflow-wrap:anywhere}
+.mov-trilha li.ok{background:var(--ok-soft);border-color:transparent}
+.mov-trilha li.ok b{color:var(--ok)}
+.mov-trilha li.cr{background:var(--danger-soft);border-color:transparent}
+.mov-trilha li.cr b{color:var(--danger)}
+.mov-trilha li.atual{background:var(--brand-soft);border-color:transparent}
+.mov-trilha li.atual b{color:var(--brand-txt)}
+.mov-trilha li.cinza b{color:var(--muted)}
+.proc-badge.cancelada{background:var(--card2);color:var(--muted);border:1px solid var(--line)}
+.proc-card.cancelada{opacity:.78}
+.mov-atual{font-size:12.5px;color:var(--muted);margin-top:7px;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:7px 11px}
+.mov-atual b{color:var(--ink)}
+.mov-resumo{background:var(--brand-soft);color:var(--ink);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.55;margin:4px 0 14px}
+.mov-resumo-rot{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-txt);margin-bottom:3px}
+.mov-resumo-pass{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+#ovMov .passo{margin-top:6px}
+#ovMov .passo-txt span{margin-top:1px}
+/* Nos temas escuros, número e etiqueta "Em andamento" usavam a cor escura da marca (quase sumiam) e o Guia tinha degradê claro. */
+html[data-tema^="escuro"] #secMovimentacao .kpi-resc .num{color:var(--ink)}
+html[data-tema^="escuro"] #secMovimentacao .kpi-resc.destaque .num{color:var(--warn)}
+html[data-tema^="escuro"] #secMovimentacao .proc-badge.andamento{color:var(--brand-txt)}
+html[data-tema^="escuro"] #secMovimentacao .guia{background:var(--card)}
+@media(max-width:700px){.mov-etapas{grid-template-columns:1fr}}
+@media(max-width:560px){.mov-trilha{flex-direction:column}}
+</style>
